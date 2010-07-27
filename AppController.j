@@ -7,13 +7,16 @@
  */
 
 @import <Foundation/CPObject.j>
+@import "Categories/CPSplitView+Categories.j"
 @import "SJLeftView.j"
+@import "SJLoginViewController.j"
 
 
 @implementation AppController : CPObject
 {
     @outlet CPWindow    theWindow; //this "outlet" is connected automatically by the Cib
     SJLeftView theLeftView;
+    SJLoginViewController theLoginViewController;
 }
 
 - (void)applicationDidFinishLaunching:(CPNotification)aNotification
@@ -32,18 +35,29 @@
 {
   [self setupToolbar];
   [self setupLeftView];
+  [self setupRightView];
   [theWindow orderFront:self];
+}
+
+- (CPSplitView)contentSplitView
+{
+  var subviews = [[theWindow contentView] subviews];
+  var splitView = [subviews objectAtIndex:0]; /* CPSplitView */
+  return splitView;
 }
 
 - (void)setupLeftView
 {
- var subviews = [[theWindow contentView] subviews];
- var splitView = [subviews objectAtIndex:0]; /* CPSplitView */
- var leftView = [[splitView subviews] objectAtIndex:0];
+ var leftView = [[self contentSplitView] viewAtIndex:0];
  
  // Setup the Left View
   theLeftView = [[SJLeftView alloc] initWithSuperView:leftView];   
 }
 
+- (void)setupRightView
+{  
+  var rightContentView = [[self contentSplitView] viewAtIndex:1];
+  theLoginViewController = [[SJLoginViewController alloc] initWithView:rightContentView];
+}
 
 @end
