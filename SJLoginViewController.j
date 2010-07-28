@@ -131,8 +131,8 @@
 {
   [spinnerView setHidden:NO];
   setTimeout(function(){
-    [connectionView setHidden:YES];
-    alert("TODO: Display the DB Tables");
+		[[CPNotificationCenter defaultCenter] postNotificationName:@"kLoginSuccess" object:nil];
+	//[connectionView setHidden:YES];
   }, 2000);
 }
 

@@ -10,11 +10,14 @@
 @import "Categories/CPSplitView+Categories.j"
 @import "SJLeftView.j"
 @import "SJLoginViewController.j"
+@import "SLDatabaseViewController.j"
 
 
 @implementation AppController : CPObject
 {
     @outlet CPWindow    theWindow; //this "outlet" is connected automatically by the Cib
+    @outlet SLDatabaseViewController dbviewController;
+
     SJLeftView theLeftView;
     SJLoginViewController theLoginViewController;
 }
@@ -22,6 +25,17 @@
 - (void)applicationDidFinishLaunching:(CPNotification)aNotification
 {
     // This is called when the application is done loading.
+	[[CPNotificationCenter defaultCenter] addObserver:self selector:@selector(didLogin:) name:@"kLoginSuccess" object:nil];
+}
+
+- (void)didLogin:(CPNotification)aNotification
+{
+    if(dbviewController) {
+        alert(@"dbviewController is available");
+      [dbviewController didLogin];
+
+    }
+   // dbViewController = [[SLDatabaseViewController alloc] init];
 }
 
 - (void)setupToolbar
