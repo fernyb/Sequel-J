@@ -18,6 +18,11 @@
   return self;
 }
 
+- (void)setHidden:(BOOL)isHidden
+{
+  [connectionView setHidden:isHidden];
+}
+
 - (CGRect)addTextField:(CPString)aTextFieldName 
 					 withLabel:(CPString)aLabelName 
 					atPosition:(CPInteger)idx

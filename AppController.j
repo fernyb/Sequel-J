@@ -31,11 +31,9 @@
 - (void)didLogin:(CPNotification)aNotification
 {
     if(dbviewController) {
-        alert(@"dbviewController is available");
-      [dbviewController didLogin];
-
+      [theLoginViewController setHidden:YES];
+      [dbviewController setHidden:NO];
     }
-   // dbViewController = [[SLDatabaseViewController alloc] init];
 }
 
 - (void)setupToolbar
@@ -50,6 +48,11 @@
   [self setupToolbar];
   [self setupLeftView];
   [self setupRightView];
+  
+  var rightView = [[self contentSplitView] viewAtIndex:1];
+  [dbviewController setContentView:rightView];
+  [dbviewController setupView];
+     
   [theWindow orderFront:self];
 }
 
