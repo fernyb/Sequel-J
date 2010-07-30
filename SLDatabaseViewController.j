@@ -1,7 +1,7 @@
-
 @import <Foundation/Foundation.j>
 @import "Categories/CPSplitView+Categories.j"
 @import "SJTableViewController.j"
+@import "SJIndexesViewController.j"
 
 
 @implementation SLDatabaseViewController : CPObject
@@ -10,6 +10,7 @@
     CPTableView tableView;
     CPView contentView;
     SJTableViewController tableViewController;
+    SJIndexesViewController indexesViewController;
 }
 
 
@@ -43,9 +44,11 @@
 - (void)addTableStructure
 {  
   var topContentView = [dbSplitView viewAtIndex:0];
+  var bottomContentView = [dbSplitView viewAtIndex:1];
   var viewWidth = [contentView bounds].size.width;
   
   tableViewController = [[SJTableViewController alloc] initWithView:topContentView andWidth:viewWidth];
+  indexesViewController = [[SJIndexesViewController alloc] initWithView:bottomContentView andWidth:viewWidth];
   
   if(contentView) {
     [contentView addSubview:dbSplitView];
