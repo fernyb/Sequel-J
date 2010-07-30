@@ -34,7 +34,7 @@
   [[column headerView] setStringValue:@"Tables"];
   [column setWidth:(viewWidth - 15)];
   [tableView addTableColumn:column];
-
+  
   [scrollView setDocumentView:tableView];
   [theSuperView addSubview:scrollView];
 }
