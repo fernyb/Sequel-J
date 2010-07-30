@@ -7,11 +7,15 @@
   CPView contentView;
   CPView connectionView;
   CPView spinnerView;
+  CPURLConnection httpConnection;
+  CPArray responseData;
 }
+
 
 - (id)initWithView:(CPView)aView
 {
   if (self = [super init]) {
+    responseData = [[CPArray alloc] init];
     contentView = aView;
     [self setupView];
   }
@@ -135,11 +139,86 @@
 - (void)connectionButtonPressed:(id)sender
 {
   [spinnerView setHidden:NO];
-  setTimeout(function(){
-		[[CPNotificationCenter defaultCenter] postNotificationName:@"kLoginSuccess" object:nil];
-	//[connectionView setHidden:YES];
-  }, 2000);
+
+	var params = [
+	  "username=",
+	  "password=",
+	  "host=",
+	  "database=",
+	  "port="
+	];
+	params = params.join("&");
+	
+	var protocol = window.location.protocol;
+	var host = window.location.host;
+	var port = window.location.port;
+	
+	if([CPPlatform isBrowser] && (protocol != "http" || protocol != "https")) {
+	  protocol = "http";
+	}
+	if([CPPlatform isBrowser] && host == "") {
+	  host = "localhost"
+	}
+	if([CPPlatform isBrowser] && port == "") {
+	  port = "3000";
+	}
+	var base = protocol +"://"+ host +":"+ port;
+
+	var request = [CPURLRequest requestWithURL:base + "/connect?" + params];
+  [request setHTTPMethod:@"GET"];
+  
+  httpConnection = [CPURLConnection connectionWithRequest:request delegate:self];
 }
+
+- (void)connectionDidFail:(id)jsObject
+{
+  alert(jsObject['error']);
+  [spinnerView setHidden:YES];
+ 
+  //[[CPNotificationCenter defaultCenter] postNotificationName:@"kLoginDidFail" object:nil];
+  [[CPNotificationCenter defaultCenter] postNotificationName:@"kLoginSuccess" object:nil];
+}
+
+- (void)connectionWasSuccess:(id)jsObject
+{
+  [[CPNotificationCenter defaultCenter] postNotificationName:@"kLoginSuccess" object:nil];
+}
+
+- (void)connectionDidFinishLoading:(CPURLConnection)connection
+{
+  var json = JSON.parse([responseData componentsJoinedByString:@""]);
+  response = nil;
+  
+  if(json['connected'] == "true") {
+    [self connectionWasSuccess:json];
+  } else {
+    [self connectionDidFail:json];
+  }
+}
+
+- (void)connection:(CPURLConnection)connection didReceiveData:(CPString)data
+{
+  //This method is called when a connection receives a response. in a
+  //multi-part request, this method will (eventually) be called multiple times,
+  //once for each part in the response.
+  
+  [responseData addObject:data];
+}
+
+- (void)connection:(CPURLConnection)connection didFailWithError:(CPString)error
+{
+    //This method is called if the request fails for any reason.
+    alert("Connection Failed: " + error);
+}
+
+- (void)clearConnection:(CPURLConnection)aConnection
+{
+    //we no longer need to hold on to a reference to this connection
+    if (aConnection == httpConnection)
+        httpConnection = nil;
+}
+
+
 
 - (void)addTitle:(CPString)aMessage fromRect:(CGRect)rect
 {
