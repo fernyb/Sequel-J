@@ -3,7 +3,7 @@
  * Sequel-J
  *
  * Created by Fernando Barajas on July 26, 2010.
- * Copyright 2010, Your Company All rights reserved.
+ * Copyright 2010, Fernando Barajas All rights reserved.
  */
 
 @import <Foundation/CPObject.j>
@@ -11,6 +11,7 @@
 @import "SJLeftView.j"
 @import "SJLoginViewController.j"
 @import "SLDatabaseViewController.j"
+@import "SJToolbarController.j"
 
 
 @implementation AppController : CPObject
@@ -38,10 +39,10 @@
 
 - (void)setupToolbar
 {
- var toolbar = [[CPToolbar alloc] initWithIdentifier:@"SJToolbar"];
-  [toolbar setVisible:YES];
-  [theWindow setToolbar:toolbar];
+  var toolbarController = [[SJToolbarController alloc] init];
+  [theWindow setToolbar:[toolbarController toolbar]];
 }
+
 
 - (void)awakeFromCib
 {
