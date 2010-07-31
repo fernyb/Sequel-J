@@ -211,7 +211,10 @@ var StructureToolbarItemIdentifier  = @"StructureToolbarItemIdentifier",
 
 - (void)selectedDatabase:(id)sender
 {
-  alert(@"Selected Database");
+  var selectedTitle = [[sender selectedItem] title];
+  if(selectedTitle == @"Refresh Databases") {
+    [[CPNotificationCenter defaultCenter] postNotificationName:@"kShowDatabaseTables" object:nil];
+  }
 }
 
 @end

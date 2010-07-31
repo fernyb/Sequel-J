@@ -1,11 +1,15 @@
 
 @import <Foundation/CPObject.j>
+@import "SJHTTPRequest.j"
+
 
 @implementation SJLeftView : CPObject
 {
   CPView theSuperView;
   CPTableView tableView;
   CPArray tableList;
+  CPURLConnection httpConnection;
+  CPArray responseData;
 }
 
 - (id)initWithSuperView:(CPView)aSuperView
@@ -14,8 +18,9 @@
     theSuperView = aSuperView;
     [self setupView];
     tableList = [[CPArray alloc] init];
+    responseData = [[CPArray alloc] init];
   
-    [[CPNotificationCenter defaultCenter] addObserver:self selector:@selector(showDBTables:) name:@"kLoginSuccess" object:nil];
+    [[CPNotificationCenter defaultCenter] addObserver:self selector:@selector(showDBTables:) name:@"kShowDatabaseTables" object:nil];
   }
   return self;
 }
@@ -55,11 +60,69 @@
   return [tableList objectAtIndex:row];
 }
 
+
 // -- Show the Database Tables
 
 - (void)showDBTables:(CPNotification)aNotification
 {
-  alert("Populate Tables");
+  var httpRequest = [SJHTTPRequest requestWithURL:"http://localhost:3000/tables"];
+  [httpRequest setParams: [[SJDataManager sharedInstance] credentials] ];
+  
+  httpConnection = [CPURLConnection connectionWithRequest:[httpRequest toRequest] delegate:self];
+}
+
+
+- (void)handleBadResponse:(id)jsObject
+{
+  alert(jsObject.message);
+}
+
+- (void)handleGoodResponse:(id)jsObject
+{
+  for(var i=0; i < jsObject.tables.length; i++) {
+    [tableList addObject:jsObject.tables[i]];
+  }
+  [tableView reloadData];
+}
+
+/*
+*
+* CPURLConnection Methods
+*
+*/
+
+- (void)connectionDidFinishLoading:(CPURLConnection)connection
+{
+  var json = JSON.parse([responseData componentsJoinedByString:@""]);
+  response = nil;
+  
+  if(json['error'] == "true") {
+    [self handleBadResponse:json];
+  } else {
+    [self handleGoodResponse:json];
+  }
+}
+
+- (void)connection:(CPURLConnection)connection didReceiveData:(CPString)data
+{
+  //This method is called when a connection receives a response. in a
+  //multi-part request, this method will (eventually) be called multiple times,
+  //once for each part in the response.
+  
+  [responseData addObject:data];
+}
+
+- (void)connection:(CPURLConnection)connection didFailWithError:(CPString)error
+{
+    //This method is called if the request fails for any reason.
+    alert("Connection Failed: " + error);
+}
+
+- (void)clearConnection:(CPURLConnection)aConnection
+{
+    //we no longer need to hold on to a reference to this connection
+    if (aConnection == httpConnection)
+        httpConnection = nil;
 }
 
 @end

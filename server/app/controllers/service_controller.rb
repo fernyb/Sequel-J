@@ -23,16 +23,18 @@ class ServiceController < ApplicationController
         render :json => {:database => @credentials[:database], :tables => tables}
       end
     rescue Exception => e
-      render :json => {:error => e.inspect}
+      render :json => {:error => "true", :message => e.inspect}
     end
   end
   
 private
   def determine_credentials
-    if session && session.has_key?(:credentials)
-      @credentials = session[:credentials]
-    else
-      @credentials = params
-    end
+     @credentials = params
+     
+    #if session && session.has_key?(:credentials)
+    #  @credentials = session[:credentials]
+    #else
+    #  @credentials = params
+    #end
   end
 end

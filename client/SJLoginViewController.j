@@ -1,5 +1,7 @@
 @import <Foundation/Foundation.j>
 @import "Frameworks/EKSpinner/EKSpinner.j"
+@import "SJDataManager.j"
+@import "SJHTTPRequest.j"
 
 
 @implementation SJLoginViewController : CPObject
@@ -151,15 +153,6 @@
   var port     = [[contentView viewWithTag:105] stringValue];
   
   if(port == "") port = "3306";
-  
-	var params = [
-	  "username=" + username,
-	  "password=" + password,
-	  "host="     + host,
-	  "database=" + database,
-	  "port="     + port
-	];
-	params = params.join("&");
 	
 	var protocol = window.location.protocol;
 	var host = window.location.host;
@@ -176,13 +169,21 @@
 	}
 	var base = protocol +"://"+ host +":"+ port;
 
-	var request = [CPURLRequest requestWithURL:base + "/connect?" + params];
-  [request setHTTPMethod:@"GET"];
+
+  var request = [SJHTTPRequest requestWithURL:base + "/connect"];
+  [request setObject:username forKey:@"username"];
+  [request setObject:password forKey:@"password"];
+  [request setObject:host forKey:@"host"];
+  [request setObject:database forKey:@"database"];
+  [request setObject:port forKey:@"port"];
   
-  httpConnection = [CPURLConnection connectionWithRequest:request delegate:self];
+  [[SJDataManager sharedInstance] setCredentials:[request params]];
+  
+  httpConnection = [CPURLConnection connectionWithRequest:[request toRequest] delegate:self];
 }
 
-- (void)connectionDidFail:(id)jsObject
+
+- (void)databaseConnectionDidFail:(id)jsObject
 {
   alert(jsObject['error']);
   [spinnerView setHidden:YES];
@@ -190,10 +191,12 @@
   [[CPNotificationCenter defaultCenter] postNotificationName:@"kLoginDidFail" object:nil];
 }
 
-- (void)connectionWasSuccess:(id)jsObject
+- (void)databaseConnectionWasSuccess:(id)jsObject
 {
   [[CPNotificationCenter defaultCenter] postNotificationName:@"kLoginSuccess" object:nil];
+  [[CPNotificationCenter defaultCenter] postNotificationName:@"kShowDatabaseTables" object:nil];
 }
+
 
 - (void)connectionDidFinishLoading:(CPURLConnection)connection
 {
@@ -201,9 +204,9 @@
   response = nil;
   
   if(json['connected'] == "true") {
-    [self connectionWasSuccess:json];
+    [self databaseConnectionWasSuccess:json];
   } else {
-    [self connectionDidFail:json];
+    [self databaseConnectionDidFail:json];
   }
 }
 
