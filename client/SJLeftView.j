@@ -5,6 +5,7 @@
 {
   CPView theSuperView;
   CPTableView tableView;
+  CPArray tableList;
 }
 
 - (id)initWithSuperView:(CPView)aSuperView
@@ -12,6 +13,9 @@
   if (self = [super init]) {
     theSuperView = aSuperView;
     [self setupView];
+    tableList = [[CPArray alloc] init];
+  
+    [[CPNotificationCenter defaultCenter] addObserver:self selector:@selector(showDBTables:) name:@"kLoginSuccess" object:nil];
   }
   return self;
 }
@@ -42,17 +46,20 @@
 
 - (CPNumber)numberOfRowsInTableView:(CPTableView)aTableView
 {
-  return 1;
+  return [tableList count];
 }
 
 
-- (id)tableView:(CPTableView)aTableView objectValueForTableColumn:(CPTableColumn)aTableColumn row:(CPNumber)row
+- (id)tableView:(CPTableView)aTableView objectValueForTableColumn:(CPTableColumn)aTableColumn row:(CPInteger)row
 {
-  if([aTableColumn identifier] === @"SJTableNames") {
-    return @"A Random Table Name";
-  }
-  return @"";
+  return [tableList objectAtIndex:row];
 }
 
+// -- Show the Database Tables
+
+- (void)showDBTables:(CPNotification)aNotification
+{
+  alert("Populate Tables");
+}
 
 @end

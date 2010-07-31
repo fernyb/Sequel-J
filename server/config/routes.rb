@@ -59,4 +59,5 @@ SequelJ::Application.routes.draw do
   # match ':controller(/:action(/:id(.:format)))'
   
   get "/connect" => "service#connect"
+  get "/tables" => "service#tables"
 end

@@ -30,6 +30,7 @@
 - (CGRect)addTextField:(CPString)aTextFieldName 
 					 withLabel:(CPString)aLabelName 
 					atPosition:(CPInteger)idx
+					withTag:(CPInteger)aTag
 {
 	var offset = 0;
 	var posX = ([contentView frame].size.width - 300) / 2;
@@ -61,6 +62,7 @@
   [nameField setFrameOrigin:CGPointMake(posX + 120, posY)]; 
   [nameField setEditable:YES]; 
   [nameField setBezeled: YES]; 
+  [nameField setTag:aTag];
 
   [connectionView addSubview:nameField];
   
@@ -77,14 +79,15 @@
   
   [connectionView setAutoresizingMask:CPViewWidthSizable | CPViewHeightSizable];
   
-	var formPos = [self addTextField:@"Name" withLabel:@"Name" atPosition:0];
+	var formPos = [self addTextField:@"Name" withLabel:@"Name" atPosition:0 withTag:100];
 	[self addTitle:@"Enter connection details below, or choose a favorite" fromRect:formPos];
   
-	[self addTextField:@"Host" withLabel:@"Host" atPosition:1];
-	[self addTextField:@"Username" withLabel:@"Username" atPosition:2];
-	[self addTextField:@"Password" withLabel:@"Password" atPosition:3];
+	[self addTextField:@"Host" withLabel:@"Host" atPosition:1 withTag:101];
+	[self addTextField:@"Username" withLabel:@"Username" atPosition:2 withTag:102];
+	[self addTextField:@"Password" withLabel:@"Password" atPosition:3 withTag:103];
+  [self addTextField:@"Database" withLabel:@"Database" atPosition:4 withTag:104];
   
-  var rect = [self addTextField:@"Port" withLabel:@"3306" atPosition:4];
+  var rect = [self addTextField:@"Port" withLabel:@"3306" atPosition:5 withTag:105];
 	
 	var loginbtn = [[CPButton alloc] initWithFrame:CGRectMake(rect.origin.x + rect.size.width - 102, 
 	  rect.origin.y + rect.size.height + 10, 
@@ -140,12 +143,21 @@
 {
   [spinnerView setHidden:NO];
 
+  var name     = [[contentView viewWithTag:100] stringValue];
+  var host     = [[contentView viewWithTag:101] stringValue];
+  var username = [[contentView viewWithTag:102] stringValue];
+  var password = [[contentView viewWithTag:103] stringValue];
+  var database = [[contentView viewWithTag:104] stringValue];
+  var port     = [[contentView viewWithTag:105] stringValue];
+  
+  if(port == "") port = "3306";
+  
 	var params = [
-	  "username=",
-	  "password=",
-	  "host=",
-	  "database=",
-	  "port="
+	  "username=" + username,
+	  "password=" + password,
+	  "host="     + host,
+	  "database=" + database,
+	  "port="     + port
 	];
 	params = params.join("&");
 	
@@ -175,8 +187,7 @@
   alert(jsObject['error']);
   [spinnerView setHidden:YES];
  
-  //[[CPNotificationCenter defaultCenter] postNotificationName:@"kLoginDidFail" object:nil];
-  [[CPNotificationCenter defaultCenter] postNotificationName:@"kLoginSuccess" object:nil];
+  [[CPNotificationCenter defaultCenter] postNotificationName:@"kLoginDidFail" object:nil];
 }
 
 - (void)connectionWasSuccess:(id)jsObject

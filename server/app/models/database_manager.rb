@@ -13,7 +13,18 @@ class DatabaseManager
     self
   end
   
-  def self.connected?
-    Mysql.new(@@credentials[:host], @@credentials[:username], @@credentials[:password], @@credentials[:database])
+  class << self
+    def connect
+      @@mysql ||= Mysql.new(@@credentials[:host], @@credentials[:username], @@credentials[:password], @@credentials[:database])
+    end
+  
+    def tables
+      results = connect.query("SHOW TABLES");
+      tables = []
+      results.each{|t| tables << t }
+      tables.flatten!
+      results.free
+      tables
+    end
   end
 end
