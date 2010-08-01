@@ -26,5 +26,14 @@ class DatabaseManager
       results.free
       tables
     end
+    
+    def databases
+      results = connect.query("SHOW DATABASES");
+      databases = []
+      results.each{|d| databases << d }
+      databases.flatten!
+      results.free
+      databases
+    end  
   end
 end

@@ -19,6 +19,8 @@ var StructureToolbarItemIdentifier  = @"StructureToolbarItemIdentifier",
 {
   if(self = [super init]) {
     [self setupToolbar];
+  
+    [[CPNotificationCenter defaultCenter] addObserver:self selector:@selector(showDatabases:) name:@"kShowDatabases" object:nil];
   }
   return self;
 }
@@ -65,6 +67,7 @@ var StructureToolbarItemIdentifier  = @"StructureToolbarItemIdentifier",
     
     switch(anItemIdentifier) {
       case SelectDatabaseToolbarItem :
+        [toolbarItem setTag:200];
         [self addSelectDatabaseToolbarItemFor:toolbarItem];
       break;
       
@@ -102,22 +105,43 @@ var StructureToolbarItemIdentifier  = @"StructureToolbarItemIdentifier",
 	[selectDBButton setTarget:self];
 	[selectDBButton setAction:@selector(selectedDatabase:)];
 	[selectDBButton setTitle:@"Choose Database..."];
-	[selectDBButton setPullsDown:YES];
+	//[selectDBButton setPullsDown:YES];
   
-	[selectDBButton addItemWithTitle:@"Add Database"];
-	[selectDBButton addItemWithTitle:@"Refresh Databases"];
-	[[selectDBButton menu] addItem:[CPMenuItem separatorItem]];
+  var items = [self itemsForPopupButton];
   
-	[selectDBButton addItemWithTitle:@"information_schema"];
-	[[selectDBButton menu] addItem:[CPMenuItem separatorItem]];
-  
-	[toolbarItem setMinSize:CGSizeMake(selectDBButtonWidth, selectDBButtonHeight)];
-  [toolbarItem setMaxSize:CGSizeMake(selectDBButtonWidth, selectDBButtonHeight)]; 
+  for(var i=0; i < [items count]; i++) {
+    var item = [items objectAtIndex:i];
+    if([item className] == @"CPString") {
+      [selectDBButton addItemWithTitle:item];
+    } else if([item className] == @"CPMenuItem") {
+      [[selectDBButton menu] addItem:item];
+    }
+  }
   
   [toolbarItem setView:selectDBButton];
 	[toolbarItem setLabel:@"Select Database"];
+	
+	[toolbarItem setMinSize:CGSizeMake(selectDBButtonWidth, selectDBButtonHeight)];
+  [toolbarItem setMaxSize:CGSizeMake(selectDBButtonWidth, selectDBButtonHeight)]; 
 }
 
+- (CPArray)itemsForPopupButton
+{
+  var items = [[CPArray alloc] init];
+  [items addObject:@"Add Database"];
+  [items addObject:@"Refresh Databases"];
+  [items addObject:[CPMenuItem separatorItem]];
+  [items addObject:@"information_schema"];
+  [items addObject:[CPMenuItem separatorItem]];
+  
+  return items;
+}
+
+- (void)showDatabases:(CPNotification)aNotification
+{
+  CPLog( @"ShowDatabases" )
+  CPLog( [aNotification object] );
+}
 
 - (void)addContentToolbarItemFor:(CPToolbarItem)toolbarItem
 {

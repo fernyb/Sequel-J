@@ -27,6 +27,9 @@
 {
     // This is called when the application is done loading.
 	[[CPNotificationCenter defaultCenter] addObserver:self selector:@selector(didLogin:) name:@"kLoginSuccess" object:nil];
+	
+	var name = [[theWindow contentView] viewWithTag:100];
+	[theWindow makeFirstResponder:name];
 }
 
 - (void)didLogin:(CPNotification)aNotification

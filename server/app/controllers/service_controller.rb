@@ -20,10 +20,11 @@ class ServiceController < ApplicationController
     begin
       if db.connect
         tables = db.tables
-        render :json => {:database => @credentials[:database], :tables => tables}
+        databases = db.databases
+        render :json => {:databases => databases, :selected_database => @credentials[:database], :tables => tables}
       end
     rescue Exception => e
-      render :json => {:error => "true", :message => e.inspect}
+      render :json => {:error => "true", :message => "Exception"}
     end
   end
   

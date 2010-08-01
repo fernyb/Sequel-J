@@ -83,6 +83,7 @@
     [tableList addObject:jsObject.tables[i]];
   }
   [tableView reloadData];
+  [[CPNotificationCenter defaultCenter] postNotificationName:@"kShowDatabases" object:jsObject.databases];
 }
 
 /*
