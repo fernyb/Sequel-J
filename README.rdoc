@@ -1,0 +1,4 @@
+== Sequel-J
+
+MySQL database management. An attempt to port "Sequel Pro" over to Cappuccino.
+
