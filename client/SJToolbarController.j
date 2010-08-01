@@ -13,11 +13,13 @@ var StructureToolbarItemIdentifier  = @"StructureToolbarItemIdentifier",
 {
   CPToolbar toolbar;
   id menuItem;
+  CPArray _databases;
 }
 
 - (id)init
 {
   if(self = [super init]) {
+    _databases = [[CPArray alloc] init];
     [self setupToolbar];
   
     [[CPNotificationCenter defaultCenter] addObserver:self selector:@selector(showDatabases:) name:@"kShowDatabases" object:nil];
@@ -32,7 +34,7 @@ var StructureToolbarItemIdentifier  = @"StructureToolbarItemIdentifier",
 
 - (void)setupToolbar
 {
-  var toolbar = [[CPToolbar alloc] initWithIdentifier:@"SJToolbar"];
+  toolbar = [[CPToolbar alloc] initWithIdentifier:@"SJToolbar"];
   [toolbar setVisible:YES];
   [toolbar setDelegate:self];
 }
@@ -67,7 +69,6 @@ var StructureToolbarItemIdentifier  = @"StructureToolbarItemIdentifier",
     
     switch(anItemIdentifier) {
       case SelectDatabaseToolbarItem :
-        [toolbarItem setTag:200];
         [self addSelectDatabaseToolbarItemFor:toolbarItem];
       break;
       
@@ -105,18 +106,9 @@ var StructureToolbarItemIdentifier  = @"StructureToolbarItemIdentifier",
 	[selectDBButton setTarget:self];
 	[selectDBButton setAction:@selector(selectedDatabase:)];
 	[selectDBButton setTitle:@"Choose Database..."];
-	//[selectDBButton setPullsDown:YES];
-  
-  var items = [self itemsForPopupButton];
-  
-  for(var i=0; i < [items count]; i++) {
-    var item = [items objectAtIndex:i];
-    if([item className] == @"CPString") {
-      [selectDBButton addItemWithTitle:item];
-    } else if([item className] == @"CPMenuItem") {
-      [[selectDBButton menu] addItem:item];
-    }
-  }
+	
+	// Load the Items for the Popup Button
+  [self loadItemsForPopupButton:selectDBButton];
   
   [toolbarItem setView:selectDBButton];
 	[toolbarItem setLabel:@"Select Database"];
@@ -131,17 +123,60 @@ var StructureToolbarItemIdentifier  = @"StructureToolbarItemIdentifier",
   [items addObject:@"Add Database"];
   [items addObject:@"Refresh Databases"];
   [items addObject:[CPMenuItem separatorItem]];
-  [items addObject:@"information_schema"];
-  [items addObject:[CPMenuItem separatorItem]];
+  
+  var dbs = [self availableDatabases];
+  for(var i=0; i < [dbs count]; i++) {
+    [items addObject:[dbs objectAtIndex:i]];
+  }
   
   return items;
 }
 
+- (CPArray)availableDatabases
+{
+  return _databases;
+}
+
+
+- (void)loadItemsForPopupButton:(CPPopupButton)selectDBButton
+{
+  var items = [self itemsForPopupButton];
+  
+  for(var i=0; i < [items count]; i++) {
+    var item = [items objectAtIndex:i];
+    if([item className] == @"CPString") {
+      [selectDBButton addItemWithTitle:item];
+    } else if([item className] == @"CPMenuItem") {
+      [[selectDBButton menu] addItem:item];
+    }
+  }
+}
+
+
 - (void)showDatabases:(CPNotification)aNotification
 {
-  CPLog( @"ShowDatabases" )
-  CPLog( [aNotification object] );
+  CPLog(@"Show Databases");
+  _databases = [aNotification object];
+  
+  var popupButton = [[self itemForIdentifier:SelectDatabaseToolbarItem] view];
+  [popupButton removeAllItems];
+  
+  [self loadItemsForPopupButton:popupButton];
 }
+
+- (id)itemForIdentifier:(CPString)anIdentifier
+{
+  var items = [toolbar items];
+  for(var i=0; i < [items count]; i++) {
+    var item = [items objectAtIndex:i];
+    if([item itemIdentifier] == anIdentifier) {
+      return item;
+    }
+  }
+  return nil;  
+}
+
+
 
 - (void)addContentToolbarItemFor:(CPToolbarItem)toolbarItem
 {

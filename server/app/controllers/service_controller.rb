@@ -31,11 +31,5 @@ class ServiceController < ApplicationController
 private
   def determine_credentials
      @credentials = params
-     
-    #if session && session.has_key?(:credentials)
-    #  @credentials = session[:credentials]
-    #else
-    #  @credentials = params
-    #end
   end
 end
