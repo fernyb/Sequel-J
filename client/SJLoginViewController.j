@@ -104,12 +104,34 @@
 	[connectionView addSubview:loginbtn];
 	[connectionView setBackgroundColor:[CPColor colorWithHexString:"eeeeee"]];
 	
+	// Assign The Next Key View
+	[self assignNextKeyView];  
+	  
 	// add the spinner
   [self addSpinnerFromRect:rect];
   
 	// finally add the connectionView to the ContentView
 	[contentView addSubview:connectionView];
 }
+
+
+- (void)assignNextKeyView
+{
+  var name     = [connectionView viewWithTag:100];
+  var host     = [connectionView viewWithTag:101];
+  var username = [connectionView viewWithTag:102];
+  var password = [connectionView viewWithTag:103];
+  var database = [connectionView viewWithTag:104];
+  var port     = [connectionView viewWithTag:105];
+  
+  [name setNextKeyView:host];
+  [host setNextKeyView:username];
+  [username setNextKeyView:password];
+  [password setNextKeyView:database];
+  [database setNextKeyView:port];
+  [port setNextKeyView:name];
+}
+
 
 - (void)addSpinnerFromRect:(CGRect)rect
 {

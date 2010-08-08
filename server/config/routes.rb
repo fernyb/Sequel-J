@@ -60,4 +60,5 @@ SequelJ::Application.routes.draw do
   
   get "/connect" => "service#connect"
   get "/tables" => "service#tables"
+  get "/columns/:table" => "service#columns"
 end

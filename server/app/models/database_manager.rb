@@ -34,6 +34,36 @@ class DatabaseManager
       databases.flatten!
       results.free
       databases
+    end
+    
+    def columns(table_name)
+      results = connect.query("SHOW COLUMNS FROM `#{table_name}`");
+
+      columns = {
+        :columns => {
+          :field   => "",
+          :type    => "",
+          :null    => "",
+          :key     => "",
+          :default => "",
+          :extra   => ""          
+        },
+        :rows => []
+      }
+      
+      results.each{|d|
+        columns[:rows] << {
+          :field   => d[0],
+          :type    => d[1],
+          :null    => d[2],
+          :key     => d[3],
+          :default => d[4],
+          :extra   => d[5]
+        }
+      }
+      
+      results.free
+      columns
     end  
   end
 end

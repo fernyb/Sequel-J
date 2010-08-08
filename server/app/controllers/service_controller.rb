@@ -28,6 +28,18 @@ class ServiceController < ApplicationController
     end
   end
   
+  def columns
+    db = DatabaseManager.credentials(@credentials)
+    begin
+      if db.connect
+        data = db.columns(params[:table])
+        render :json => data
+      end
+    rescue Exception => e
+      render :json => {:error => "true", :message => "Exception"}
+    end
+  end
+  
 private
   def determine_credentials
      @credentials = params

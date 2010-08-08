@@ -37,6 +37,7 @@
   // create the CPTableView
   tableView = [[CPTableView alloc] initWithFrame:[scrollView bounds]];
   [tableView setDataSource:self];
+  [tableView setDelegate:self];
   [tableView setUsesAlternatingRowBackgroundColors:YES];
 
   var column = [[CPTableColumn alloc] initWithIdentifier:@"SJTableNames"];
@@ -46,6 +47,13 @@
   
   [scrollView setDocumentView:tableView];
   [theSuperView addSubview:scrollView];
+}
+
+
+- (BOOL)tableView:(CPTableView)aTableView shouldSelectRow:(CPInteger)aRow
+{
+  [[CPNotificationCenter defaultCenter] postNotificationName:@"SJSelectedDBTableRow" object:[tableList objectAtIndex:aRow]];
+  return YES;
 }
 
 
