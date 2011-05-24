@@ -1,0 +1,2 @@
+gem 'sinatra', '1.2.0'
+gem 'mysql', '2.8.1'

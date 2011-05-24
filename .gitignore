@@ -1,2 +1,3 @@
 .DS_Store
 Build/
+server-sinatra/Gemfile.lock
