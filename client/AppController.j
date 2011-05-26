@@ -12,6 +12,7 @@
 @import "SJLoginViewController.j"
 @import "SLDatabaseViewController.j"
 @import "SJToolbarController.j"
+@import "SJConstants.j"
 
 
 @implementation AppController : CPObject

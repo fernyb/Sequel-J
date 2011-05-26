@@ -1,6 +1,6 @@
-
 @import <Foundation/CPObject.j>
 @import "SJHTTPRequest.j"
+@import "SJConstants.j"
 
 
 @implementation SJLeftView : CPObject
@@ -19,8 +19,8 @@
     [self setupView];
     tableList = [[CPArray alloc] init];
     responseData = [[CPArray alloc] init];
-  
-    [[CPNotificationCenter defaultCenter] addObserver:self selector:@selector(showDBTables:) name:@"kShowDatabaseTables" object:nil];
+
+    [[CPNotificationCenter defaultCenter] addObserver:self selector:@selector(showDBTables:) name:SHOW_DATABASE_TABLES_NOTIFICATION object:nil];
   }
   return self;
 }
@@ -73,16 +73,25 @@
 
 - (void)showDBTables:(CPNotification)aNotification
 {
-  var httpRequest = [SJHTTPRequest requestWithURL:"http://localhost:3000/tables"];
+  var httpRequest = [SJHTTPRequest requestWithURL:SERVER_BASE + "/tables"];
   [httpRequest setParams: [[SJDataManager sharedInstance] credentials] ];
-  
+
+  var dbName = [aNotification object];
+  if(dbName != "" && [dbName length] > 0) {
+    [httpRequest setObject:dbName forKey:@"database"];
+  }
+
+ if ([httpRequest objectForKey:@"database"] === "") {
+   return;
+ }
+
   httpConnection = [CPURLConnection connectionWithRequest:[httpRequest toRequest] delegate:self];
 }
 
 
 - (void)handleBadResponse:(id)jsObject
 {
-  alert(jsObject.message);
+  alert(jsObject.error);
 }
 
 - (void)handleGoodResponse:(id)jsObject
@@ -91,7 +100,6 @@
     [tableList addObject:jsObject.tables[i]];
   }
   [tableView reloadData];
-  [[CPNotificationCenter defaultCenter] postNotificationName:@"kShowDatabases" object:jsObject.databases];
 }
 
 /*
@@ -104,8 +112,9 @@
 {
   var json = JSON.parse([responseData componentsJoinedByString:@""]);
   response = nil;
-  
-  if(json['error'] == "true") {
+  alert([responseData componentsJoinedByString:@""]);
+
+  if(json['error'] != '') {
     [self handleBadResponse:json];
   } else {
     [self handleGoodResponse:json];

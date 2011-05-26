@@ -38,6 +38,11 @@
   [_params setObject:aString forKey:aKey];
 }
 
+- (id)objectForKey:(CPString)aKey
+{
+  return [_params objectForKey:aKey];
+}
+
 - (CPDictionary)params
 {
   return _params;

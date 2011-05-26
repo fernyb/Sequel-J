@@ -2,6 +2,7 @@
 @import "Frameworks/EKSpinner/EKSpinner.j"
 @import "SJDataManager.j"
 @import "SJHTTPRequest.j"
+@import "SJConstants.j"
 
 
 @implementation SJLoginViewController : CPObject
@@ -175,24 +176,8 @@
   var port     = [[contentView viewWithTag:105] stringValue];
   
   if(port == "") port = "3306";
-	
-	var protocol = window.location.protocol;
-	var host = window.location.host;
-	var port = window.location.port;
-	
-	if([CPPlatform isBrowser] && (protocol != "http" || protocol != "https")) {
-	  protocol = "http";
-	}
-	if([CPPlatform isBrowser] && host == "") {
-	  host = "localhost"
-	}
-	if([CPPlatform isBrowser] && port == "") {
-	  port = "3000";
-	}
-	var base = protocol +"://"+ host +":"+ port;
 
-
-  var request = [SJHTTPRequest requestWithURL:base + "/connect"];
+  var request = [SJHTTPRequest requestWithURL:SERVER_BASE + "/connect"];
   [request setObject:username forKey:@"username"];
   [request setObject:password forKey:@"password"];
   [request setObject:host forKey:@"host"];
@@ -209,14 +194,15 @@
 {
   alert(jsObject['error']);
   [spinnerView setHidden:YES];
- 
+
   [[CPNotificationCenter defaultCenter] postNotificationName:@"kLoginDidFail" object:nil];
 }
 
 - (void)databaseConnectionWasSuccess:(id)jsObject
 {
   [[CPNotificationCenter defaultCenter] postNotificationName:@"kLoginSuccess" object:nil];
-  [[CPNotificationCenter defaultCenter] postNotificationName:@"kShowDatabaseTables" object:nil];
+  [[CPNotificationCenter defaultCenter] postNotificationName:SHOW_DATABASES_NOTIFICATION object:nil];
+  [[CPNotificationCenter defaultCenter] postNotificationName:SHOW_DATABASE_TABLES_NOTIFICATION object:nil];
 }
 
 
@@ -224,8 +210,8 @@
 {
   var json = JSON.parse([responseData componentsJoinedByString:@""]);
   response = nil;
-  
-  if(json['connected'] == "true") {
+
+  if(json['connected'] == true) {
     [self databaseConnectionWasSuccess:json];
   } else {
     [self databaseConnectionDidFail:json];

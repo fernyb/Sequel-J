@@ -1,4 +1,7 @@
 @import <Foundation/Foundation.j>
+@import "SJDataManager.j"
+@import "SJHTTPRequest.j"
+@import "SJConstants.j"
 
 
 var StructureToolbarItemIdentifier  = @"StructureToolbarItemIdentifier",
@@ -14,15 +17,18 @@ var StructureToolbarItemIdentifier  = @"StructureToolbarItemIdentifier",
   CPToolbar toolbar;
   id menuItem;
   CPArray _databases;
+  CPURLConnection httpConnection;
+  CPArray responseData;
 }
+
 
 - (id)init
 {
   if(self = [super init]) {
     _databases = [[CPArray alloc] init];
+    responseData = [[CPArray alloc] init];
     [self setupToolbar];
-  
-    [[CPNotificationCenter defaultCenter] addObserver:self selector:@selector(showDatabases:) name:@"kShowDatabases" object:nil];
+    [[CPNotificationCenter defaultCenter] addObserver:self selector:@selector(showDatabases:) name:SHOW_DATABASES_NOTIFICATION object:nil];
   }
   return self;
 }
@@ -156,13 +162,31 @@ var StructureToolbarItemIdentifier  = @"StructureToolbarItemIdentifier",
 - (void)showDatabases:(CPNotification)aNotification
 {
   CPLog(@"Show Databases");
-  _databases = [aNotification object];
-  
+
+  var httpRequest = [SJHTTPRequest requestWithURL:SERVER_BASE + "/databases"];
+  [httpRequest setParams: [[SJDataManager sharedInstance] credentials] ];
+
+  httpConnection = [CPURLConnection connectionWithRequest:[httpRequest toRequest] delegate:self];
+}
+
+
+
+- (void)handleBadResponse:(id)js
+{
+  alert(js.error);
+}
+
+
+- (void)handleGoodResponse:(id)js
+{
+  _databases = js.databases;
+
   var popupButton = [[self itemForIdentifier:SelectDatabaseToolbarItem] view];
   [popupButton removeAllItems];
-  
   [self loadItemsForPopupButton:popupButton];
 }
+
+
 
 - (id)itemForIdentifier:(CPString)anIdentifier
 {
@@ -272,8 +296,50 @@ var StructureToolbarItemIdentifier  = @"StructureToolbarItemIdentifier",
 {
   var selectedTitle = [[sender selectedItem] title];
   if(selectedTitle == @"Refresh Databases") {
-    [[CPNotificationCenter defaultCenter] postNotificationName:@"kShowDatabaseTables" object:nil];
+    [[CPNotificationCenter defaultCenter] postNotificationName:SHOW_DATABASES_NOTIFICATION object:nil];
+  } else {
+    [[CPNotificationCenter defaultCenter] postNotificationName:SHOW_DATABASE_TABLES_NOTIFICATION object:selectedTitle];
   }
 }
+
+
+
+/*
+*
+* CPURLConnection Methods
+*
+*/
+- (void)connectionDidFinishLoading:(CPURLConnection)connection
+{
+  var json = JSON.parse([responseData componentsJoinedByString:@""]);
+  response = nil;
+  [responseData removeAllObjects];
+    
+  if(json['error'] != "") {
+    [self handleBadResponse:json];
+  } else {
+    [self handleGoodResponse:json];
+  }
+}
+
+- (void)connection:(CPURLConnection)connection didReceiveData:(CPString)data
+{
+  [responseData addObject:data];
+}
+
+- (void)connection:(CPURLConnection)connection didFailWithError:(CPString)error
+{
+  //This method is called if the request fails for any reason.
+  alert("Connection Failed: " + error);
+}
+
+- (void)clearConnection:(CPURLConnection)aConnection
+{
+    //we no longer need to hold on to a reference to this connection
+    if (aConnection == httpConnection)
+        httpConnection = nil;
+}
+
+
 
 @end

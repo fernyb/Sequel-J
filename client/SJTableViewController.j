@@ -3,6 +3,7 @@
 @import "Categories/CPSplitView+Categories.j"
 @import "SJHTTPRequest.j"
 @import "SJDataManager.j"
+@import "SJConstants.j"
 
 
 @implementation SJTableViewController : CPObject 
@@ -116,7 +117,7 @@
 
 - (void)didSelectDatabaseTable:(CPNotification)aNotification
 {
-  var httpRequest = [SJHTTPRequest requestWithURL:"http://localhost:3000/columns/" + [aNotification object]];
+  var httpRequest = [SJHTTPRequest requestWithURL:SERVER_BASE + "/columns/" + [aNotification object]];
   [httpRequest setParams: [[SJDataManager sharedInstance] credentials] ];
   
   httpConnection = [CPURLConnection connectionWithRequest:[httpRequest toRequest] delegate:self];
@@ -150,7 +151,7 @@
   [tableList removeAllObjects];
   [responseData removeAllObjects];
     
-  if(json['error'] == "true") {
+  if(json['error'] != "") {
     [self handleBadResponse:json];
   } else {
     [self handleGoodResponse:json];

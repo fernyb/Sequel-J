@@ -2,6 +2,7 @@
 @import "Categories/CPSplitView+Categories.j"
 @import "SJTableViewController.j"
 @import "SJIndexesViewController.j"
+@import "SJConstants.j"
 
 
 @implementation SLDatabaseViewController : CPObject
