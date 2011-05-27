@@ -112,7 +112,6 @@
 {
   var json = JSON.parse([responseData componentsJoinedByString:@""]);
   response = nil;
-  alert([responseData componentsJoinedByString:@""]);
 
   if(json['error'] != '') {
     [self handleBadResponse:json];

@@ -111,8 +111,8 @@
 	// add the spinner
   [self addSpinnerFromRect:rect];
   
-	// finally add the connectionView to the ContentView
-	[contentView addSubview:connectionView];
+  // finally add the connectionView to the ContentView
+  [contentView addSubview:connectionView];
 }
 
 
@@ -210,6 +210,7 @@
 {
   var json = JSON.parse([responseData componentsJoinedByString:@""]);
   response = nil;
+  [responseData removeAllObjects];
 
   if(json['connected'] == true) {
     [self databaseConnectionWasSuccess:json];

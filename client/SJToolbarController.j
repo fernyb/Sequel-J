@@ -263,33 +263,37 @@ var StructureToolbarItemIdentifier  = @"StructureToolbarItemIdentifier",
   [toolbarItem setLabel:aLabel];
 
   [toolbarItem setMinSize:CGSizeMake(32, 32)];
-  [toolbarItem setMaxSize:CGSizeMake(32, 32)];  
+  [toolbarItem setMaxSize:CGSizeMake(32, 32)]; 
 }
 
+- (void)showViewName:(CPString)name
+{
+ [[CPNotificationCenter defaultCenter] postNotificationName:SWITCH_CONTENT_RIGHT_VIEW_NOTIFICATION object:name];
+}
 
 - (void)showStructureView:(id)sender
 {
-  alert(@"Show The Structure View");
-}
+ [self showViewName:@"SJStructureTabController"];
+}                                                
 
 - (void)showContentView:(id)sender
 {
-  alert(@"Show the Content View");
+ [self showViewName:@"SJContentTabController"];
 }
 
 - (void)showRelationsView:(id)sender
 {
-  alert(@"Show Relations View");
+  [self showViewName:@"SJRelationsTabController"];
 }
 
 - (void)showTableInfoView:(id)sender
 {
-  alert(@"Show Table Info View");
+  [self showViewName:@"SJTableInfoTabController"];
 }
 
 - (void)showQueryView:(id)sender
 {
-  alert(@"Show Query View");
+  [self showViewName:@"SJQueryTabController"];
 }
 
 - (void)selectedDatabase:(id)sender

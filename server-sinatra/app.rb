@@ -44,6 +44,24 @@ class App < Sinatra::Base
     end
   end
   
+  get '/columns/:table' do
+    results = @mysql.query("SHOW COLUMNS FROM `#{params[:table]}`")
+
+    columns = []
+    results.each{|d|
+      columns << {
+        :field   => d[0],
+        :type    => d[1],
+        :null    => d[2],
+        :key     => d[3],
+        :default => d[4],
+        :extra   => d[5]
+      }
+    }
+    
+    { connected: @connected, error: @error.to_s, columns: columns }.to_json
+  end
+  
   get '/' do
     'Hello World'
   end

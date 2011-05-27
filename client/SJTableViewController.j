@@ -78,7 +78,8 @@
 - (id)tableView:(CPTableView)aTableView objectValueForTableColumn:(CPTableColumn)aTableColumn row:(CPNumber)row
 {
   var field = [tableList objectAtIndex:row];
-  
+  console.log(field);
+
   switch([aTableColumn identifier]) {
    case @"SJTableColumnField" :
     return field.field;
@@ -126,13 +127,13 @@
 
 - (void)handleBadResponse:(id)jsObject
 {
-  alert(jsObject.message);
+  alert(jsObject.error);
 }
 
 - (void)handleGoodResponse:(id)jsObject
 {
-  for(var i=0; i < jsObject.rows.length; i++) {
-    [tableList addObject:jsObject.rows[i]];
+  for(var i=0; i < jsObject.fields.length; i++) {
+    [tableList addObject:jsObject.columns[i]];
   }
   [tableView reloadData];
 }
