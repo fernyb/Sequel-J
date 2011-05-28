@@ -299,6 +299,8 @@ var StructureToolbarItemIdentifier  = @"StructureToolbarItemIdentifier",
 - (void)selectedDatabase:(id)sender
 {
   var selectedTitle = [[sender selectedItem] title];
+  CPLog("Selected Database Title: "+ selectedTitle);
+  
   if(selectedTitle == @"Refresh Databases") {
     [[CPNotificationCenter defaultCenter] postNotificationName:SHOW_DATABASES_NOTIFICATION object:nil];
   } else {
@@ -318,7 +320,7 @@ var StructureToolbarItemIdentifier  = @"StructureToolbarItemIdentifier",
   var json = JSON.parse([responseData componentsJoinedByString:@""]);
   response = nil;
   [responseData removeAllObjects];
-    
+
   if(json['error'] != "") {
     [self handleBadResponse:json];
   } else {

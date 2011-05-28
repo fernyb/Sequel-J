@@ -25,10 +25,8 @@
 
 - (void)fetchHeaderNamesForTableName:(CPString)tableName
 {
-#if DEBUG
   CPLog("Fetch Header Names For Table Name: "+ tableName);
-#endif
-
+  
   if(tableName == null || tableName == 'undefined' || tableName == '') {
     return;
   }
@@ -56,9 +54,6 @@
 
 - (void)handleHeaderNamesResponse:(id)js
 {
-#if DEBUG
-    console.log(js);
-#endif
   if(scrollview) {
     [self setTbrows:[CPArray array]];
     [[self tableView] reloadData];
@@ -82,9 +77,6 @@
 
 - (void)handleTableRowsResponse:(id)js
 {
-#if DEBUG
-  console.log(js);
-#endif
   [self setTbrows:js.rows];
   [[self tableView] reloadData];
 }

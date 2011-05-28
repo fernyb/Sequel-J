@@ -81,7 +81,7 @@
   [httpRequest setParams: [[SJDataManager sharedInstance] credentials] ];
 
   var dbName = [aNotification object];
-  if(dbName != "" && [dbName length] > 0) {
+  if(dbName && dbName != null && dbName != 'undefined' && dbName != "" && [dbName length] > 0) {
     [httpRequest setObject:dbName forKey:@"database"];
   }
 
@@ -100,6 +100,7 @@
 
 - (void)handleGoodResponse:(id)jsObject
 {
+  [tableList removeAllObjects];
   for(var i=0; i < jsObject.tables.length; i++) {
     [tableList addObject:jsObject.tables[i]];
   }
@@ -116,6 +117,7 @@
 {
   var json = JSON.parse([responseData componentsJoinedByString:@""]);
   response = nil;
+  [responseData removeAllObjects];
 
   if(json['error'] != '') {
     [self handleBadResponse:json];
