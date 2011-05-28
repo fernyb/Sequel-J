@@ -1,3 +1,5 @@
+source "http://rubygems.org"
+
 gem 'sinatra', '1.2.0'
 gem 'mysql', '2.8.1'
 gem 'json', '1.5.1'

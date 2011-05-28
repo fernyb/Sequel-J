@@ -1,15 +1,18 @@
 APP_ROOT = File.dirname(__FILE__)
 
 require 'rubygems'
+
+gem 'bundler', '1.0.14'
 require 'bundler'
 
-Bundler.require
+ENVIRONMENT = (ENV['RACK_ENV'] || 'production')
+Bundler.require :default, ENVIRONMENT
 
 require "#{APP_ROOT}/app.rb"
 
 set :root, "#{APP_ROOT}"
 set :app_file, "#{APP_ROOT}/app.rb"
-set :environment, ENV['RACK_ENV'] || :production
+set :environment, ENVIRONMENT
 set :run, false
 
 disable :run, :reload
