@@ -9,22 +9,19 @@
   CPView _view;
   CPArray _responseData;
   CPTableView _tableview;
-  BOOL _didAddSubview;
   CPString _tablename;
 }
 
 - (id)init
 {
   self = [super init];
-  // This doesn't work and I don't know why?
-  // [self initializeViewsWithRect:CGRectMake(0, 0, 100, 100)];
   return self;
 }
 
 - (id)initWithView:(CPView)aView
 {
   if (self = [super init]) {
-   [self setContentView:aView];
+   //[self initializeViewsWithRect:[aView frame]];
   }
   return self;
 }
@@ -33,18 +30,20 @@
 - (void)initializeViewsWithRect:(CGRect)rect
 {
  if(!_view) {
-  _didAddSubview = NO;
   [self setResponseData:[[CPArray alloc] init]];
-
+  
+  var acontentview = [[CPView alloc] initWithFrame:rect];
+  [self setContentView:acontentview];
+  
   var aview = [[CPView alloc] initWithFrame:rect];
   [self setView:aview];
-
-  var acontentview = [[CPView alloc] initWithFrame:[aview frame]];
-  [self setContentView:acontentview];
-
-  [self setupView];
   [self setHidden:YES];
  }
+}
+
+- (void)awakeFromCib
+{
+  [self initializeViewsWithRect:CGRectMake(0, 0, 0, 0)];
 }
 
 
@@ -103,9 +102,14 @@
 }
 
 
-- (void)setupView
+- (void)contentViewWillSet
 {
-  if (_didAddSubview == NO && [self view]) {
+ // gets called before the ContentView gets set
+}
+
+- (void)contentViewDidSet
+{
+  if ([self view]) {
     var superSplitview;
 
     if (superSplitview = [[self contentView] superview]) {
@@ -114,18 +118,36 @@
      var rect = [[self contentView] frame];
       rect.origin.x -= [superSplitLeftView frame].size.width + 10;
 
-     [[self contentView] addSubview:[self view]];
-
      [[self view] setFrame:rect];
+     [[self view] setBounds:rect];
      [[self view] setAutoresizingMask:CPViewWidthSizable | CPViewHeightSizable];
-     _didAddSubview = YES;
+     [self viewDidAdjust];
+
+     [[self contentView] addSubview:[self view]];
     }
   }
 }
 
+- (void)viewDidAdjust
+{
+ // Called when the view was adjusted because the ContentView was set.
+}
+
+- (void)viewWillSet
+{
+ // Subclasses should implement this if needed
+}
+
+- (void)viewDidSet
+{
+  [[self view] setHidden:YES];
+}
+
 - (void)setView:(CPView)aView
 {
+  [self viewWillSet];
   _view = aView;
+  [self viewDidSet];
 }
 
 - (CPView)view
@@ -135,11 +157,11 @@
 
 - (void)setContentView:(CPView)aView
 {
-  [self initializeViewsWithRect:[aView frame]];
+  [self contentViewWillSet];
   contentview = aView;
-  _didAddSubview = NO;
-  [self setupView];
+  [self contentViewDidSet];
 }
+
 
 - (CPView)contentView
 {

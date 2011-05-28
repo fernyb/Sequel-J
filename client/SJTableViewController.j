@@ -1,6 +1,7 @@
 
 @import <Foundation/Foundation.j>
 @import "Categories/CPSplitView+Categories.j"
+@import "Categories/CPArray+Categories.j"
 @import "SJHTTPRequest.j"
 @import "SJDataManager.j"
 @import "SJConstants.j"
@@ -57,10 +58,19 @@
     [column setWidth:widthOfHeader];
     [tableView addTableColumn:column];
   }
-  
+
   [scrollView setDocumentView:tableView];
   
   return scrollView;
+}
+
+- (void)adjustView
+{
+  var columns = [tableView tableColumns];
+  var columnWidth = ([tableView frame].size.width - 15) / [columns count];
+  [columns map:function(column) {
+    [column setWidth:columnWidth];
+  }];
 }
 
 

@@ -118,22 +118,18 @@
   // Add Controllers
 
   [structureTabController setContentView:[self contentRightView]];
-  [structureTabController setupView];
   [viewControllers addObject:structureTabController];
 
   [contentTabController setContentView:[self contentRightView]];
   [viewControllers addObject:contentTabController];
 
   [relationsTabController setContentView:[self contentRightView]];
-  [relationsTabController setupView];
   [viewControllers addObject:relationsTabController];
 
   [tableInfoTabController setContentView:[self contentRightView]];
-  [tableInfoTabController setupView];
   [viewControllers addObject:tableInfoTabController];
 
   [queryTabController setContentView:[self contentRightView]];
-  [queryTabController setupView];
   [viewControllers addObject:queryTabController];
 
   [theWindow orderFront:self];

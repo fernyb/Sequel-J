@@ -9,57 +9,52 @@
 @implementation SJStructureTabController : SJTabBaseController
 {
     @outlet CPSplitView dbSplitView;
-    CPTableView tableView;
-    CPView contentView;
     SJTableViewController tableViewController;
     SJIndexesViewController indexesViewController;
+    BOOL didAddSplitView;
 }
 
-- (id)initWithView:(CPView)aView
+- (void)viewDidSet
 {
-  self = [super initWithView:aView];
-  return self;
+  [super viewDidSet];
+  [self addTableStructure];
+
+  CPLog(@"SJStructureTabController, View Did Set");
 }
 
-- (void)setHidden:(BOOL)isHidden
+
+- (void)viewDidAdjust
 {
-  [dbSplitView setHidden:isHidden];
+  [super viewDidAdjust];
+  var frame = [[self view] frame];
+  [dbSplitView setFrame:CGRectMake(0, 0, frame.size.width, frame.size.height)];
+  [dbSplitView setAutoresizingMask:CPViewWidthSizable | CPViewHeightSizable];
+
+  if (tableViewController) {
+    [tableViewController adjustView];
+  }
+  if (indexesViewController) {
+    [indexesViewController adjustView];
+  }
 }
 
-- (void)awakeFromCib
+
+- (void)viewWillAppear
 {
-  [self setHidden:YES];
+  [super viewWillAppear];
 }
 
-- (void)setContentView:(CPView)aView
-{
-  contentView = aView;
-}
-
-- (void)setupView
-{ 
-   [dbSplitView setFrame:CGRectMake(0, 0, [contentView bounds].size.width, [contentView bounds].size.height)];
-   [dbSplitView setAutoresizingMask:CPViewWidthSizable | CPViewHeightSizable];
-   [self addTableStructure];
-}
-
-- (void)cibDidFailToLoad:(id)sender
-{
-  alert(@"Failed to load CIB");
-}
 
 - (void)addTableStructure
-{  
+{
   var topContentView = [dbSplitView viewAtIndex:0];
   var bottomContentView = [dbSplitView viewAtIndex:1];
-  var viewWidth = [contentView bounds].size.width;
+  var viewWidth = [[self view] bounds].size.width;
   
   tableViewController = [[SJTableViewController alloc] initWithView:topContentView andWidth:viewWidth];
   indexesViewController = [[SJIndexesViewController alloc] initWithView:bottomContentView andWidth:viewWidth];
-  
-  if(contentView) {
-    [contentView addSubview:dbSplitView];
-  }
+
+  [[self view] addSubview:dbSplitView];
 }
 
 @end

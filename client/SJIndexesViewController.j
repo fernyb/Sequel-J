@@ -1,4 +1,6 @@
 @import <Foundation/Foundation.j>
+@import "Categories/CPArray+Categories.j"
+
 
 @implementation SJIndexesViewController : CPObject 
 {
@@ -48,6 +50,15 @@
   [scrollView setDocumentView:tableView];
   
   return scrollView;
+}
+
+- (void)adjustView
+{
+  var columns = [tableView tableColumns];
+  var columnWidth = ([tableView frame].size.width - 15) / [columns count];
+  [columns map:function(column) {
+    [column setWidth:columnWidth];
+  }];
 }
 
 - (CPArray)headerNames
