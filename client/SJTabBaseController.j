@@ -10,6 +10,7 @@
   CPArray _responseData;
   CPTableView _tableview;
   BOOL _didAddSubview;
+  CPString _tablename;
 }
 
 - (id)init
@@ -73,6 +74,11 @@
       [self viewDidDisappear];
     }
   }
+}
+
+- (BOOL)isHidden
+{
+  return [[self view] isHidden];
 }
 
 
@@ -159,7 +165,7 @@
 
 - (void)connectionDidFinishLoading:(CPURLConnection)connection
 {
-  var json = JSON.parse([responseData componentsJoinedByString:@""]);
+  var json = JSON.parse([_responseData componentsJoinedByString:@""]);
   response = nil;
   [_responseData removeAllObjects];
 
@@ -199,6 +205,12 @@
   _tableview = aTableView;
 }
 
+- (CPTableView)tableView
+{
+  return _tableview;
+}
+
+
 - (CPScrollView)createTableViewForView:(CPView)cview headerNames:(CPArray)headerNames
 {
    // create a CPScrollView that will contain the CPTableView
@@ -228,5 +240,19 @@
 }
 
 
+- (void)setTableName:(CPString)aname
+{
+  _tablename = aname;
+}
+
+- (CPString)tableName
+{
+  return _tablename;
+}
+
+- (void)databaseTableSelected
+{
+  // subclass should implement this method
+}
 
 @end

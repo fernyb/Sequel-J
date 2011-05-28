@@ -7,3 +7,4 @@ SHOW_DATABASES_NOTIFICATION = @"ShowDatabasesNotification";
 SHOW_DATABASE_TABLES_NOTIFICATION = @"ShowDatabaseTablesNotification";
 
 SWITCH_CONTENT_RIGHT_VIEW_NOTIFICATION = @"SwitchContentRightViewNotification";
+TABLE_SELECTED_NOTIFICATION = @"TableSelectedNotification";

@@ -8,6 +8,8 @@
 
 @import <Foundation/CPObject.j>
 @import "Categories/CPSplitView+Categories.j"
+@import "Categories/CPArray+Categories.j"
+
 @import "SJLeftView.j"
 @import "SJLoginViewController.j"
 
@@ -42,10 +44,26 @@
 - (void)applicationDidFinishLaunching:(CPNotification)aNotification
 {
     [[CPNotificationCenter defaultCenter] addObserver:self selector:@selector(switchView:) name:SWITCH_CONTENT_RIGHT_VIEW_NOTIFICATION object:nil];
-	[[CPNotificationCenter defaultCenter] addObserver:self selector:@selector(didLogin:) name:@"kLoginSuccess" object:nil];
-	
+    [[CPNotificationCenter defaultCenter] addObserver:self selector:@selector(didLogin:) name:@"kLoginSuccess" object:nil];
+    [[CPNotificationCenter defaultCenter] addObserver:self selector:@selector(databaseTableSelected:) name:TABLE_SELECTED_NOTIFICATION object:nil];
+
 	var name = [[theWindow contentView] viewWithTag:100];
 	[theWindow makeFirstResponder:name];
+}
+
+- (void)databaseTableSelected:(CPNotification)aNotification
+{
+  var tablename = [aNotification object];
+  [viewControllers map:function(controller) {
+    if ([controller respondsToSelector:@selector(setTableName:)]) {
+      [controller setTableName:tablename];
+    }
+    if ([controller respondsToSelector:@selector(isHidden)] && 
+        [controller performSelector:@selector(isHidden)] == NO) 
+    {
+      [controller databaseTableSelected];
+    }
+  }];
 }
 
 

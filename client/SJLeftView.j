@@ -52,8 +52,12 @@
 
 - (BOOL)tableView:(CPTableView)aTableView shouldSelectRow:(CPInteger)aRow
 {
-  [[CPNotificationCenter defaultCenter] postNotificationName:@"SJSelectedDBTableRow" object:[tableList objectAtIndex:aRow]];
-  return YES;
+  // FIXME: Find out what 'SJSelectedDBTableRow' notification does...
+  // [[CPNotificationCenter defaultCenter] postNotificationName:@"SJSelectedDBTableRow" object:[tableList objectAtIndex:aRow]];
+  var tablename = [tableList objectAtIndex:aRow];
+  [[CPNotificationCenter defaultCenter] postNotificationName:TABLE_SELECTED_NOTIFICATION object:tablename];
+
+ return YES;
 }
 
 
