@@ -8,6 +8,7 @@
   CPArray headerNames;
   CPArray tbrows;
   CPString cachedTableName;
+  CPButtonBar bottomBar;
 }
 
 - (void)viewWillAppear
@@ -64,7 +65,14 @@
   if (!scrollview) {
     headerNames = [[CPArray alloc] initWithArray:js.header_names];
     scrollview = [self createTableViewForView:[self view] headerNames:[self headerNames]];
+    
+    var rect = [scrollview frame];
+    rect.size.height -= 23.0;
+    
+    [scrollview setFrame:rect];
     [[self view] addSubview:scrollview];
+    
+    [self addBottomBarWithRect:rect];
     
     // We need to get the rows for the table, lets do that here
     var httpRequest = [SJHTTPRequest requestWithURL:SERVER_BASE + "/rows/"+ [self tableName]];
@@ -73,6 +81,39 @@
   }
 }
 
+- (void)addBottomBarWithRect:(CGRect)rect
+{
+  if(bottomBar) return;
+  
+  var originY = rect.size.height;
+  bottomBar = [[CPButtonBar alloc] initWithFrame:CGRectMake(0, originY, rect.size.width, 23.0)];    
+  [bottomBar setAutoresizingMask:CPViewWidthSizable | CPViewMinYMargin];
+  
+  [[self view] addSubview:bottomBar];
+  
+  var addButton = [CPButtonBar plusButton];
+  [addButton setAction:@selector(addRow:)];
+  [addButton setTarget:self];
+  [addButton setEnabled:YES];
+
+  var minusButton = [CPButtonBar minusButton];
+  [minusButton setAction:@selector(removeRow:)];
+  [minusButton setTarget:self];
+  [minusButton setEnabled:YES];
+
+  [bottomBar setButtons:[addButton, minusButton]];
+  [bottomBar setHasResizeControl:NO];
+}
+
+- (void)addRow:(id)sender
+{
+  alert('Add Row');
+}
+
+- (void)removeRow:(id)sender
+{
+  alert('Remove Row');
+}
 
 
 - (void)handleTableRowsResponse:(id)js
