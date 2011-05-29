@@ -18,8 +18,6 @@
 {
   [super viewDidSet];
   [self addTableStructure];
-
-  CPLog(@"SJStructureTabController, View Did Set");
 }
 
 
@@ -55,6 +53,55 @@
   indexesViewController = [[SJIndexesViewController alloc] initWithView:bottomContentView andWidth:viewWidth];
 
   [[self view] addSubview:dbSplitView];
+}
+
+- (void)viewWillAppear
+{
+  [self requestTableData];
+}
+
+- (void)databaseTableSelected
+{
+  [self requestTableData];
+}
+
+- (void)requestTableData
+{
+  var httpRequest = [SJHTTPRequest requestWithURL:SERVER_BASE + "/schema/"+ [self tableName]];
+  [httpRequest setParams: [[SJDataManager sharedInstance] credentials] ];
+  [self connectionWithRequest:httpRequest];
+}
+
+
+- (void)requestDidFinish:(id)js
+{
+  if (js.path.indexOf('/schema/') != -1) {
+   [self handleSchemaResponse:js]; 
+  }
+  else if (js.path.indexOf('/indexes/') != -1) {
+    [self handleIndexesResponse:js];
+  }
+}
+
+- (void)requestDidFail:(id)js
+{
+  alert(js.error);
+}
+
+- (void)handleSchemaResponse:(id)js
+{
+  var httpRequest = [SJHTTPRequest requestWithURL:SERVER_BASE + "/indexes/"+ [self tableName]];
+  [httpRequest setParams: [[SJDataManager sharedInstance] credentials] ];
+  [self connectionWithRequest:httpRequest];
+  
+  [tableViewController setFields:js.fields];
+  [tableViewController reloadData];
+}
+
+- (void)handleIndexesResponse:(id)js
+{
+  [indexesViewController setIndexes:js.indexes];
+  [indexesViewController reloadData];
 }
 
 @end

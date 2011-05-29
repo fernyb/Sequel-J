@@ -7,6 +7,7 @@
   CPView contentView;
   CPTableView tableView;
   CGFloat viewWidth;
+  CPArray indexes;
 }
 
 
@@ -20,8 +21,19 @@
   return self;
 }
 
+- (void)setIndexes:(CPArray)idxs
+{
+  indexes = idxs;
+}
+
+- (void)reloadData
+{
+  [tableView reloadData];
+}
+
 - (void)setupView
 {
+  indexes = [[CPArray alloc] init];
   var scrollview = [self addTableView];
   [contentView addSubview:scrollview];
 }
@@ -68,16 +80,46 @@
 
 - (CPNumber)numberOfRowsInTableView:(CPTableView)aTableView
 {
-  return 1;
+  return [indexes count];
 }
 
 
 - (id)tableView:(CPTableView)aTableView objectValueForTableColumn:(CPTableColumn)aTableColumn row:(CPNumber)row
 {
-  if([aTableColumn identifier] === @"SJTableStructure") {
-    return @"id";
+  var field = [indexes objectAtIndex:row];
+  
+  switch([aTableColumn identifier]) {
+    case @"SJTableColumnNon_unique" :
+      return field['Non_unique'];
+    break;
+    case @"SJTableColumnKey_name" :
+      return field['Key_name']
+    break;
+    case @"SJTableColumnSeq_in_index" :
+      return field['Seq_in_index'];
+    break;
+    case @"SJTableColumnColumn_name" :
+      return field['Column_name'];
+    break;
+    case @"SJTableColumnCollation" :
+      return field['Collation'];
+    break;
+    case @"SJTableColumnCardinality" :
+      return field['Cardinality'];
+    break;
+    case @"SJTableColumnSub_part" :
+      return field['Sub_part'];
+    break;
+    case @"SJTableColumnPacked" :
+      return field['Packed'];
+    break;
+    case @"SJTableColumnComment" :
+      return field['Comment'];
+    break;
+    default :
+      return @"";
+    break;
   }
-  return @"aValue";
 }
 
 @end

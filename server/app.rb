@@ -30,6 +30,10 @@ class App < Sinatra::Base
     names
   end
   
+  def render kv={}
+    { connected: @connected, error: @error.to_s, path: request.path_info }.merge!(kv).to_json
+  end
+  
   before do
     self.credentials = params
     @connected = connect ? true : false
@@ -37,18 +41,18 @@ class App < Sinatra::Base
   
   
   get '/connect' do
-    { connected: @connected, error: @error.to_s, path: request.path_info }.to_json
+    render
   end
   
   get '/databases' do
-    { connected: @connected, error: @error.to_s, databases: @mysql.list_dbs, path: request.path_info  }.to_json
+    render databases: @mysql.list_dbs
   end
   
   get '/tables' do
     begin
-      { connected: @connected, error: @error.to_s, tables: @mysql.list_tables, path: request.path_info  }.to_json
+      render tables: @mysql.list_tables
     rescue Mysql::Error => e
-      { connected: @connected, error: e.to_s, tables: [], path: request.path_info  }.to_json
+      render tables: []
     end
   end
   
@@ -67,13 +71,12 @@ class App < Sinatra::Base
       }
     }
     
-    { connected: @connected, error: @error.to_s, columns: columns, path: request.path_info  }.to_json
+    render columns: columns
   end
   
   get '/header_names/:table' do
     names = table_columns params[:table]
-    
-    { connected: @connected, error: @error.to_s, header_names: names, path: request.path_info }.to_json
+    render header_names: names
   end
   
   get '/rows/:table' do
@@ -87,7 +90,50 @@ class App < Sinatra::Base
       rows << row
     }
     
-    { connected: @connected, error: @error.to_s, path: request.path_info, rows: rows }.to_json
+    render rows: rows
+  end
+  
+  get '/schema/:table' do
+    results = @mysql.query("SHOW COLUMNS FROM `#{params[:table]}`")
+    fields = []
+    results.each {|row|
+      fields << {
+        'Field'      => row[0],
+        'Type'       => (row[1] =~ /([a-z]+)/i ? $1 : ''),
+        'Length'     => (row[1] =~ /([0-9]+)/ ? $1 : ''),
+        'Unsigned'   => (row[1] =~ /unsigned/i ? true : false),
+        'Zerofill'   => (row[1] =~ /zerofill/i ? true : false),
+        'Binary'     => false, # I don't know what this field is for?
+        'Allow Null' => (row[2].to_s == 'YES'),
+        'Key'        => row[3].to_s,
+        'Default'    => (row[4].nil? ? 'NULL' : row[4]),
+        'Extra'      => row[5]
+      } 
+    }
+    
+    render fields: fields
+  end
+  
+  get '/indexes/:table' do
+    results = @mysql.query("SHOW INDEX FROM `#{params[:table]}`")
+    fields = []
+    results.each {|row|
+      fields << {
+        'Non_unique'   => row[1],
+        'Key_name'     => row[2],
+        'Seq_in_index' => row[3],
+        'Column_name'  => row[4],
+        'Collation'    => row[5],
+        'Cardinality'  => row[6],
+        'Sub_part'     => row[7].nil? ? 'NULL' : row[7],
+        'Packed'       => row[8].nil? ? 'NULL' : row[8],
+        'Null'         => row[9],
+        'Index_type'   => row[10],
+        'Comment'      => row[11]
+      }
+    }
+    
+    render indexes: fields 
   end
   
   get '/' do

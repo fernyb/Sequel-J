@@ -83,11 +83,12 @@
 
 - (void)switchToView:(CPString)name
 {
+  CPLog(@"Switch To View: "+ name);
   [self hideAllSubviews];
 
   for(var i=0; i<[viewControllers count]; i++) {
     var controller = [viewControllers objectAtIndex:i];
-    if([controller respondsToSelector:@selector(className)] && [controller performSelector:@selector(className)] == name) { 
+    if([controller respondsToSelector:@selector(className)] && [controller performSelector:@selector(className)] == name) {
      [controller setHidden:NO];
     }
   }

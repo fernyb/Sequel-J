@@ -12,9 +12,7 @@
   CPView contentView;
   CPTableView tableView;
   CGFloat viewWidth;
-  CPURLConnection httpRequest;
   CPArray tableList;
-  CPArray responseData;
 }
 
 
@@ -26,8 +24,6 @@
   tableList = [[CPArray alloc] init];
   responseData = [[CPArray alloc] init];
   
-  [[CPNotificationCenter defaultCenter] addObserver:self selector:@selector(didSelectDatabaseTable:) name:@"SJSelectedDBTableRow" object:nil];
-
   [self setupView];
   return self;
 }
@@ -73,6 +69,15 @@
   }];
 }
 
+- (void)setFields:(CPArray)fields
+{
+  tableList = fields;
+}
+
+- (void)reloadData
+{
+  [tableView reloadData];
+}
 
 - (CPArray)headerNames
 {
@@ -88,36 +93,35 @@
 - (id)tableView:(CPTableView)aTableView objectValueForTableColumn:(CPTableColumn)aTableColumn row:(CPNumber)row
 {
   var field = [tableList objectAtIndex:row];
-  console.log(field);
 
   switch([aTableColumn identifier]) {
    case @"SJTableColumnField" :
-    return field.field;
+    return field['Field'];
    break; 
   
    case @"SJTableColumnType" :
-    return field.type;
+    return field['Type'];
    break;
   
    case @"SJTableColumnLength" :
-    return @"";
+    return field['Length'];
    break;
   
    case @"SJTableColumnKey" :
-    return field.key;
+    return field['Key'];
    break;
   
    case @"SJTableColumnExtra" :
-    return field.extra;
+    return field['Extra'];
    break;
 
  
    case @"SJTableColumnAllow Null" :
-    return field['null'];
+    return field['Null'];
    break;
   
    case @"SJTableColumnDefault" :
-    return field['default'];
+    return field['Default'];
    break;
    
    default :
@@ -125,68 +129,6 @@
    break;
   }
 }
-
-- (void)didSelectDatabaseTable:(CPNotification)aNotification
-{
-  var httpRequest = [SJHTTPRequest requestWithURL:SERVER_BASE + "/columns/" + [aNotification object]];
-  [httpRequest setParams: [[SJDataManager sharedInstance] credentials] ];
-  
-  httpConnection = [CPURLConnection connectionWithRequest:[httpRequest toRequest] delegate:self];
-}
-
-
-- (void)handleBadResponse:(id)jsObject
-{
-  alert(jsObject.error);
-}
-
-- (void)handleGoodResponse:(id)jsObject
-{
-  for(var i=0; i < jsObject.fields.length; i++) {
-    [tableList addObject:jsObject.columns[i]];
-  }
-  [tableView reloadData];
-}
-
-
-/*
-*
-* CPURLConnection Methods
-*
-*/
-- (void)connectionDidFinishLoading:(CPURLConnection)connection
-{
-  var json = JSON.parse([responseData componentsJoinedByString:@""]);
-  response = nil;
-
-  [tableList removeAllObjects];
-  [responseData removeAllObjects];
-    
-  if(json['error'] != "") {
-    [self handleBadResponse:json];
-  } else {
-    [self handleGoodResponse:json];
-  }
-}
-
-- (void)connection:(CPURLConnection)connection didReceiveData:(CPString)data
-{
-  [responseData addObject:data];
-}
-
-- (void)connection:(CPURLConnection)connection didFailWithError:(CPString)error
-{
-    //This method is called if the request fails for any reason.
-    alert("Connection Failed: " + error);
-}
-
-- (void)clearConnection:(CPURLConnection)aConnection
-{
-    //we no longer need to hold on to a reference to this connection
-    if (aConnection == httpConnection)
-        httpConnection = nil;
-}
-
 
 
 @end
