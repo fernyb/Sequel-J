@@ -23,11 +23,27 @@ class App < Sinatra::Base
     }.merge!(params)
   end
   
+  def query str
+    @mysql.query(str)
+    rescue Mysql::Error => e
+    @error = e
+    []
+  end
+  
   def table_columns table_name
     results = @mysql.query("SHOW COLUMNS FROM `#{table_name}`")
     names = []
     results.each {|f| names << f[0] }
     names
+  end
+  
+  def sql_for_table table_name
+    results = query "SHOW CREATE TABLE `#{table_name}`"
+    result = []
+    sql = ""
+    results.each {|item| result = item }
+    sql = result[1] if result.size == 2
+    sql
   end
   
   def render kv={}
@@ -45,7 +61,11 @@ class App < Sinatra::Base
   end
   
   get '/databases' do
-    render databases: @mysql.list_dbs
+    begin
+      render databases: @mysql.list_dbs
+    rescue Mysql::Error => e
+      render databases: []
+    end
   end
   
   get '/tables' do
@@ -57,8 +77,8 @@ class App < Sinatra::Base
   end
   
   get '/columns/:table' do
-    results = @mysql.query("SHOW COLUMNS FROM `#{params[:table]}`")
-
+    results = query "SHOW COLUMNS FROM `#{params[:table]}`"
+    
     columns = []
     results.each{|d|
       columns << {
@@ -81,8 +101,8 @@ class App < Sinatra::Base
   
   get '/rows/:table' do
     names = table_columns params[:table]
+    results = query "SELECT * FROM `#{params[:table]}` LIMIT 0,100"
     
-    results = @mysql.query("SELECT * FROM `#{params[:table]}` LIMIT 0,100")
     rows = []
     results.each {|f|
       row = {}
@@ -94,7 +114,8 @@ class App < Sinatra::Base
   end
   
   get '/schema/:table' do
-    results = @mysql.query("SHOW COLUMNS FROM `#{params[:table]}`")
+    results = query "SHOW COLUMNS FROM `#{params[:table]}`"
+  
     fields = []
     results.each {|row|
       fields << {
@@ -115,7 +136,7 @@ class App < Sinatra::Base
   end
   
   get '/indexes/:table' do
-    results = @mysql.query("SHOW INDEX FROM `#{params[:table]}`")
+    results = query "SHOW INDEX FROM `#{params[:table]}`"
     fields = []
     results.each {|row|
       fields << {
@@ -134,6 +155,43 @@ class App < Sinatra::Base
     }
     
     render indexes: fields 
+  end
+  
+  
+  get '/relations/:table' do
+    sql = sql_for_table params[:table]
+    parts = sql.split("\n").map {|part| part.strip }
+    constraints = parts.select {|part| part =~ /^CONSTRAINT/ }
+
+    relations = constraints.map do |part|
+      row = {}
+      row.merge!({ name: $1 }) if part =~ /CONSTRAINT `([0-9a-z_\-\+\=\%]+)`/i
+    
+      if part =~ /FOREIGN KEY \(/i
+        fields = part.split("FOREIGN KEY (").last.split(")").first
+        fields = fields.scan(/`([\w\-]+)`/i).flatten
+        row.merge!({ foreign_key: fields })
+      end
+
+      if part =~ /REFERENCES `([0-9a-z_\-\+\=\%]+)`/i
+        row.merge!({ reference_table: $1 })
+        fields = part.split("REFERENCES").last
+        fields = fields.scan(/\`([\w\-]+)`/i).flatten
+        fields.shift    
+        row.merge!({ reference_key: fields })
+      end
+      
+      row.merge!({ on_delete: $1 }) if part =~ /ON DELETE (RESTRICT|CASCADE|SET NULL|NO ACTION)/i
+      row.merge!({ on_update: $1 }) if part =~ /ON UPDATE (RESTRICT|CASCADE|SET NULL|NO ACTION)/i
+      row.size > 0 ? row : nil
+    end.reject {|item| item.nil? }
+  
+    render relations: relations
+  end
+  
+  get '/show_create_table/:table' do
+    sql = sql_for_table params[:table]
+    render sql: sql
   end
   
   get '/' do
