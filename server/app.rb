@@ -24,7 +24,7 @@ class App < Sinatra::Base
   end
   
   def query str
-    @mysql.query(str)
+    @mysql ? @mysql.query(str) : []
     rescue Mysql::Error => e
     @error = e
     []

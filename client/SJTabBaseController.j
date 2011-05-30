@@ -272,6 +272,20 @@
   return _tablename;
 }
 
+- (CPInteger)numberOfRowsInTableView:(CPTableView *)aTableView
+{
+  // subclasses should overide this method
+  return 0;
+}
+
+- (id)tableView:(CPTableView)aTableView objectValueForTableColumn:(CPTableColumn)aTableColumn row:(CPInteger)rowIndex
+{
+  // Subclasses should overide this method
+  return "Column:"+ [aTableColumn identifier] +", Row Index: "+ rowIndex;
+}
+
+
+
 - (void)databaseTableSelected
 {
   // subclass should implement this method
