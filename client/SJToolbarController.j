@@ -204,7 +204,7 @@ var StructureToolbarItemIdentifier  = @"StructureToolbarItemIdentifier",
 
 - (void)addContentToolbarItemFor:(CPToolbarItem)toolbarItem
 {
-  [self addToolbarItemNamed:@"toolbar-switch-to-browse.tiff" 
+  [self addToolbarItemNamed:@"toolbar-switch-to-browse.png" 
             withToolbarItem:toolbarItem  
                   withLabel:@"Content" 
                 andSelector:@selector(showContentView:)];
@@ -228,7 +228,7 @@ var StructureToolbarItemIdentifier  = @"StructureToolbarItemIdentifier",
 
 - (void)addQueryToolbarItemFor:(CPToolbarItem)toolbarItem
 {
-  [self addToolbarItemNamed:@"toolbar-switch-to-sql.tiff" 
+  [self addToolbarItemNamed:@"toolbar-switch-to-sql.png" 
             withToolbarItem:toolbarItem
                   withLabel:@"Query" 
                 andSelector:@selector(showQueryView:)];  
