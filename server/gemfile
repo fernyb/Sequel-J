@@ -3,3 +3,7 @@ source "http://rubygems.org"
 gem 'sinatra', '1.2.0'
 gem 'mysql', '2.8.1'
 gem 'json', '1.5.1'
+
+group :development do
+  gem 'shotgun', '0.9'
+end
