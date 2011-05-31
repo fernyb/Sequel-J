@@ -1,6 +1,7 @@
 
 @import <Foundation/CPObject.j>
 @import "SJTabBaseController.j"
+@import "SJConstants.j"
 @import "Categories/CPTableView+Categories.j"
 
 
