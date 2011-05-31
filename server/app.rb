@@ -164,7 +164,13 @@ class App < Sinatra::Base
     constraints = parts.select {|part| part =~ /^CONSTRAINT/ }
 
     relations = constraints.map do |part|
-      row = {}
+      row = {
+        name:          '',
+        foreign_key:   [],
+        reference_key: [],
+        on_delete:     '',
+        on_update:     ''
+      }
       row.merge!({ name: $1 }) if part =~ /CONSTRAINT `([0-9a-z_\-\+\=\%]+)`/i
     
       if part =~ /FOREIGN KEY \(/i

@@ -6,6 +6,7 @@
 
 @implementation SJRelationsTabController : SJTabBaseController
 {
+  CPArray relations;
 }
 
 // View Did Set is only called when the [self view] is set.
@@ -30,6 +31,73 @@
 - (void)viewDidAdjust
 {
   [[self tableView] adjustColumnsToFit];
+}
+
+// Called when the tab is selected and the view will be displayed.
+- (void)viewWillAppear
+{
+  [self retrieveRelations];
+}
+
+// Called when the Tab already in display and a different table is selected.
+- (void)databaseTableSelected
+{
+  [self retrieveRelations];
+}
+
+- (void)retrieveRelations
+{
+  if ([self tableName]) {
+    var httpRequest = [SJHTTPRequest requestWithURL:SERVER_BASE + "/relations/"+ [self tableName]];
+    [httpRequest setParams: [[SJDataManager sharedInstance] credentials] ];
+    [self connectionWithRequest:httpRequest];
+  }
+}
+
+- (void)requestDidFail:(id)js
+{
+  alert("SJRelationsTabController, "+ js.error);
+}
+
+- (void)requestDidFinish:(id)js
+{
+  relations = js.relations;
+  [[self tableView] reloadData];
+}
+
+- (CPInteger)numberOfRowsInTableView:(CPTableView *)aTableView
+{
+ return [relations count]; 
+}
+
+- (id)tableView:(CPTableView)aTableView objectValueForTableColumn:(CPTableColumn)aTableColumn row:(CPInteger)rowIndex
+{
+  var row = [relations objectAtIndex:rowIndex];
+
+  switch([aTableColumn identifier]) {
+    case @"SJTableColumnName" :
+     return row.name;
+    break;
+    case @"SJTableColumnColumns" :
+      return row.foreign_key[0];
+    break;
+    case @"SJTableColumnFK Table" :
+      return row.reference_table;
+    break;
+    case @"SJTableColumnFK Columns" :
+      return row.reference_key[0];
+    break;
+    case @"SJTableColumnOn Update" :
+      return row.on_update;
+    break;
+    case @"SJTableColumnOn Delete" :
+      return row.on_delete;
+    break;
+    default:
+     CPLog("TableColumn Identifier: "+ [aTableColumn identifier]);
+    break;
+  }
+  return @"";
 }
 
 @end
