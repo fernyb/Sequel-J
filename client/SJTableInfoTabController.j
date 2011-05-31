@@ -18,7 +18,7 @@
 /**
 * TODO: Must be able to change values.
 */
-  var topView = [[CPView alloc] initWithFrame:CGRectMake(0, 0, 600, 200)];
+  var topView = [[CPView alloc] initWithFrame:CGRectMake(0, 0, 600, 150)];
   
   var labelType = [self createLabelAndPopup:@"Type:"];
   var labelTypeFrame = [labelType frame];
@@ -52,12 +52,17 @@
   [labelUpdatedAt setFrame:labelUpdatedAtFrame];
   [topView addSubview:labelUpdatedAt];  
   
-  /*
-  var lineview = [[CPBox alloc] initWithFrame:[topView frame]];
-  [lineview setBorderType:CPBoxSeparator];
-  [lineview setBoxType:nil];
+  var lineview = [[CPView alloc] initWithFrame:[topView frame]];
+  [lineview lockFocus];
+  var pathFrame = [topView frame];
+  pathFrame.origin.y = [topView frame].size.height - 2;
+  pathFrame.size.height = 1;
+  var path = [CPBezierPath bezierPathWithRect:pathFrame];
+  [[CPColor blackColor] set];
+  [path fill];
+  [lineview unlockFocus];
+  
   [topView addSubview:lineview];
-  */
   
   [[self view] addSubview:topView];
 }
