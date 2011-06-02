@@ -116,7 +116,7 @@
      var superSplitLeftView = [[superSplitview subviews] objectAtIndex:0];
       
      var rect = [[self contentView] frame];
-      rect.origin.x -= [superSplitLeftView frame].size.width + 10;
+      rect.origin.x -= [superSplitLeftView frame].size.width + 0;
 
      [[self view] setFrame:rect];
      [[self view] setBounds:rect];
