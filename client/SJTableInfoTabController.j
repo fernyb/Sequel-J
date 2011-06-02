@@ -2,6 +2,7 @@
 @import <Foundation/CPObject.j>
 @import "SJTabBaseController.j"
 @import "LPMultiLineTextField.j"
+@import "SJConstants.j"
 
 
 @implementation SJTableInfoTabController : SJTabBaseController
@@ -11,16 +12,67 @@
   CPView middleView;
   CPView middleViewLine;
   CPView bottomView;
+  CPDictionary formFields;
 }
+
 
 - (void)viewDidSet
 {
   [super viewDidSet];
+  formFields = [[CPDictionary alloc] init];
   [[self view] setBackgroundColor:[CPColor colorWithHexString:@"eee"]];
   [self createTopView];
   [self createMiddleView];
   [self createBottomView];
 }
+
+// Called when selected from the left Table View
+- (void)databaseTableSelected
+{
+  [self loadTableInfo];
+}
+
+// Called when selected from the Toolbar Tab
+- (void)viewWillAppear
+{
+  [self loadTableInfo];
+}
+
+- (void)loadTableInfo
+{
+  if ([self tableName]) {
+    var httpRequest = [SJHTTPRequest requestWithURL:SERVER_BASE + "/show_create_table/"+ [self tableName]];
+    [httpRequest setParams: [[SJDataManager sharedInstance] credentials] ];
+    [self connectionWithRequest:httpRequest];
+  }
+}
+
+- (void)requestDidFinish:(id)js
+{
+  if (js.path.indexOf('/show_create_table/') != -1) {
+    [self handleShowCreateTableResponse:js];
+  }
+}
+
+- (void)requestDidFail:(id)js
+{
+  alert(js.error);
+}
+
+- (void)handleShowCreateTableResponse:(id)js
+{
+  console.log(js);
+  [self setString:js.sql forKey:@"create_syntax"];
+}
+
+- (void)setString:(CPString)str forKey:(CPString)akey
+{
+  var obj = [formFields objectForKey:akey];
+  if(obj && [obj respondsToSelector:@selector(setStringValue:)]) {
+    [obj setStringValue:str];
+  }
+}
+
 
 - (void)viewDidAdjust
 {
@@ -174,7 +226,7 @@
   var labelViewOriginX = [middleView frame].origin.x;
   var labelViewOriginY = [middleView frame].origin.y + [middleView frame].size.height + 10;
   var labelViewSizeWidth = [middleView frame].size.width;
-  var labelVieSizeHeight = 350;
+  var labelVieSizeHeight = 300;
   
   bottomView = [[CPView alloc] initWithFrame:CGRectMake(labelViewOriginX, labelViewOriginY, labelViewSizeWidth, labelVieSizeHeight)];
   [bottomView setAutoresizingMask:CPViewWidthSizable];
@@ -194,12 +246,13 @@
 	var textboxOriginX = [label frame].origin.x + [label frame].size.width + 5;
 	var textboxSizeWidth = (labelViewSizeWidth - textboxOriginX) - 15;
  
-  var textbox = [[LPMultiLineTextField alloc] initWithFrame:CGRectMake(textboxOriginX, 2, textboxSizeWidth - 5, 200)];
-  [textbox setAutoresizingMask:CPViewWidthSizable]; 
+  var textbox = [[LPMultiLineTextField alloc] initWithFrame:CGRectMake(textboxOriginX, 2, textboxSizeWidth - 5, labelVieSizeHeight - 4)];
+  [textbox setAutoresizingMask:CPViewWidthSizable | CPViewHeightSizable];
   [textbox setEditable:YES];
   [textbox setBezeled:YES];
   [textbox setAlignment:CPLeftTextAlignment];
   [textbox setFont:[CPFont systemFontOfSize:12.0]];
+  [formFields setObject:textbox forKey:@"create_syntax"];
   [bottomView addSubview:textbox];
   
   [[self view] addSubview:bottomView];
