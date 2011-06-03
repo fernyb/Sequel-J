@@ -63,8 +63,9 @@
   [nameField setFont:[CPFont boldSystemFontOfSize:12.0]]; 
   [nameField setAutoresizingMask:CPViewMinXMargin | CPViewMaxXMargin | CPViewMinYMargin | CPViewMaxYMargin]; 
   [nameField setFrameOrigin:CGPointMake(posX + 120, posY)]; 
-  [nameField setEditable:YES]; 
-  [nameField setBezeled: YES]; 
+  [nameField setEditable:YES];
+  [nameField setEnabled:YES];
+  [nameField setBezeled:YES];
   [nameField setTag:aTag];
 
   [connectionView addSubview:nameField];
@@ -76,10 +77,7 @@
 
 - (void)setupView
 { 
-  connectionView = [[CPView alloc] initWithFrame:CGRectMake(0, 0, 
-    [contentView frame].size.width, 
-    [contentView frame].size.height)];
-  
+  connectionView = [[CPView alloc] initWithFrame:CGRectMake(0, 0, [contentView frame].size.width, [contentView frame].size.height)];
   [connectionView setAutoresizingMask:CPViewWidthSizable | CPViewHeightSizable];
   
 	var formPos = [self addTextField:@"Name" withLabel:@"Name" atPosition:0 withTag:100];
@@ -125,6 +123,11 @@
   var database = [connectionView viewWithTag:104];
   var port     = [connectionView viewWithTag:105];
   
+  /** 
+  * TODO: Issue #5
+  * I don't know what happen but tabbing on each of the field would set focus to the next field
+  * somehow it doesn't work anymore and I don't know why.
+  */
   [name setNextKeyView:host];
   [host setNextKeyView:username];
   [username setNextKeyView:password];

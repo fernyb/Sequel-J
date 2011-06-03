@@ -98,6 +98,10 @@
   [self setMenuItems:js.engines forKey:@"type_menu"];
   [self setMenuItems:js.encodings forKey:@"encoding_menu"];
   [self setMenuItems:js.collations forKey:@"collation_menu"];
+  
+  [self selectPopupButtonForKey:@"type_menu" withObject:js];
+  [self selectPopupButtonForKey:@"encoding_menu" withObject:js];
+  [self selectPopupButtonForKey:@"collation_menu" withObject:js];
 }
 
 - (void)setString:(CPString)str forKey:(CPString)akey
@@ -105,6 +109,34 @@
   var obj = [formFields objectForKey:akey];
   if(obj && [obj respondsToSelector:@selector(setStringValue:)]) {
     [obj setStringValue:str];
+  }
+}
+
+- (void)selectPopupButtonForKey:(CPString)akey withObject:(id)js
+{
+  var popupMenu = [formFields objectForKey:akey];
+  var titles = [popupMenu itemTitles];
+    
+  if (akey == @"type_menu") {
+    [popupMenu selectItemWithTitle:js.status.engine];
+  }
+  else if (akey == @"encoding_menu") {
+    for (var i=0; i<[js.encodings count]; i++) {
+      var item = [js.encodings objectAtIndex:i];
+      if (item.collate_set_name.indexOf(js.status.collation) != -1) {
+        [popupMenu selectItemAtIndex:i];
+        break;
+      }
+    }
+  }
+  else if (akey == @"collation_menu") {
+    for (var i=0; i<[js.collations count]; i++) {
+      var item = [js.collations objectAtIndex:i];
+      if (item.collation_name.indexOf(js.status.collation) != -1) {
+        [popupMenu selectItemAtIndex:i];
+        break;
+      }
+    }    
   }
 }
 
@@ -134,9 +166,22 @@
   }
 }
 
-- (void)selectedPopupMenuItem:(id)sender
+- (void)didSelectCollation:(CPPopUpButton)sender
 {
-  // TODO: Implement this method
+  var title = [sender titleOfSelectedItem];
+  alert(title);
+}
+
+- (void)didSelectEncoding:(CPPopUpButton)sender
+{
+  var title = [sender titleOfSelectedItem];
+  alert(title);
+}
+
+- (void)didSelecType:(CPPopUpButton)sender
+{
+  var title = [sender titleOfSelectedItem];
+  alert(title);
 }
 
 
@@ -165,7 +210,7 @@
   topView = [[CPView alloc] initWithFrame:CGRectMake(0, 10, topViewSizeWidth, 115)];
   [topView setAutoresizingMask:CPViewWidthSizable];
   
-  var labelType = [self createLabelAndPopup:@"Type:"];
+  var labelType = [self createLabelAndPopup:@"Type:" withActionSelector:@selector(didSelecType:)];
   var labelTypeFrame = [labelType frame];
   labelTypeFrame.origin.y += 0;
   [labelType setFrame:labelTypeFrame];
@@ -173,7 +218,7 @@
   [formFields setObject:[[labelType subviews] lastObject] forKey:@"type_menu"];
     
   
-  var labelEncoding = [self createLabelAndPopup:@"Encoding:"];
+  var labelEncoding = [self createLabelAndPopup:@"Encoding:" withActionSelector:@selector(didSelectEncoding:)];
   var labelEncodingFrame = [labelEncoding frame];
   labelEncodingFrame.origin.y = [labelType frame].size.height + 5 + [labelType frame].origin.y;
   [labelEncoding setFrame:labelEncodingFrame];
@@ -181,7 +226,7 @@
   [formFields setObject:[[labelEncoding subviews] lastObject] forKey:@"encoding_menu"];
     
     
-  var labelCollation = [self createLabelAndPopup:@"Collation:"];
+  var labelCollation = [self createLabelAndPopup:@"Collation:" withActionSelector:@selector(didSelectCollation:)];
   var labelCollationFrame = [labelCollation frame];
   labelCollationFrame.origin.y = [labelEncoding frame].size.height + 5 + [labelEncoding frame].origin.y;
   [labelCollation setFrame:labelCollationFrame];
@@ -339,7 +384,7 @@
 }
 
 
-- (CPView)createLabelAndPopup:(CPString)labelStr
+- (CPView)createLabelAndPopup:(CPString)labelStr withActionSelector:(SEL)actionSelector
 {
   var itemview = [[CPView alloc] initWithFrame:CGRectMake(0,0,290, 28)];
 
@@ -357,12 +402,9 @@
 	[itemview addSubview:label];
 	
   var popupMenu = [[CPPopUpButton alloc] initWithFrame:CGRectMake([label frame].origin.x + [label frame].size.width + 5, 0, 200, 24)];
-
-	[popupMenu setTarget:self];
-	[popupMenu setAction:@selector(selectedPopupMenuItem:)];
-	[popupMenu setTitle:@"Choose Database..."];
-	[popupMenu addItemWithTitle:@"InnoDB"];
-  
+  [popupMenu setTarget:self];
+	[popupMenu setAction:actionSelector];
+	
   [itemview addSubview:popupMenu];
   [itemview setBackgroundColor:[CPColor clearColor]];
   
