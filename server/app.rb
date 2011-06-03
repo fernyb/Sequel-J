@@ -37,7 +37,7 @@ class App < Sinatra::Base
   
   def sql_for_table table_name
     results = query "SHOW CREATE TABLE `#{table_name}`"
-    results.size == 2 ? results.last : ''
+    results.count == 2 ? results.last : ''
   end
   
   def render kv={}
