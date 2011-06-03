@@ -41,7 +41,7 @@
 - (void)loadTableInfo
 {
   if ([self tableName]) {
-    var httpRequest = [SJHTTPRequest requestWithURL:SERVER_BASE + "/show_create_table/"+ [self tableName]];
+    var httpRequest = [SJHTTPRequest requestWithURL:SERVER_BASE + "/table_info/"+ [self tableName]];
     [httpRequest setParams: [[SJDataManager sharedInstance] credentials] ];
     [self connectionWithRequest:httpRequest];
   }
@@ -49,8 +49,8 @@
 
 - (void)requestDidFinish:(id)js
 {
-  if (js.path.indexOf('/show_create_table/') != -1) {
-    [self handleShowCreateTableResponse:js];
+  if (js.path.indexOf('/table_info/') != -1) {
+    [self handleTableInfoResponse:js];
   }
 }
 
@@ -59,10 +59,45 @@
   alert(js.error);
 }
 
-- (void)handleShowCreateTableResponse:(id)js
+
+- (void)handleTableInfoResponse:(id)js
 {
-  console.log(js);
   [self setString:js.sql forKey:@"create_syntax"];
+  
+  var status = js.status;
+  [self setString:status.create_time forKey:@"created_at"];
+  [self setString:status.update_time forKey:@"updated_at"];
+  [self setString:status.rows forKey:@"number_of_rows"];
+  [self setString:status.row_format forKey:@"row_format"];
+  [self setString:status.avg_row_length forKey:@"avg_row_length"];
+  [self setString:status.auto_increment forKey:@"auto_increment"];
+  
+  var convertToCorrectSize = function(size) {
+    var dataSize = parseInt(size) >= 0 ? parseInt(size) : 0;
+    dataSize = (dataSize / 1024);
+    if(dataSize > 1024) {
+      dataSize = dataSize / 1024;
+      if (dataSize > 1024) {
+        dataSize = dataSize / 1024;
+        dataSize += " GB";
+      } else {
+        dataSize += " MB";
+      }
+    } else {
+      dataSize += " KB";
+    }
+    return dataSize;
+  };
+
+  [self setString:convertToCorrectSize(status.data_length) forKey:@"data_size"];
+  [self setString:convertToCorrectSize(status.max_data_length) forKey:@"max_data_size"];
+  [self setString:convertToCorrectSize(status.index_length) forKey:@"index_size"];
+  [self setString:convertToCorrectSize(status.data_free) forKey:@"free_data_size"];
+  
+  // TODO: populate the popup menus.
+  [self setMenuItems:js.engines forKey:@"type_menu"];
+  [self setMenuItems:js.encodings forKey:@"encoding_menu"];
+  [self setMenuItems:js.collations forKey:@"collation_menu"];
 }
 
 - (void)setString:(CPString)str forKey:(CPString)akey
@@ -71,6 +106,37 @@
   if(obj && [obj respondsToSelector:@selector(setStringValue:)]) {
     [obj setStringValue:str];
   }
+}
+
+- (void)setMenuItems:(CPArray)items forKey:(CPString)akey
+{
+  var popupMenu = [formFields objectForKey:akey];
+  
+  if ([popupMenu respondsToSelector:@selector(removeAllItems)]) {
+    [popupMenu removeAllItems];
+  }
+  
+  if (akey == @"type_menu") {
+    [items each:function(item) {
+      [popupMenu addItemWithTitle:item];
+    }];
+  }
+  else if (akey == @"encoding_menu") {
+    [items each:function(item) {
+      var title = item.description + " ("+ item.collation_name +")";
+      [popupMenu addItemWithTitle:title];
+    }];
+  }
+  else if (akey == @"collation_menu") {
+    [items each:function(item) {
+      [popupMenu addItemWithTitle:item.collation_name];  
+    }];
+  }
+}
+
+- (void)selectedPopupMenuItem:(id)sender
+{
+  // TODO: Implement this method
 }
 
 
@@ -104,18 +170,24 @@
   labelTypeFrame.origin.y += 0;
   [labelType setFrame:labelTypeFrame];
   [topView addSubview:labelType];
+  [formFields setObject:[[labelType subviews] lastObject] forKey:@"type_menu"];
+    
   
   var labelEncoding = [self createLabelAndPopup:@"Encoding:"];
   var labelEncodingFrame = [labelEncoding frame];
   labelEncodingFrame.origin.y = [labelType frame].size.height + 5 + [labelType frame].origin.y;
   [labelEncoding setFrame:labelEncodingFrame];
   [topView addSubview:labelEncoding];
-  
+  [formFields setObject:[[labelEncoding subviews] lastObject] forKey:@"encoding_menu"];
+    
+    
   var labelCollation = [self createLabelAndPopup:@"Collation:"];
   var labelCollationFrame = [labelCollation frame];
   labelCollationFrame.origin.y = [labelEncoding frame].size.height + 5 + [labelEncoding frame].origin.y;
   [labelCollation setFrame:labelCollationFrame];
   [topView addSubview:labelCollation];
+  [formFields setObject:[[labelCollation subviews] lastObject] forKey:@"collation_menu"];
+  
   
   // On Right Side
   var labelCreatedAt = [self labelFor:@"Created at:" withValue:@"May 30, 2011 10:16:19 AM"];
@@ -123,6 +195,7 @@
   labelCreatedAtFrame.origin.x = labelCollationFrame.size.width + 20;
   [labelCreatedAt setFrame:labelCreatedAtFrame];
   [topView addSubview:labelCreatedAt];
+  [formFields setObject:[[labelCreatedAt subviews] lastObject] forKey:@"created_at"];
   
   var labelUpdatedAt = [self labelFor:@"Updated at:" withValue:@"No Available"];
   var labelUpdatedAtFrame = [labelUpdatedAt frame];
@@ -130,7 +203,7 @@
   labelUpdatedAtFrame.origin.y = labelEncodingFrame.origin.y - 1.5;
   [labelUpdatedAt setFrame:labelUpdatedAtFrame];
   [topView addSubview:labelUpdatedAt];  
-  
+  [formFields setObject:[[labelUpdatedAt subviews] lastObject] forKey:@"updated_at"];
   
   topViewLine = [[CPView alloc] initWithFrame:CGRectMake(10, [topView frame].size.height - 2, [topView frame].size.width - 20, 1)];
   [topViewLine setAutoresizingMask:CPViewWidthSizable];
@@ -158,24 +231,28 @@
   // Left Column
   var labelNumRows = [self labelFor:@"Number of rows:" withValue:@"~85"];
   [middleView addSubview:labelNumRows];
+  [formFields setObject:[[labelNumRows subviews] lastObject] forKey:@"number_of_rows"];
   
   var labelRowFormat = [self labelFor:@"Row format:" withValue:@"Compact"];
   var labelRowFormatFrame = [labelRowFormat frame];
   labelRowFormatFrame.origin.y = [labelNumRows frame].origin.y + [labelNumRows frame].size.height;
   [labelRowFormat setFrame:labelRowFormatFrame];
   [middleView addSubview:labelRowFormat];
+  [formFields setObject:[[labelRowFormat subviews] lastObject] forKey:@"row_format"];
   
   var labelAvgRowLength = [self labelFor:@"Avg. row length:" withValue:@"192"];
   var labelAvgRowLengthFrame = [labelAvgRowLength frame];
   labelAvgRowLengthFrame.origin.y = labelRowFormatFrame.origin.y + labelRowFormatFrame.size.height;
   [labelAvgRowLength setFrame:labelAvgRowLengthFrame];
   [middleView addSubview:labelAvgRowLength];
+  [formFields setObject:[[labelAvgRowLength subviews] lastObject] forKey:@"avg_row_length"];
   
   var labelAutoIncrement = [self labelFor:@"Auto increment:" withValue:@"86"];
   var labelAutoIncrementFrame = [labelAutoIncrement frame];
   labelAutoIncrementFrame.origin.y = labelAvgRowLengthFrame.origin.y + labelAvgRowLengthFrame.size.height;
   [labelAutoIncrement setFrame:labelAutoIncrementFrame];
   [middleView addSubview:labelAutoIncrement];
+  [formFields setObject:[[labelAutoIncrement subviews] lastObject] forKey:@"auto_increment"];
   
   // Right Column
   var labelDataSize = [self labelFor:@"Data Size:" withValue:@"16.0 KB"];
@@ -184,28 +261,31 @@
   labelDataSizeFrame.origin.y = [labelNumRows frame].origin.y;
   [labelDataSize setFrame:labelDataSizeFrame];
   [middleView addSubview:labelDataSize];
-  
+  [formFields setObject:[[labelDataSize subviews] lastObject] forKey:@"data_size"];
+    
   var labelMaxDataSize = [self labelFor:@"Max data size:" withValue:@"0 B"];
   var labelMaxDataSizeFrame = [labelMaxDataSize frame];
   labelMaxDataSizeFrame.origin.x = labelDataSizeFrame.origin.x;
   labelMaxDataSizeFrame.origin.y = labelDataSizeFrame.origin.y + labelDataSizeFrame.size.height;
   [labelMaxDataSize setFrame:labelMaxDataSizeFrame];
   [middleView addSubview:labelMaxDataSize];
-
+  [formFields setObject:[[labelMaxDataSize subviews] lastObject] forKey:@"max_data_size"];
+    
   var labelIndexSize = [self labelFor:@"Index Size:" withValue:@"96.0 KB"];
   var labelIndexSizeFrame = [labelIndexSize frame];
   labelIndexSizeFrame.origin.x = labelMaxDataSizeFrame.origin.x;
   labelIndexSizeFrame.origin.y = labelMaxDataSizeFrame.origin.y + labelMaxDataSizeFrame.size.height;
   [labelIndexSize setFrame:labelIndexSizeFrame];
   [middleView addSubview:labelIndexSize];
-  
+  [formFields setObject:[[labelIndexSize subviews] lastObject] forKey:@"index_size"];
+      
   var labelFreeDataSize = [self labelFor:@"Free data size:" withValue:@"409 MB"];
   var labelFreeDataSizeFrame = [labelFreeDataSize frame];
   labelFreeDataSizeFrame.origin.x = labelIndexSizeFrame.origin.x;
   labelFreeDataSizeFrame.origin.y = labelIndexSizeFrame.origin.y + labelIndexSizeFrame.size.height;
   [labelFreeDataSize setFrame:labelFreeDataSizeFrame];
   [middleView addSubview:labelFreeDataSize];
-  
+  [formFields setObject:[[labelFreeDataSize subviews] lastObject] forKey:@"free_data_size"];
   
   middleViewLine = [[CPView alloc] initWithFrame:CGRectMake(10, [middleView frame].size.height - 1, [middleView frame].size.width - 20, 1)];
   [middleViewLine lockFocus];
@@ -279,7 +359,7 @@
   var popupMenu = [[CPPopUpButton alloc] initWithFrame:CGRectMake([label frame].origin.x + [label frame].size.width + 5, 0, 200, 24)];
 
 	[popupMenu setTarget:self];
-	[popupMenu setAction:@selector(selectedDatabase:)];
+	[popupMenu setAction:@selector(selectedPopupMenuItem:)];
 	[popupMenu setTitle:@"Choose Database..."];
 	[popupMenu addItemWithTitle:@"InnoDB"];
   

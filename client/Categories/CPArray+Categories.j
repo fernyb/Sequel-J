@@ -10,4 +10,11 @@
   }
 }
 
+- (void)each:(Function)func
+{
+  for(var i=0; i<[self count]; i++) {
+    func([self objectAtIndex:i]);
+  }
+}
+
 @end

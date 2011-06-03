@@ -199,6 +199,52 @@ class App < Sinatra::Base
     sql = sql_for_table params[:table]
     render sql: sql
   end
+
+  get '/table_info/:table' do
+    results = query "SHOW TABLE STATUS LIKE '#{params[:table]}'"
+    status = results.map {|item|
+      item = item.map{|value| value.nil? ? '' : value }
+      {
+        name:            item[0],
+        engine:          item[1],
+        version:         item[2],
+        row_format:      item[3],
+        rows:            item[4],
+        avg_row_length:  item[5],
+        data_length:     item[6],
+        max_data_length: item[7],
+        index_length:    item[8],
+        data_free:       item[9],
+        auto_increment:  item[10],
+        create_time:     item[11],
+        update_time:     item[12],
+        check_time:      item[13],
+        collation:       item[14],
+        checksum:        item[15],
+        create_options:  item[16],
+        comment:         item[17]
+      }
+    }.first
+    
+    if status
+      result = query "SELECT Engine, Support FROM information_schema.engines WHERE support IN ('DEFAULT', 'YES')"
+      engines = result.map {|item| item.first }
+      
+      result = query "SELECT * FROM information_schema.character_sets ORDER BY character_set_name ASC"
+      encodings = result.map {|item| {collation_name: item[0], collate_set_name: item[1], description: item[2]} }
+      collation = encodings.select {|item| item[:collate_set_name] == status[:collation] }.first
+      if collation
+        result = query "SELECT * FROM information_schema.collations WHERE character_set_name = '#{collation[:collation_name]}' ORDER BY 'collation_name' ASC"
+        collations = result.map {|item| {collation_name: item[0], character_set_name: item[1], id: item[2]} }
+      end
+    end
+    
+    sql = sql_for_table params[:table]
+    encodings ||= []
+    collations ||= []
+    
+    render status: status, engines: engines, encodings: encodings, collations: collations, sql: sql
+  end
   
   get '/' do
     'Hello World'
