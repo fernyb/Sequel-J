@@ -32,18 +32,12 @@ class App < Sinatra::Base
   
   def table_columns table_name
     results = @mysql.query("SHOW COLUMNS FROM `#{table_name}`")
-    names = []
-    results.each {|f| names << f[0] }
-    names
+    results.collect {|f| f[0] }
   end
   
   def sql_for_table table_name
     results = query "SHOW CREATE TABLE `#{table_name}`"
-    result = []
-    sql = ""
-    results.each {|item| result = item }
-    sql = result[1] if result.size == 2
-    sql
+    results.size == 2 ? results.last : ''
   end
   
   def render kv={}
@@ -78,10 +72,8 @@ class App < Sinatra::Base
   
   get '/columns/:table' do
     results = query "SHOW COLUMNS FROM `#{params[:table]}`"
-    
-    columns = []
-    results.each{|d|
-      columns << {
+    columns = results.map {|d|
+      {
         :field   => d[0],
         :type    => d[1],
         :null    => d[2],
