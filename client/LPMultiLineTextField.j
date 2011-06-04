@@ -54,7 +54,7 @@ var CPTextFieldInputOwner = nil;
         _DOMTextareaElement.onblur = function(){
                 [[CPTextFieldInputOwner window] makeFirstResponder:nil];
                 CPTextFieldInputOwner = nil;
-            };
+        };
 
         self._DOMElement.appendChild(_DOMTextareaElement);
     }
@@ -62,13 +62,6 @@ var CPTextFieldInputOwner = nil;
     return _DOMTextareaElement;
 }
 
-- (id)initWithFrame:(CGRect)aFrame
-{
-    if (self = [super initWithFrame:aFrame])
-    {
-    }
-    return self;
-}
 
 - (BOOL)isScrollable
 {
@@ -198,11 +191,19 @@ var CPTextFieldInputOwner = nil;
     [[[self window] platformWindow] _propagateCurrentDOMEvent:YES];
 }
 
+/* 
+  This is causing problems with nextKeyView? 
+  We will just comment it out as I don't think we need it.
+  And I don't know what it's for...
+*/
+/*
 - (BOOL)performKeyEquivalent:(CPEvent)anEvent
 {
     [[[self window] platformWindow] _propagateCurrentDOMEvent:YES];
     return YES;
 }
+*/
+
 
 - (BOOL)becomeFirstResponder
 {
@@ -234,14 +235,16 @@ var CPTextFieldInputOwner = nil;
         _isEditing = NO;
         [self textDidEndEditing:[CPNotification notificationWithName:CPControlTextDidEndEditingNotification object:self userInfo:nil]];
 
-        if ([self sendsActionOnEndEditing])
+        if ([self sendsActionOnEndEditing]) {
             [self sendAction:[self action] to:[self target]];
+          }
     }
     
     [self textDidBlur:[CPNotification notificationWithName:CPTextFieldDidBlurNotification object:self userInfo:nil]];
     
     return YES;
 }
+
 
 - (CPString)stringValue
 {
@@ -276,7 +279,7 @@ var LPMultiLineTextFieldStringValueKey = "LPMultiLineTextFieldStringValueKey",
 {
     [super encodeWithCoder:aCoder];      
     [aCoder encodeObject:_stringValue forKey:LPMultiLineTextFieldStringValueKey];
-    [aCoder encodeBool:(_hideOverflow?NO:YES) forKey:LPMultiLineTextFieldScrollableKey];
+    [aCoder encodeBool:(_hideOverflow ? NO : YES) forKey:LPMultiLineTextFieldScrollableKey];
 }
 
 @end

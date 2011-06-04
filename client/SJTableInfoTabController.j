@@ -94,7 +94,6 @@
   [self setString:convertToCorrectSize(status.index_length) forKey:@"index_size"];
   [self setString:convertToCorrectSize(status.data_free) forKey:@"free_data_size"];
   
-  // TODO: populate the popup menus.
   [self setMenuItems:js.engines forKey:@"type_menu"];
   [self setMenuItems:js.encodings forKey:@"encoding_menu"];
   [self setMenuItems:js.collations forKey:@"collation_menu"];
@@ -378,6 +377,7 @@
   [textbox setAlignment:CPLeftTextAlignment];
   [textbox setFont:[CPFont systemFontOfSize:12.0]];
   [formFields setObject:textbox forKey:@"create_syntax"];
+  
   [bottomView addSubview:textbox];
   
   [[self view] addSubview:bottomView];

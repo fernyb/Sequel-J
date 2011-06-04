@@ -122,12 +122,7 @@
   var password = [connectionView viewWithTag:103];
   var database = [connectionView viewWithTag:104];
   var port     = [connectionView viewWithTag:105];
-  
-  /** 
-  * TODO: Issue #5
-  * I don't know what happen but tabbing on each of the field would set focus to the next field
-  * somehow it doesn't work anymore and I don't know why.
-  */
+
   [name setNextKeyView:host];
   [host setNextKeyView:username];
   [username setNextKeyView:password];
