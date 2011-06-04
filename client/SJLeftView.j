@@ -1,6 +1,7 @@
 @import <Foundation/CPObject.j>
 @import "SJHTTPRequest.j"
 @import "SJConstants.j"
+@import "SJTableListItemDataView.j"
 
 
 @implementation SJLeftView : CPObject
@@ -33,16 +34,29 @@
   var scrollView = [[CPScrollView alloc] initWithFrame:[theSuperView bounds]];
   [scrollView setAutoresizingMask:CPViewWidthSizable | CPViewHeightSizable];
   [scrollView setAutohidesScrollers:YES];
-
+  [scrollView setHasHorizontalScroller:NO];
+  [scrollView setBackgroundColor:[CPColor colorWithHexString:@"DEE4EA"]];
+  
   // create the CPTableView
   tableView = [[CPTableView alloc] initWithFrame:[scrollView bounds]];
   [tableView setDataSource:self];
   [tableView setDelegate:self];
-  [tableView setUsesAlternatingRowBackgroundColors:YES];
-
+  [tableView setColumnAutoresizingStyle:CPTableViewLastColumnOnlyAutoresizingStyle];
+  [tableView setSelectionHighlightStyle:CPTableViewSelectionHighlightStyleSourceList];
+  [tableView setCornerView:nil];
+  [tableView setBackgroundColor:[CPColor colorWithHexString:@"DEE4EA"]];
+  [tableView setAllowsEmptySelection:NO];
+  [tableView setRowHeight:20];
+  
   var column = [[CPTableColumn alloc] initWithIdentifier:@"SJTableNames"];
-  [[column headerView] setStringValue:@"Tables"];
+  [[column headerView] setStringValue:@"TABLES"];
   [column setWidth:(viewWidth - 15)];
+  [column setDataView:[[SJTableListItemDataView alloc] initWithFrame:CGRectMake(0,0,viewWidth,20)]];
+  
+  [[column headerView] setValue:[CPColor colorWithHexString:@"DEE4EA"] forThemeAttribute:@"background-color"];
+  [[column headerView] setValue:[CPColor colorWithHexString:@"626262"] forThemeAttribute:@"text-color"];
+  [[column headerView] setValue:[CPFont boldSystemFontOfSize:12] forThemeAttribute:@"text-font"];
+  
   [tableView addTableColumn:column];
   
   [scrollView setDocumentView:tableView];
