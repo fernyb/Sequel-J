@@ -10,7 +10,7 @@
   CPView topView;
   CPView bottomView;
   CPScrollView bottomScrollview;
-  CPButtonBar topBar;
+  CPView topBar;
 }
 
 - (void)viewDidSet
@@ -32,14 +32,18 @@
   bottomView = [[CPView alloc] initWithFrame:CGRectMake(0,0, CGRectGetWidth([[self view] frame]), CGRectGetHeight([[self view] frame]) / 2)];
   [bottomView setAutoresizingMask:CPViewWidthSizable | CPViewHeightSizable];
   [bottomView setBackgroundColor:[CPColor clearColor]];
+  [bottomView setHidden:NO];
   
   var topBarHeight = 23.0;
-  topBar = [[CPButtonBar alloc] initWithFrame:CGRectMake(0, 0, CGRectGetWidth([[self view] frame]), 23.0)];
+  topBar = [[CPView alloc] initWithFrame:CGRectMake(0, 0, CGRectGetWidth([[self view] frame]), 23.0)];
   [topBar setAutoresizingMask:CPViewWidthSizable | CPViewMaxYMargin];
+  
+  var img = [[CPImage alloc] initWithContentsOfFile:[[CPBundle mainBundle] pathForResource:@"button_bar_spacer.png"]];
+  [topBar setBackgroundColor:[CPColor colorWithPatternImage:img]];
   [bottomView addSubview:topBar];
   
   bottomScrollview = [self createTableViewForView:bottomView headerNames:[self bottomTableHeaderNames]];
-  [bottomScrollview setFrame:CGRectMake(0, topBarHeight, CGRectGetWidth([bottomScrollview frame]), CGRectGetHeight([bottomScrollview frame]) - topBarHeight)];  
+  [bottomScrollview setFrame:CGRectMake(0, topBarHeight, CGRectGetWidth([bottomScrollview frame]), CGRectGetHeight([bottomScrollview frame]) - topBarHeight)];
   [bottomView addSubview:bottomScrollview];
   [splitview addSubview:bottomView];
   
@@ -53,8 +57,8 @@
   [splitview setFrame:[[self view] frame]];  
   [topView setFrame:CGRectMake(0,0, CGRectGetWidth([[self view] frame]), CGRectGetHeight([[self view] frame]) / 2)];
   [bottomView setFrame:CGRectMake(0, 23.0, CGRectGetWidth([[self view] frame]), (CGRectGetHeight([[self view] frame]) / 2) - 23.0)];
-  [topBar setFrame:CGRectMake(0,0, [[self view] frame].size.width, 23.0)];
-  
+  [topBar setFrame:CGRectMake(0, -1, [[self view] frame].size.width, 23.0)];
+
   /* CPTableView */var docview = [bottomScrollview documentView];
   [docview adjustColumnsToFit];
 }

@@ -67,9 +67,11 @@
 
 - (void)requestTableData
 {
-  var httpRequest = [SJHTTPRequest requestWithURL:SERVER_BASE + "/schema/"+ [self tableName]];
-  [httpRequest setParams: [[SJDataManager sharedInstance] credentials] ];
-  [self connectionWithRequest:httpRequest];
+  if([self tableName]) {
+    var httpRequest = [SJHTTPRequest requestWithURL:SERVER_BASE + "/schema/"+ [self tableName]];
+    [httpRequest setParams: [[SJDataManager sharedInstance] credentials] ];
+    [self connectionWithRequest:httpRequest];
+  }
 }
 
 

@@ -19,6 +19,7 @@
   }
 }
 
+
 - (void)databaseTableSelected
 {
   [self fetchHeaderNamesForTableName:[self tableName]];
@@ -89,18 +90,24 @@
   bottomBar = [[CPButtonBar alloc] initWithFrame:CGRectMake(0, originY, rect.size.width, 23.0)];    
   [bottomBar setAutoresizingMask:CPViewWidthSizable | CPViewMinYMargin];
   
+  var img = [[CPImage alloc] initWithContentsOfFile:[[CPBundle mainBundle] pathForResource:@"button_bar_spacer.png"]];
+  [bottomBar setValue:[CPColor colorWithPatternImage:img] forThemeAttribute:@"bezel-color"];
+  [bottomBar setValue:[CPColor colorWithPatternImage:img] forThemeAttribute:@"button-bezel-color" inState:CPThemeStateNormal];
+  // TODO: add in the alternate image
+  [bottomBar setValue:[CPColor colorWithPatternImage:img] forThemeAttribute:@"button-bezel-color" inState:CPThemeStateHighlighted];
+  
   [[self view] addSubview:bottomBar];
   
   var addButton = [CPButtonBar plusButton];
   [addButton setAction:@selector(addRow:)];
   [addButton setTarget:self];
   [addButton setEnabled:YES];
-
+  
   var minusButton = [CPButtonBar minusButton];
   [minusButton setAction:@selector(removeRow:)];
   [minusButton setTarget:self];
   [minusButton setEnabled:YES];
-
+  
   [bottomBar setButtons:[addButton, minusButton]];
   [bottomBar setHasResizeControl:NO];
 }
