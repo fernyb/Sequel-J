@@ -140,13 +140,13 @@
 
 - (void)viewDidSet
 {
-  [[self view] setHidden:YES];
 }
 
 - (void)setView:(CPView)aView
 {
   [self viewWillSet];
   _view = aView;
+  [[self view] setHidden:YES];
   [self viewDidSet];
 }
 
