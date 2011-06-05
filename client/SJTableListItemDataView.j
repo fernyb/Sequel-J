@@ -48,7 +48,6 @@
 
 - (void)setObjectValue:(CPString)aTableName
 {
-	console.log(aTableName);
 	[self setTableName:aTableName];
 }
 

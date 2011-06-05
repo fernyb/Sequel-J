@@ -6,11 +6,13 @@
 
 @implementation SJLeftView : CPObject
 {
-  CPView theSuperView;
-  CPTableView tableView;
-  CPArray tableList;
+  CPView		theSuperView;
+  CPTableView 	tableView;
+  CPArray 		tableList;
+  CPArray		filteredTableList;
   CPURLConnection httpConnection;
-  CPArray responseData;
+  CPArray 		responseData;
+  CPSearchField	tableFilterSearchField;
 }
 
 - (id)initWithSuperView:(CPView)aSuperView
@@ -19,6 +21,7 @@
     theSuperView = aSuperView;
     [self setupView];
     tableList = [[CPArray alloc] init];
+    filteredTableList = [[CPArray alloc] init];
     responseData = [[CPArray alloc] init];
 
     [[CPNotificationCenter defaultCenter] addObserver:self selector:@selector(showDBTables:) name:SHOW_DATABASE_TABLES_NOTIFICATION object:nil];
@@ -31,11 +34,19 @@
   var viewWidth = [theSuperView bounds].size.width;
 
  // create a CPScrollView that will contain the CPTableView
-  var scrollView = [[CPScrollView alloc] initWithFrame:[theSuperView bounds]];
+  var scrollView = [[CPScrollView alloc] initWithFrame:CGRectMake(0,35,viewWidth,[theSuperView frame].size.height - 35)];
   [scrollView setAutoresizingMask:CPViewWidthSizable | CPViewHeightSizable];
   [scrollView setAutohidesScrollers:YES];
   [scrollView setHasHorizontalScroller:NO];
   [scrollView setBackgroundColor:[CPColor colorWithHexString:@"DEE4EA"]];
+  
+  // create the filter earch field
+  tableFilterSearchField = [[CPSearchField alloc] initWithFrame:CGRectMake(4,2,viewWidth-8,30)];
+  [tableFilterSearchField setPlaceholderString:@"Filter"];
+  [tableFilterSearchField setAutoresizingMask:CPViewWidthSizable];
+  [tableFilterSearchField setTarget:self];
+  [tableFilterSearchField setAction:@selector(tableFilterSearchFieldDidChange:)];
+  [tableFilterSearchField setSendsSearchStringImmediately:YES];
   
   // create the CPTableView
   tableView = [[CPTableView alloc] initWithFrame:[scrollView bounds]];
@@ -60,7 +71,10 @@
   [tableView addTableColumn:column];
   
   [scrollView setDocumentView:tableView];
+  
   [theSuperView addSubview:scrollView];
+  [theSuperView addSubview:tableFilterSearchField];
+  [theSuperView setBackgroundColor:[CPColor colorWithHexString:@"DEE4EA"]];
 }
 
 
@@ -68,7 +82,7 @@
 {
   // FIXME: Find out what 'SJSelectedDBTableRow' notification does...
   // [[CPNotificationCenter defaultCenter] postNotificationName:@"SJSelectedDBTableRow" object:[tableList objectAtIndex:aRow]];
-  var tablename = [tableList objectAtIndex:aRow];
+  var tablename = [filteredTableList objectAtIndex:aRow];
   [[CPNotificationCenter defaultCenter] postNotificationName:TABLE_SELECTED_NOTIFICATION object:tablename];
 
  return YES;
@@ -77,13 +91,13 @@
 
 - (CPNumber)numberOfRowsInTableView:(CPTableView)aTableView
 {
-  return [tableList count];
+  return [filteredTableList count];
 }
 
 
 - (id)tableView:(CPTableView)aTableView objectValueForTableColumn:(CPTableColumn)aTableColumn row:(CPInteger)row
 {
-  return [tableList objectAtIndex:row];
+  return [filteredTableList objectAtIndex:row];
 }
 
 
@@ -106,6 +120,32 @@
   httpConnection = [CPURLConnection connectionWithRequest:[httpRequest toRequest] delegate:self];
 }
 
+- (@action)tableFilterSearchFieldDidChange:(id)sender
+{
+	var count = [tableList count];
+	var searchString = [tableFilterSearchField stringValue];
+	
+	// if there is no search, fill the array and return
+	if( searchString == @"" )
+	{
+		filteredTableList = [tableList copy];
+		[tableView reloadData];
+		return;
+	}
+	
+	[filteredTableList removeAllObjects];
+	
+	for( var i = 0; i < count; i++ ) 
+	{
+		var range = [[tableList objectAtIndex:i] rangeOfString:searchString options:CPCaseInsensitiveSearch];
+		
+		if( range.length )
+			[filteredTableList addObject:[tableList objectAtIndex:i]];
+	}
+	
+	[tableView reloadData];
+}
+
 
 - (void)handleBadResponse:(id)jsObject
 {
@@ -118,6 +158,9 @@
   for(var i=0; i < jsObject.tables.length; i++) {
     [tableList addObject:jsObject.tables[i]];
   }
+  
+  filteredTableList = [tableList copy];
+  
   [tableView reloadData];
 }
 
