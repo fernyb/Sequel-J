@@ -10,8 +10,9 @@
 @import "Categories/CPSplitView+Categories.j"
 @import "Categories/CPArray+Categories.j"
 
-@import "SJLeftView.j"
+@import "SJTablesListViewController.j"
 @import "SJLoginViewController.j"
+@import "SJFavouritesListViewController.j"
 
 @import "SJStructureTabController.j"
 @import "SJContentTabController.j"
@@ -36,8 +37,9 @@
     @outlet SJTableInfoTabController tableInfoTabController;
     @outlet SJQueryTabController queryTabController;
 
-    SJLeftView theLeftView;
-    SJLoginViewController theLoginViewController;
+    SJTablesListViewController 		tablesListViewController;
+    SJFavouritesListViewController	favouritesListViewController;
+    SJLoginViewController 			theLoginViewController;
     CPArray viewControllers;
 }
 
@@ -98,6 +100,9 @@
 - (void)didLogin:(CPNotification)aNotification
 {
   [self switchToView:@"SJContentTabController"];
+  
+  [[[self contentLeftView] subviews] makeObjectsPerformSelector:@selector(removeFromSuperview)];
+  tablesListViewController = [[SJTablesListViewController alloc] initWithSuperView:[self contentLeftView]]; 
 }
 
 
@@ -158,7 +163,7 @@
 
 - (void)setupLeftView
 {
-  theLeftView = [[SJLeftView alloc] initWithSuperView:[self contentLeftView]];   
+    favouritesListViewController = [[SJFavouritesListViewController alloc] initWithSuperView:[self contentLeftView]]; 
 }
 
 - (void)setupRightView
