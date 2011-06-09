@@ -4,7 +4,7 @@
 @import "SJTableListItemDataView.j"
 
 
-@implementation SJLeftView : CPObject
+@implementation SJTablesListViewController : CPObject
 {
   CPView		theSuperView;
   CPTableView 	tableView;
@@ -13,6 +13,7 @@
   CPURLConnection httpConnection;
   CPArray 		responseData;
   CPSearchField	tableFilterSearchField;
+  CPButtonBar	bottomButtonBar;
 }
 
 - (id)initWithSuperView:(CPView)aSuperView
@@ -34,7 +35,7 @@
   var viewWidth = [theSuperView bounds].size.width;
 
  // create a CPScrollView that will contain the CPTableView
-  var scrollView = [[CPScrollView alloc] initWithFrame:CGRectMake(0,35,viewWidth,[theSuperView frame].size.height - 35)];
+  var scrollView = [[CPScrollView alloc] initWithFrame:CGRectMake(0,35,viewWidth,[theSuperView frame].size.height - 35 - 23)];
   [scrollView setAutoresizingMask:CPViewWidthSizable | CPViewHeightSizable];
   [scrollView setAutohidesScrollers:YES];
   [scrollView setHasHorizontalScroller:NO];
@@ -72,9 +73,32 @@
   
   [scrollView setDocumentView:tableView];
   
+  // create the bottom button bar
+  bottomButtonBar = [[CPButtonBar alloc] initWithFrame:CGRectMake(0,[theSuperView frame].size.height-23, viewWidth, 23)];
+  [bottomButtonBar setAutoresizingMask:CPViewWidthSizable | CPViewMinYMargin];
+
+  var addButton = [CPButtonBar plusButton];
+  [addButton setAction:@selector(showAddTableDialog:)];
+  [addButton setTarget:self];
+  [addButton setEnabled:YES];
+  
+  var settingsButton = [CPButtonBar actionPopupButton];
+  [settingsButton setAction:@selector(showSettingsPopup:)];
+  [settingsButton setTarget:self];
+  [settingsButton setEnabled:YES];
+  [settingsButton addItemsWithTitles:[@"Rename Table...", @"Duplicate Table..."]];
+  
+   var refreshButton = [CPButtonBar plusButton];
+  [refreshButton setAction:@selector(refreshTables:)];
+  [refreshButton setTarget:self];
+  [refreshButton setEnabled:YES];
+  
+  [bottomButtonBar setButtons:[addButton, settingsButton, refreshButton]];
+  
   [theSuperView addSubview:scrollView];
   [theSuperView addSubview:tableFilterSearchField];
   [theSuperView setBackgroundColor:[CPColor colorWithHexString:@"DEE4EA"]];
+  [theSuperView addSubview:bottomButtonBar];
 }
 
 
@@ -144,6 +168,16 @@
 	}
 	
 	[tableView reloadData];
+}
+
+- (@action)showAddTableDialog:(id)sender
+{
+	alert( 'Add Table' );
+}
+
+- (@action)refreshTables:(id)sender
+{
+	alert( "Refresh Tables" );
 }
 
 
