@@ -59,6 +59,7 @@ class App < Sinatra::Base
     begin
       render databases: @mysql.list_dbs
     rescue Mysql::Error => e
+      @error = e
       render databases: []
     end
   end
@@ -67,6 +68,7 @@ class App < Sinatra::Base
     begin
       render tables: @mysql.list_tables
     rescue Mysql::Error => e
+      @error = e      
       render tables: []
     end
   end
