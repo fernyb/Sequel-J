@@ -69,30 +69,124 @@
 {
   var runCurrentBtn = [[CPButton alloc] initWithFrame:CGRectMake(CGRectGetWidth([bar frame]) - 170, 1, 100, 23)];
   [runCurrentBtn setAutoresizingMask:CPViewMinXMargin | CPViewMaxYMargin];
-  [runCurrentBtn setTitle:@"  Run Current "];
+  [runCurrentBtn setTitle:@"Run Current"];
+  [runCurrentBtn setBezelStyle:CPRoundedBezelStyle];
   [runCurrentBtn sizeToFit];
-  [bar addSubview:runCurrentBtn];  
+  [runCurrentBtn setTarget:self];
+  [runCurrentBtn setAction:@selector(didClickRunCurrent:)];
+  [bar addSubview:runCurrentBtn];
   
   var runAllBtn = [[CPButton alloc] initWithFrame:CGRectMake([runCurrentBtn frame].origin.x + CGRectGetWidth([runCurrentBtn frame]) + 10, 1, 75, 23)];
   [runAllBtn setAutoresizingMask:CPViewMinXMargin | CPViewMaxYMargin];
-  [runAllBtn setTitle:@" Run All "];
+  [runAllBtn setTitle:@"Run All"];
+  [runAllBtn setBezelStyle:CPRoundedBezelStyle];
   [runAllBtn sizeToFit];
+  [runAllBtn setTarget:self];
+  [runAllBtn setAction:@selector(didClickRunAll:)];
   [bar addSubview:runAllBtn];
 
 
   var queryFavBtn = [[CPButton alloc] initWithFrame:CGRectMake(4, 1, 75, 23)];
   [queryFavBtn setAutoresizingMask:CPViewMaxXMargin | CPViewMaxYMargin];
   [queryFavBtn setTitle:@"Query Favorites"];
+  [queryFavBtn setBezelStyle:CPRoundedBezelStyle];
   [queryFavBtn sizeToFit];
+  [queryFavBtn setTarget:self];
+  [queryFavBtn setAction:@selector(didClickQueryFavorites:)];
   [bar addSubview:queryFavBtn];
 
   var queryHisBtn = [[CPButton alloc] initWithFrame:CGRectMake([queryFavBtn frame].origin.x + CGRectGetWidth([queryFavBtn frame]) + 10, 1, 75, 23)];
   [queryHisBtn setAutoresizingMask:CPViewMaxXMargin | CPViewMaxYMargin];
   [queryHisBtn setTitle:@"Query History"];
+  [queryHisBtn setBezelStyle:CPRoundedBezelStyle];
   [queryHisBtn sizeToFit];
+  [queryHisBtn setTarget:self];
+  [queryHisBtn setAction:@selector(didClickQueryHistory:)];
   [bar addSubview:queryHisBtn];  
 }
 
+
+- (void)didClickRunCurrent:(CPButton)sender
+{
+  alert('Run Current');
+}
+
+- (void)didClickRunAll:(CPButton)sender
+{
+  alert('Run All');
+}
+
+- (void)didClickQueryFavorites:(CPButton)sender
+{
+  /* CPMenu */var menu = [[CPMenu alloc] initWithTitle:@"Favorites"];
+  var menuItem;
+  menuItem = [[CPMenuItem alloc] initWithTitle:@"Save to Favorites" action:@selector(saveToFavoritesAction:) keyEquivalent:nil];
+  [menuItem setTarget:self];
+  [menu addItem:menuItem];
+  
+  menuItem = [[CPMenuItem alloc] initWithTitle:@"Edit Favorites..." action:@selector(editFavoritesAction:) keyEquivalent:nil];
+  [menuItem setTarget:self];
+  [menu addItem:menuItem];
+  
+  var locationMenuPoint = [[[self contentView] superview] convertPoint:[sender frame].origin fromView:sender];
+  locationMenuPoint.y += 40 * 2;
+  
+  [self showContextualMenu:menu atLocation:locationMenuPoint forView:sender];
+}
+
+- (void)didClickQueryHistory:(CPButton)sender
+{
+  /* CPMenu */var menu = [[CPMenu alloc] initWithTitle:@"Query History"];
+  var menuItem;
+  menuItem = [[CPMenuItem alloc] initWithTitle:@"Save History" action:@selector(saveHistoryAction:) keyEquivalent:nil];
+  [menuItem setTarget:self];
+  [menu addItem:menuItem];
+  
+  menuItem = [[CPMenuItem alloc] initWithTitle:@"Clear Global History" action:@selector(clearGlobalHistory:) keyEquivalent:nil];
+  [menuItem setTarget:self];
+  [menu addItem:menuItem];
+  
+  var locationMenuPoint = [[[self contentView] superview] convertPoint:[sender frame].origin fromView:sender];
+  locationMenuPoint.y += 40 * 2;
+  locationMenuPoint.x -= 122;
+  
+  [self showContextualMenu:menu atLocation:locationMenuPoint forView:sender];
+}
+
+- (void)showContextualMenu:(CPMenu)aMenu atLocation:(CPPoint)point forView:(id)aview
+{
+  var anEvent = [CPEvent mouseEventWithType:CPLeftMouseDown 
+                                   location:point 
+                              modifierFlags:0 
+                                  timestamp:[[CPApp currentEvent] timestamp]
+                               windowNumber:[[[self view] window] windowNumber]
+                                    context:nil
+                                eventNumber:1
+                                 clickCount:1 
+                                   pressure:0.0];
+
+  [CPMenu popUpContextMenu:aMenu withEvent:anEvent forView:aview];    
+}
+
+- (void)saveToFavoritesAction:(CPMenuItem)sender
+{
+  alert('save to favorites action');
+}
+
+- (void)editFavoritesAction:(CPMenuItem)sender
+{
+  alert('edit favorites action');
+}
+
+- (void)saveHistoryAction:(CPMenuItem)sender
+{
+  alert('Save History Action');
+}
+
+- (void)clearGlobalHistory:(CPMenuItem)sender
+{
+  alert('Clear Global History');
+}
 
 - (void)viewDidAdjust
 {
