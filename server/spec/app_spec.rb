@@ -230,6 +230,34 @@ describe "App" do
   end
 
   describe '/indexes/:table' do
+    it 'returns indexes for table_name' do
+      @mysql.should_receive(:query).with("SHOW INDEX FROM `table_name`").and_return([
+        ["checkins", "0", "PRIMARY", "1", "id", "A", "85", nil, nil, "", "BTREE", ""],
+        ["checkins", "1", "index_checkins_on_id", "1", "id", "A", "85", nil, nil, "", "BTREE", ""],
+        ["checkins", "1", "index_checkins_on_user_id", "1", "user_id", "A", "8", nil, nil, "YES", "BTREE", ""],
+        ["checkins", "1", "index_checkins_on_created_at", "1", "created_at", "A", "85", nil, nil, "YES", "BTREE", ""],
+        ["checkins", "1", "index_checkins_on_latitude", "1", "latitude", "A", "85", nil, nil, "YES", "BTREE", ""],
+        ["checkins", "1", "index_checkins_on_longitude", "1", "longitude", "A", "85", nil, nil, "YES", "BTREE", ""],
+        ["checkins", "1", "test_index", "1", "test", "A", "2", nil, nil, "YES", "BTREE", ""]
+      ])
+      
+      get '/indexes/table_name'
+      
+      json['path'].should == '/indexes/table_name'
+      json['error'].should == ''
+      json['indexes'].size.should == 7
+      json['indexes'].first.keys.should include('Non_unique', 'Key_name', 'Seq_in_index', 'Column_name', 'Collation', 'Cardinality')
+      json['indexes'].first.keys.should include('Sub_part', 'Packed', 'Null', 'Index_type', 'Comment')
+    end
+    
+    it 'returns error message when Mysql gives an error' do
+      @mysql.should_receive(:query).with("SHOW INDEX FROM `table_name`").and_raise(Mysql::Error.new('There is an error...'))
+      get '/indexes/table_name'
+      
+      json['path'].should == '/indexes/table_name'
+      json['indexes'].size.should == 0
+      json['error'].should == 'There is an error...'
+    end
   end
   
   describe '/relations/:table' do
