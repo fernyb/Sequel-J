@@ -261,11 +261,135 @@ describe "App" do
   end
   
   describe '/relations/:table' do
+    it 'returns relations for table checkins' do
+      sql_code = File.open("#{DIR_PATH}/fixture/checkins.sql") {|f| f.read }
+      @mysql.should_receive(:query).with("SHOW CREATE TABLE `checkins`").and_return(['checkins', sql_code])
+      get '/relations/checkins'
+      
+      json['path'].should == '/relations/checkins'
+      json['error'].should == ''
+      json['relations'].size.should == 4
+      json['relations'].each do |r|
+        r.keys.should include('name', 'foreign_key', 'reference_key', 'on_delete', 'on_update', 'reference_table')
+      end
+    end
+    
+    it 'returns error message when Mysql throws an error' do
+      @mysql.should_receive(:query).with("SHOW CREATE TABLE `checkins`").and_raise(Mysql::Error.new('There is an error'))
+      get '/relations/checkins'
+      
+      json['path'].should == '/relations/checkins'
+      json['error'].should == 'There is an error'
+      json['relations'].size.should == 0
+    end
   end
   
   describe '/show_create_table/:table' do
+    it 'returns sql create table code' do
+      sql_code = File.open("#{DIR_PATH}/fixture/checkins.sql") {|f| f.read }
+      @mysql.should_receive(:query).with("SHOW CREATE TABLE `checkins`").and_return(['checkins', sql_code])
+      get '/show_create_table/checkins'
+      
+      json['sql'].should == sql_code
+      json['path'].should == '/show_create_table/checkins'
+      json['error'].should == ''
+    end
+    
+    it 'returns error message when Mysql throws and error' do
+      @mysql.should_receive(:query).with("SHOW CREATE TABLE `checkins`").and_raise(Mysql::Error.new('There is a error'))
+      get '/show_create_table/checkins'
+      
+      json['path'].should == '/show_create_table/checkins'
+      json['error'].should == 'There is a error'
+      json['sql'].should == ''
+    end
   end
   
   describe '/table_info/:table' do
+    it 'returns table info' do
+      @mysql.should_receive(:query).with("SHOW TABLE STATUS LIKE 'checkins'").and_return([[
+        "checkins", "InnoDB", "10", "Compact", "85", "192", "16384", "0", "98304", "428867584", "86", "2011-06-02 15:09:52", nil, nil, "utf8_general_ci", nil, "", ""
+      ]])
+      @mysql.should_receive(:query).with("SELECT Engine, Support FROM information_schema.engines WHERE support IN ('DEFAULT', 'YES')").and_return([
+        ["InnoDB", "YES"],
+        ["MRG_MYISAM", "YES"],
+        ["BLACKHOLE", "YES"],
+        ["CSV", "YES"],
+        ["MEMORY", "YES"],
+        ["ARCHIVE", "YES"],
+        ["MyISAM", "DEFAULT"]
+      ])
+      @mysql.should_receive(:query).with("SELECT * FROM information_schema.character_sets ORDER BY character_set_name ASC").and_return([
+        ["ucs2", "ucs2_general_ci", "UCS-2 Unicode", "2"],
+        ["ujis", "ujis_japanese_ci", "EUC-JP Japanese", "3"],
+        ["utf8", "utf8_general_ci", "UTF-8 Unicode", "3"]
+      ])
+      @mysql.should_receive(:query).
+      with("SELECT * FROM information_schema.collations WHERE character_set_name = 'utf8' ORDER BY 'collation_name' ASC").
+      and_return([
+       ["utf8_general_ci", "utf8", "33", "Yes", "Yes", "1"],
+       ["utf8_bin", "utf8", "83", "", "Yes", "1"],
+       ["utf8_unicode_ci", "utf8", "192", "", "Yes", "8"],
+       ["utf8_icelandic_ci", "utf8", "193", "", "Yes", "8"],
+       ["utf8_latvian_ci", "utf8", "194", "", "Yes", "8"],
+       ["utf8_romanian_ci", "utf8", "195", "", "Yes", "8"]
+      ])
+      sql_code = File.open("#{DIR_PATH}/fixture/checkins.sql") {|f| f.read }
+      @mysql.should_receive(:query).with("SHOW CREATE TABLE `checkins`").and_return(['checkins', sql_code])
+      
+      get '/table_info/checkins'
+      
+      json['path'].should == '/table_info/checkins'
+      json['error'].should == ''
+      json['status'].should == {"name"=>"checkins", 
+        "engine"=>"InnoDB", 
+        "version"=>"10", 
+        "row_format"=>"Compact", 
+        "rows"=>"85", 
+        "avg_row_length"=>"192", 
+        "data_length"=>"16384", 
+        "max_data_length"=>"0", 
+        "index_length"=>"98304", 
+        "data_free"=>"428867584", 
+        "auto_increment"=>"86", 
+        "create_time"=>"2011-06-02 15:09:52", 
+        "update_time"=>"", 
+        "check_time"=>"", 
+        "collation"=>"utf8_general_ci", 
+        "checksum"=>"", 
+        "create_options"=>"", 
+        "comment"=>""}
+      
+      json['engines'].should == ["InnoDB", "MRG_MYISAM", "BLACKHOLE", "CSV", "MEMORY", "ARCHIVE", "MyISAM"]
+      json['encodings'].should == [{"collation_name"=>"ucs2", "collate_set_name"=>"ucs2_general_ci", "description"=>"UCS-2 Unicode"}, 
+                                   {"collation_name"=>"ujis", "collate_set_name"=>"ujis_japanese_ci", "description"=>"EUC-JP Japanese"}, 
+                                   {"collation_name"=>"utf8", "collate_set_name"=>"utf8_general_ci", "description"=>"UTF-8 Unicode"}]
+      
+      json['collations'].should == [{"collation_name"=>"utf8_general_ci", "character_set_name"=>"utf8", "id"=>"33"}, 
+                                    {"collation_name"=>"utf8_bin", "character_set_name"=>"utf8", "id"=>"83"}, 
+                                    {"collation_name"=>"utf8_unicode_ci", "character_set_name"=>"utf8", "id"=>"192"}, 
+                                    {"collation_name"=>"utf8_icelandic_ci", "character_set_name"=>"utf8", "id"=>"193"}, 
+                                    {"collation_name"=>"utf8_latvian_ci", "character_set_name"=>"utf8", "id"=>"194"}, 
+                                    {"collation_name"=>"utf8_romanian_ci", "character_set_name"=>"utf8", "id"=>"195"}]
+      
+      json['sql'].should == sql_code
+    end
+    
+    it 'returns error message when Mysql throws an error' do
+      @mysql.should_receive(:query).with("SHOW TABLE STATUS LIKE 'checkins'").and_raise(Mysql::Error.new('Mysql Error Message'))
+      
+      sql_code = File.open("#{DIR_PATH}/fixture/checkins.sql") {|f| f.read }
+      @mysql.should_receive(:query).with("SHOW CREATE TABLE `checkins`").and_return(['checkins', sql_code])
+      
+      get '/table_info/checkins'
+      
+      json['path'].should == '/table_info/checkins'
+      json['error'].should == 'Mysql Error Message'
+      json['status'].should == ''
+      json['engines'].should == ''
+      json['encodings'].size.should == 0
+      json['collations'].size.should == 0
+      json['sql'].should == sql_code
+    end
   end
 end

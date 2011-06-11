@@ -127,9 +127,8 @@ class App < Sinatra::Base
   
   get '/indexes/:table' do
     results = query "SHOW INDEX FROM `#{params[:table]}`"
-    fields = []
-    results.each {|row|
-      fields << {
+    fields = results.map {|row|
+      {
         'Non_unique'   => row[1],
         'Key_name'     => row[2],
         'Seq_in_index' => row[3],
@@ -144,7 +143,7 @@ class App < Sinatra::Base
       }
     }
     
-    render indexes: fields 
+    render indexes: fields
   end
   
   
@@ -193,7 +192,7 @@ class App < Sinatra::Base
   get '/table_info/:table' do
     results = query "SHOW TABLE STATUS LIKE '#{params[:table]}'"
     status = results.map {|item|
-      item = item.map{|value| value.nil? ? '' : value }
+      item = item.map {|value| value.nil? ? '' : value }
       {
         name:            item[0],
         engine:          item[1],
@@ -232,6 +231,8 @@ class App < Sinatra::Base
     sql = sql_for_table params[:table]
     encodings ||= []
     collations ||= []
+    status ||= ''
+    engines ||= ''
     
     render status: status, engines: engines, encodings: encodings, collations: collations, sql: sql
   end

@@ -1,0 +1,22 @@
+CREATE TABLE `checkins` (
+  `id` int(11) unsigned zerofill NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) DEFAULT NULL,
+  `name` varchar(255) DEFAULT NULL,
+  `description` text,
+  `latitude` float DEFAULT NULL,
+  `longitude` float DEFAULT NULL,
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL,
+  `test` varchar(255) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `index_checkins_on_id` (`id`),
+  KEY `index_checkins_on_user_id` (`user_id`),
+  KEY `index_checkins_on_created_at` (`created_at`),
+  KEY `index_checkins_on_latitude` (`latitude`),
+  KEY `index_checkins_on_longitude` (`longitude`),
+  KEY `test_index` (`test`),
+  CONSTRAINT `checkins_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
+  CONSTRAINT `checkins_ibfk_2` FOREIGN KEY (`id`) REFERENCES `checkins` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `checkins_ibfk_3` FOREIGN KEY (`id`) REFERENCES `checkins` (`id`),
+  CONSTRAINT `checkins_ibfk_4` FOREIGN KEY (`id`) REFERENCES `checkins` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB AUTO_INCREMENT=86 DEFAULT CHARSET=utf8
