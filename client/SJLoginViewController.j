@@ -4,6 +4,7 @@
 @import "SJHTTPRequest.j"
 @import "SJConstants.j"
 
+var sharedLoginViewController = nil;
 
 @implementation SJLoginViewController : CPObject
 {
@@ -14,6 +15,10 @@
   CPArray responseData;
 }
 
++ (id)sharedLoginViewController
+{
+	return sharedLoginViewController;
+}
 
 - (id)initWithView:(CPView)aView
 {
@@ -22,6 +27,9 @@
     contentView = aView;
     [self setupView];
   }
+  
+  sharedLoginViewController = self;
+  
   return self;
 }
 
@@ -86,13 +94,17 @@
 	[self addTextField:@"Host" withLabel:@"Host" atPosition:1 withTag:101];
 	[self addTextField:@"Username" withLabel:@"Username" atPosition:2 withTag:102];
 	[self addTextField:@"Password" withLabel:@"Password" atPosition:3 withTag:103];
-  [self addTextField:@"Database" withLabel:@"Database" atPosition:4 withTag:104];
+  	[self addTextField:@"Database" withLabel:@"Database" atPosition:4 withTag:104];
   
-  var rect = [self addTextField:@"Port" withLabel:@"3306" atPosition:5 withTag:105];
+  	var rect = [self addTextField:@"Port" withLabel:@"3306" atPosition:5 withTag:105];
 	
 	var loginbtn = [[CPButton alloc] initWithFrame:CGRectMake(rect.origin.x + rect.size.width - 102, 
 	  rect.origin.y + rect.size.height + 10, 
 	  100, 24)];
+	
+	var favoriteButton = [[CPButton alloc] initWithFrame:CGRectMake(rect.origin.x + rect.size.width - 242, 
+	  rect.origin.y + rect.size.height + 10, 
+	  120, 24)];
 	
 	[loginbtn setBordered:YES];
 	[loginbtn setTitle:@"Connect"];
@@ -100,7 +112,14 @@
 	[loginbtn setTarget:self];
 	[loginbtn setAction:@selector(connectionButtonPressed:)];
 	
+	[favoriteButton setBordered:YES];
+	[favoriteButton setTitle:@"Add to Favorites"];
+	[favoriteButton setAutoresizingMask:CPViewMinXMargin | CPViewMaxXMargin | CPViewMinYMargin | CPViewMaxYMargin];
+	[favoriteButton setTarget:self];
+	[favoriteButton setAction:@selector(addToFavoritesButtonPressed:)];
+	
 	[connectionView addSubview:loginbtn];
+	[connectionView addSubview:favoriteButton];
 	[connectionView setBackgroundColor:[CPColor colorWithHexString:"eeeeee"]];
 	
 	// Assign The Next Key View
@@ -131,11 +150,27 @@
   [port setNextKeyView:name];
 }
 
+- (void)populateWithConnectionDetails:(CPDictionary)notificationDetails name:(CPString)aName
+{
+  var name     = [connectionView viewWithTag:100];
+  var host     = [connectionView viewWithTag:101];
+  var username = [connectionView viewWithTag:102];
+  var password = [connectionView viewWithTag:103];
+  var database = [connectionView viewWithTag:104];
+  var port     = [connectionView viewWithTag:105];
+  
+  [name 		setStringValue:aName];
+  [host 		setStringValue:[notificationDetails objectForKey:@"connectionHost"]];
+  [username		setStringValue:[notificationDetails objectForKey:@"connectionUsername"]];
+  [password 	setStringValue:[notificationDetails objectForKey:@"connectionPassword"]];
+  [database 	setStringValue:[notificationDetails objectForKey:@"connectionDatabase"]];
+  [port 		setStringValue:[notificationDetails objectForKey:@"connectionPort"]];
+}
 
 - (void)addSpinnerFromRect:(CGRect)rect
 {
   spinnerView = [[CPView alloc] initWithFrame:CGRectMake(rect.origin.x + 2, 
-    rect.origin.y + rect.size.height, 
+    rect.origin.y + rect.size.height  + 30, 
     140, 18)];
   
   var spinner = [[EKSpinner alloc] initWithFrame:CGRectMake(0, 0, 18, 18) andStyle:@"medium_gray"];
@@ -187,6 +222,17 @@
   httpConnection = [CPURLConnection connectionWithRequest:[request toRequest] delegate:self];
 }
 
+- (void)addToFavoritesButtonPressed:(id)sender
+{
+	[[SJFavoritesController sharedFavoritesController] addFavoriteWithType:@"standard"
+		name: 		[[contentView viewWithTag:100] stringValue]
+  		host: 		[[contentView viewWithTag:101] stringValue]
+  		username: 	[[contentView viewWithTag:102] stringValue]
+  		password: 	[[contentView viewWithTag:103] stringValue]
+  		database: 	[[contentView viewWithTag:104] stringValue]
+  		port: 		[[contentView viewWithTag:105] stringValue]
+  	];
+}
 
 - (void)databaseConnectionDidFail:(id)jsObject
 {

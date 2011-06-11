@@ -12,7 +12,7 @@
 
 @import "SJTablesListViewController.j"
 @import "SJLoginViewController.j"
-@import "SJFavouritesListViewController.j"
+@import "SJFavoritesListViewController.j"
 
 @import "SJStructureTabController.j"
 @import "SJContentTabController.j"
@@ -38,7 +38,7 @@
     @outlet SJQueryTabController queryTabController;
 
     SJTablesListViewController 		tablesListViewController;
-    SJFavouritesListViewController	favouritesListViewController;
+    SJFavoritesListViewController	favoritesListViewController;
     SJLoginViewController 			theLoginViewController;
     CPArray viewControllers;
 }
@@ -163,7 +163,7 @@
 
 - (void)setupLeftView
 {
-    favouritesListViewController = [[SJFavouritesListViewController alloc] initWithSuperView:[self contentLeftView]]; 
+    favoritesListViewController = [[SJFavoritesListViewController alloc] initWithSuperView:[self contentLeftView]]; 
 }
 
 - (void)setupRightView
