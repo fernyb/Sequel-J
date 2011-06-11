@@ -35,6 +35,6 @@ Once you have the server running you can now open Sequel-J (client/index-debug.h
 When completed a screencast will be available to demonstrate the application.
 
 
-![Sequel-J](http://cloud.github.com/downloads/fernyb/Sequel-J/sequel-j-login.png)
+![Sequel-J](http://github.com/downloads/fernyb/Sequel-J/sequel-j-login.png)
 
-![Sequel-J Content Tab View](http://cloud.github.com/downloads/fernyb/Sequel-J/sequel-j-content-tab.png)
+![Sequel-J Content Tab View](http://github.com/downloads/fernyb/Sequel-J/sequel-j-content-tab.png)
