@@ -31,7 +31,7 @@ class App < Sinatra::Base
   end
   
   def table_columns table_name
-    results = @mysql.query("SHOW COLUMNS FROM `#{table_name}`")
+    results = query("SHOW COLUMNS FROM `#{table_name}`")
     results.collect {|f| f[0] }
   end
   
@@ -97,12 +97,9 @@ class App < Sinatra::Base
   get '/rows/:table' do
     names = table_columns params[:table]
     results = query "SELECT * FROM `#{params[:table]}` LIMIT 0,100"
-    
-    rows = []
-    results.each {|f|
-      row = {}
-      f.each_with_index {|v,idx| row.merge!({ names[idx].to_s => v.to_s }) }
-      rows << row
+    rows = results.map {|f|
+      f = f.map {|v| v.nil? ? '' : v }
+      Hash[*names.zip(f).flatten]
     }
     
     render rows: rows
@@ -110,10 +107,8 @@ class App < Sinatra::Base
   
   get '/schema/:table' do
     results = query "SHOW COLUMNS FROM `#{params[:table]}`"
-  
-    fields = []
-    results.each {|row|
-      fields << {
+    fields = results.map {|row|
+      {
         'Field'      => row[0],
         'Type'       => (row[1] =~ /([a-z]+)/i ? $1 : ''),
         'Length'     => (row[1] =~ /([0-9]+)/ ? $1 : ''),
@@ -124,7 +119,7 @@ class App < Sinatra::Base
         'Key'        => row[3].to_s,
         'Default'    => (row[4].nil? ? 'NULL' : row[4]),
         'Extra'      => row[5]
-      } 
+      }
     }
     
     render fields: fields
