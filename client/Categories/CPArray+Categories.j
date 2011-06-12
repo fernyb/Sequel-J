@@ -31,4 +31,39 @@
   return results;
 }
 
+- (void)moveIndexes:(CPIndexSet)indexes toIndex:(int)insertIndex beforeExisting:(BOOL)beforeExisting
+{
+    var aboveCount = 0,
+        object,
+        removeIndex;
+	
+	var index = [indexes lastIndex];
+	
+    while (index != CPNotFound)
+	{
+		if (index >= insertIndex)
+		{
+
+			removeIndex = index + aboveCount;
+			
+			aboveCount ++;
+		}
+		else
+		{
+			removeIndex = index;
+			
+			if( beforeExisting )
+				insertIndex --;
+			else
+				insertIndex ++;
+		}
+
+		object = [self objectAtIndex:removeIndex];
+		[self removeObjectAtIndex:removeIndex];
+		[self insertObject:object atIndex:insertIndex];
+		
+		index = [indexes indexLessThanIndex:index];
+	}
+}
+
 @end

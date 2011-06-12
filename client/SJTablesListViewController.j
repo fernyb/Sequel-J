@@ -99,6 +99,8 @@
   [theSuperView addSubview:tableFilterSearchField];
   [theSuperView setBackgroundColor:[CPColor colorWithHexString:@"DEE4EA"]];
   [theSuperView addSubview:bottomButtonBar];
+  
+  [[theSuperView superview] setButtonBar:bottomButtonBar forDividerAtIndex:0];
 }
 
 

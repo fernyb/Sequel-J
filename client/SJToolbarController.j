@@ -28,6 +28,8 @@ var StructureToolbarItemIdentifier  = @"StructureToolbarItemIdentifier",
     _databases = [[CPArray alloc] init];
     responseData = [[CPArray alloc] init];
     [self setupToolbar];
+    
+    [[CPNotificationCenter defaultCenter] addObserver:self selector:@selector(enableQueryToolBarItem) name:@"kLoginSuccess" object:nil];
     [[CPNotificationCenter defaultCenter] addObserver:self selector:@selector(showDatabases:) name:SHOW_DATABASES_NOTIFICATION object:nil];
   }
   return self;
@@ -72,6 +74,7 @@ var StructureToolbarItemIdentifier  = @"StructureToolbarItemIdentifier",
 - (CPToolbarItem)toolbar:(CPToolbar)aToolbar itemForItemIdentifier:(CPString)anItemIdentifier willBeInsertedIntoToolbar:(BOOL)aFlag
 {
     var toolbarItem = [[CPToolbarItem alloc] initWithItemIdentifier:anItemIdentifier];
+    [toolbarItem setEnabled:NO];
     
     switch(anItemIdentifier) {
       case SelectDatabaseToolbarItem :
@@ -104,28 +107,31 @@ var StructureToolbarItemIdentifier  = @"StructureToolbarItemIdentifier",
 
 - (void)addSelectDatabaseToolbarItemFor:(CPToolbarItem)toolbarItem
 {
-  var selectDBButtonWidth = 200;
-  var selectDBButtonHeight = 24;
+ 	var selectDBButtonWidth = 200;
+	var selectDBButtonHeight = 24;
   
 	var selectDBButton = [[CPPopUpButton alloc] initWithFrame:CGRectMake(0, 0, selectDBButtonWidth, selectDBButtonHeight)];
 
 	[selectDBButton setTarget:self];
 	[selectDBButton setAction:@selector(selectedDatabase:)];
 	[selectDBButton setTitle:@"Choose Database..."];
+	[selectDBButton setEnabled:NO];
 	
 	// Load the Items for the Popup Button
-  [self loadItemsForPopupButton:selectDBButton];
+	[self loadItemsForPopupButton:selectDBButton];
   
-  [toolbarItem setView:selectDBButton];
+	[toolbarItem setView:selectDBButton];
 	[toolbarItem setLabel:@"Select Database"];
 	
 	[toolbarItem setMinSize:CGSizeMake(selectDBButtonWidth, selectDBButtonHeight)];
-  [toolbarItem setMaxSize:CGSizeMake(selectDBButtonWidth, selectDBButtonHeight)]; 
+	[toolbarItem setMaxSize:CGSizeMake(selectDBButtonWidth, selectDBButtonHeight)]; 
 }
 
 - (CPArray)itemsForPopupButton
 {
   var items = [[CPArray alloc] init];
+  [items addObject:@"Choose Database..."];
+  [items addObject:[CPMenuItem separatorItem]];
   [items addObject:@"Add Database"];
   [items addObject:@"Refresh Databases"];
   [items addObject:[CPMenuItem separatorItem]];
@@ -169,7 +175,28 @@ var StructureToolbarItemIdentifier  = @"StructureToolbarItemIdentifier",
   httpConnection = [CPURLConnection connectionWithRequest:[httpRequest toRequest] delegate:self];
 }
 
+- (void)enableToolBarItems
+{
+	var count = [[toolbar items] count],
+		items = [toolbar items];
+	
+	for(var i=0; i < count; i++) {
+		var item = [items objectAtIndex:i];
+      	[item setEnabled:YES];
+    }
+}
 
+- (void)enableQueryToolBarItem
+{
+	var count = [[toolbar items] count],
+		items = [toolbar items];
+		
+	for(var i=0; i < count; i++) {
+		var item = [items objectAtIndex:i];
+      	if( [item itemIdentifier] == QueryToolbarItemIdentifier )
+      		[item setEnabled:YES];
+    }
+}
 
 - (void)handleBadResponse:(id)js
 {
@@ -184,6 +211,8 @@ var StructureToolbarItemIdentifier  = @"StructureToolbarItemIdentifier",
   var popupButton = [[self itemForIdentifier:SelectDatabaseToolbarItem] view];
   [popupButton removeAllItems];
   [self loadItemsForPopupButton:popupButton];
+  [popupButton setEnabled:YES];
+  [popupButton selectItemAtIndex:0];
 }
 
 
@@ -305,6 +334,7 @@ var StructureToolbarItemIdentifier  = @"StructureToolbarItemIdentifier",
     [[CPNotificationCenter defaultCenter] postNotificationName:SHOW_DATABASES_NOTIFICATION object:nil];
   } else {
     [[CPNotificationCenter defaultCenter] postNotificationName:SHOW_DATABASE_TABLES_NOTIFICATION object:selectedTitle];
+    [self enableToolBarItems];
   }
 }
 
