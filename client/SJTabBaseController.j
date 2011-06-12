@@ -115,11 +115,10 @@
     if (superSplitview = [[self contentView] superview]) {
      var superSplitLeftView = [[superSplitview subviews] objectAtIndex:0];
       
-     var rect = [[self contentView] frame];
-      rect.origin.x -= [superSplitLeftView frame].size.width + 0;
+     var rect = [[self contentView] bounds];
 
      [[self view] setFrame:rect];
-     [[self view] setBounds:rect];
+
      [[self view] setAutoresizingMask:CPViewWidthSizable | CPViewHeightSizable];
      [self viewDidAdjust];
 
