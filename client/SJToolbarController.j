@@ -17,8 +17,6 @@ var StructureToolbarItemIdentifier  = @"StructureToolbarItemIdentifier",
   CPToolbar toolbar;
   id menuItem;
   CPArray _databases;
-  CPURLConnection httpConnection;
-  CPArray responseData;
 }
 
 
@@ -168,11 +166,18 @@ var StructureToolbarItemIdentifier  = @"StructureToolbarItemIdentifier",
 - (void)showDatabases:(CPNotification)aNotification
 {
   CPLog(@"Show Databases");
+  
+  [[SJAPIRequest sharedAPIRequest] sendRequestToDatabasesWithOptions:nil callback:function( jsonData ) 
+  {
+    _databases = jsonData.databases;
 
-  var httpRequest = [SJHTTPRequest requestWithURL:SERVER_BASE + "/databases"];
-  [httpRequest setParams: [[SJDataManager sharedInstance] credentials] ];
-
-  httpConnection = [CPURLConnection connectionWithRequest:[httpRequest toRequest] delegate:self];
+    var popupButton = [[self itemForIdentifier:SelectDatabaseToolbarItem] view];
+    [popupButton removeAllItems];
+    [self loadItemsForPopupButton:popupButton];
+    [popupButton setEnabled:YES];
+    [popupButton selectItemAtIndex:0];
+  
+  }];
 }
 
 - (void)enableToolBarItems
@@ -197,25 +202,6 @@ var StructureToolbarItemIdentifier  = @"StructureToolbarItemIdentifier",
       		[item setEnabled:YES];
     }
 }
-
-- (void)handleBadResponse:(id)js
-{
-  alert(js.error);
-}
-
-
-- (void)handleGoodResponse:(id)js
-{
-  _databases = js.databases;
-
-  var popupButton = [[self itemForIdentifier:SelectDatabaseToolbarItem] view];
-  [popupButton removeAllItems];
-  [self loadItemsForPopupButton:popupButton];
-  [popupButton setEnabled:YES];
-  [popupButton selectItemAtIndex:0];
-}
-
-
 
 - (id)itemForIdentifier:(CPString)anIdentifier
 {
@@ -337,45 +323,5 @@ var StructureToolbarItemIdentifier  = @"StructureToolbarItemIdentifier",
     [self enableToolBarItems];
   }
 }
-
-
-
-/*
-*
-* CPURLConnection Methods
-*
-*/
-- (void)connectionDidFinishLoading:(CPURLConnection)connection
-{
-  var json = JSON.parse([responseData componentsJoinedByString:@""]);
-  response = nil;
-  [responseData removeAllObjects];
-
-  if(json['error'] != "") {
-    [self handleBadResponse:json];
-  } else {
-    [self handleGoodResponse:json];
-  }
-}
-
-- (void)connection:(CPURLConnection)connection didReceiveData:(CPString)data
-{
-  [responseData addObject:data];
-}
-
-- (void)connection:(CPURLConnection)connection didFailWithError:(CPString)error
-{
-  //This method is called if the request fails for any reason.
-  alert("Connection Failed: " + error);
-}
-
-- (void)clearConnection:(CPURLConnection)aConnection
-{
-    //we no longer need to hold on to a reference to this connection
-    if (aConnection == httpConnection)
-        httpConnection = nil;
-}
-
-
 
 @end
