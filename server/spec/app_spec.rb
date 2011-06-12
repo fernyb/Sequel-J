@@ -392,4 +392,37 @@ describe "App" do
       json['sql'].should == sql_code
     end
   end
+  
+  describe '/query' do
+    it 'returns results for query' do
+      result = mock("Mysql::Result")
+      fields = ['user_id', 'name']
+      result.stub(fields: fields)
+      rows = [{"user_id" => "1","name" => "Whittier, CA"},
+              {"user_id" => "1","name" => "Whittier, CA"},
+              {"user_id" => "1","name" => "Los Angeles, CA"},
+              {"user_id" => "1","name" => "Los Angeles, CA"},
+              {"user_id" => "1","name" => "Whittier, CA"}]
+             
+      result.stub(rows: rows)
+      
+      @mysql.should_receive(:query).with("select user_id, name from checkins LIMIT 0, 5").and_return(result)
+      get '/query?query=select%20user_id,%20name%20from%20checkins%20LIMIT%200,%205'
+      
+      json['path'].should == '/query'
+      json['error'].should == ''
+      json['columns'].should == fields
+      json['results'].should == rows
+    end
+    
+    it 'returns an error message when Mysql throws an error' do
+      @mysql.should_receive(:query).with("select user_id, name from checkins LIMIT 0, 5").and_raise(Mysql::Error.new('There is an error!'))
+      get '/query?query=select%20user_id,%20name%20from%20checkins%20LIMIT%200,%205'
+      
+      json['path'].should == '/query'
+      json['error'].should == 'There is an error!'
+      json['columns'].size.should == 0
+      json['results'].size.should == 0
+    end
+  end
 end

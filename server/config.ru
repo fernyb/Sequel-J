@@ -8,6 +8,7 @@ require 'bundler'
 ENVIRONMENT = (ENV['RACK_ENV'] || 'production')
 Bundler.require :default, ENVIRONMENT
 
+require "#{APP_ROOT}/ext/array.rb"
 require "#{APP_ROOT}/ext/mysql.rb"
 require "#{APP_ROOT}/app.rb"
 

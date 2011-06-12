@@ -3,6 +3,8 @@
 @import "SJTabBaseController.j"
 @import "Categories/CPTableView+Categories.j"
 @import "LPMultiLineTextField.j"
+@import "SJHTTPRequest.j"
+@import "Categories/CPArray+Categories.j"
 
 
 @implementation SJQueryTabController : SJTabBaseController
@@ -12,11 +14,16 @@
   CPView bottomView;
   CPScrollView bottomScrollview;
   CPView topBar;
+  CGFloat topBarHeight;
+  LPMultiLineTextField textview;
+  CPArray headerNames @accessors;
+  CPArray queryResults @accessors;
 }
 
 - (void)viewDidSet
 {
   [[self view] setBackgroundColor:[CPColor colorWithHexString:"eeeeee"]];
+  [self setHeaderNames:[CPArray array]];
   
   splitview = [[CPSplitView alloc] initWithFrame:[[self view] frame]];
   [splitview setVertical:NO];
@@ -29,7 +36,7 @@
   [topView setBackgroundColor:[CPColor clearColor]];
   
   // Add the Query TextView
-  var textview = [[LPMultiLineTextField alloc] initWithFrame:CGRectMake(0, 0, CGRectGetWidth([topView frame]), CGRectGetHeight([topView frame]))];
+  textview = [[LPMultiLineTextField alloc] initWithFrame:CGRectMake(0, 0, CGRectGetWidth([topView frame]), CGRectGetHeight([topView frame]))];
   [textview setAutoresizingMask:CPViewWidthSizable | CPViewHeightSizable];
   [textview setEditable:YES];
   [textview setBezeled:YES];
@@ -47,7 +54,7 @@
   [bottomView setHidden:NO];
   
   // Create Bottom Top Bar
-  var topBarHeight = 28.0;
+  topBarHeight = 28.0;
   topBar = [[CPView alloc] initWithFrame:CGRectMake(0, 0, CGRectGetWidth([[self view] frame]), topBarHeight)];
   [self addBottomBarButtons:topBar];
   [topBar setAutoresizingMask:CPViewWidthSizable | CPViewMaxYMargin];
@@ -67,7 +74,7 @@
 
 - (void)addBottomBarButtons:(CPView)bar
 {
-  var runCurrentBtn = [[CPButton alloc] initWithFrame:CGRectMake(CGRectGetWidth([bar frame]) - 170, 1, 100, 23)];
+  var runCurrentBtn = [[CPButton alloc] initWithFrame:CGRectMake(CGRectGetWidth([bar frame]) - 95, 1, 100, 23)];
   [runCurrentBtn setAutoresizingMask:CPViewMinXMargin | CPViewMaxYMargin];
   [runCurrentBtn setTitle:@"Run Current"];
   [runCurrentBtn setBezelStyle:CPRoundedBezelStyle];
@@ -76,16 +83,6 @@
   [runCurrentBtn setAction:@selector(didClickRunCurrent:)];
   [bar addSubview:runCurrentBtn];
   
-  var runAllBtn = [[CPButton alloc] initWithFrame:CGRectMake([runCurrentBtn frame].origin.x + CGRectGetWidth([runCurrentBtn frame]) + 10, 1, 75, 23)];
-  [runAllBtn setAutoresizingMask:CPViewMinXMargin | CPViewMaxYMargin];
-  [runAllBtn setTitle:@"Run All"];
-  [runAllBtn setBezelStyle:CPRoundedBezelStyle];
-  [runAllBtn sizeToFit];
-  [runAllBtn setTarget:self];
-  [runAllBtn setAction:@selector(didClickRunAll:)];
-  [bar addSubview:runAllBtn];
-
-
   var queryFavBtn = [[CPButton alloc] initWithFrame:CGRectMake(4, 1, 75, 23)];
   [queryFavBtn setAutoresizingMask:CPViewMaxXMargin | CPViewMaxYMargin];
   [queryFavBtn setTitle:@"Query Favorites"];
@@ -108,12 +105,57 @@
 
 - (void)didClickRunCurrent:(CPButton)sender
 {
-  alert('Run Current');
+  var query;
+  if( query = [textview stringValue] ) {
+    var queries = query.split(";");
+    queries = [queries compact];
+    query = [queries count] > 1 ? [queries lastObject] : [queries objectAtIndex:0];
+    
+    var httpRequest = [SJHTTPRequest requestWithURL:SERVER_BASE + "/query"];
+    [httpRequest setParams: [[SJDataManager sharedInstance] credentials] ];
+    [httpRequest setObject:query forKey:@"query"];
+    [self connectionWithRequest:httpRequest];
+  }
 }
 
-- (void)didClickRunAll:(CPButton)sender
+- (void)requestDidFinish:(id)js
 {
-  alert('Run All');
+  if (js.path.indexOf('/query') != -1) {
+    [self handleQueryResponse:js];
+  }
+}
+
+- (void)requestDidFail:(id)js
+{
+  alert(js.error);
+}
+
+
+- (void)handleQueryResponse:(id)js
+{
+  [self setHeaderNames:js.columns];
+  [self setQueryResults:js.results];
+  
+  if(bottomScrollview) {
+    [bottomScrollview removeFromSuperview];
+    bottomScrollview = nil;
+  }
+  
+  bottomScrollview = [self createTableViewForView:bottomView headerNames:[self headerNames]];
+  [bottomScrollview setFrame:CGRectMake(0, topBarHeight, CGRectGetWidth([bottomScrollview frame]), CGRectGetHeight([bottomScrollview frame]) - topBarHeight)];
+  [bottomView addSubview:bottomScrollview];
+}
+
+- (CPInteger)numberOfRowsInTableView:(CPTableView *)aTableView
+{
+  return [[self queryResults] count];
+}
+
+- (id)tableView:(CPTableView)aTableView objectValueForTableColumn:(CPTableColumn)aTableColumn row:(CPInteger)rowIndex
+{
+  var row = [[self queryResults] objectAtIndex:rowIndex];
+  var columnName = [[aTableColumn headerView] stringValue];
+  return row[columnName];
 }
 
 - (void)didClickQueryFavorites:(CPButton)sender
@@ -199,10 +241,9 @@
   [docview adjustColumnsToFit];
 }
 
-
 - (CPArray)bottomTableHeaderNames
 {
-  return [@"Name..."];
+  return [self headerNames];
 }
 
 @end

@@ -17,4 +17,18 @@
   }
 }
 
+- (CPArray)compact
+{
+  var results = [CPArray array];
+  [self each:function (item) {
+    if (item && item != null && item != nil && item != 'undefined') {
+      item = item.replace(/^\s+|\s+$/g, '');
+      if (item != '') {
+        [results addObject:item];
+      }
+    }
+  }];
+  return results;
+}
+
 @end

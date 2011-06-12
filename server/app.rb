@@ -237,6 +237,13 @@ class App < Sinatra::Base
     render status: status, engines: engines, encodings: encodings, collations: collations, sql: sql
   end
   
+  get '/query' do
+    results = query params[:query]
+    fields  = results.fields
+    rows    = results.rows
+    render columns: fields, results: rows
+  end
+  
   get '/' do
     'Hello World'
   end
