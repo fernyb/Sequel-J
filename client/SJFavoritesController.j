@@ -20,12 +20,14 @@ var sharedFavoritesController = nil;
 	self = [super init];
 	[self _loadFavorites];
 	
+	[[CPNotificationCenter defaultCenter] addObserver:self selector:@selector(saveFavorites) name:@"SJFavoritesListViewDidResortFavorites" object:nil];
+	
 	return self;
 }
 
 - (void)saveFavorites
 {
-	
+
 }
 
 - (void)addFavoriteWithType:(CPString)aType name:(CPString)aName host:(CPString)aHost username:(CPString)aUsername password:(CPString)aPassword database:(CPString)aDatabase port:(int)aPort
