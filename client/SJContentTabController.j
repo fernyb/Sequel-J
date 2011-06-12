@@ -32,54 +32,36 @@
   if(tableName == null || tableName == 'undefined' || tableName == '') {
     return;
   }
-
-  var httpRequest = [SJHTTPRequest requestWithURL:SERVER_BASE + "/header_names/"+ tableName];
-  [httpRequest setParams: [[SJDataManager sharedInstance] credentials] ];
-
-  [self connectionWithRequest:httpRequest];
-}
-
-- (void)requestDidFail:(id)js
-{
-  alert(js.error);
-}
-
-- (void)requestDidFinish:(id)js
-{
-  if (js.path.indexOf('/header_names') != -1) {
-    [self handleHeaderNamesResponse:js];
-  } 
-  else if (js.path.indexOf('/rows') != -1) {
-    [self handleTableRowsResponse:js];
-  }
-}
-
-- (void)handleHeaderNamesResponse:(id)js
-{
-  if(scrollview) {
-    [self setTbrows:[CPArray array]];
-    [[self tableView] reloadData];
-    [scrollview removeFromSuperview];
-    scrollview = nil;
-  }
-
-  if (!scrollview) {
-    headerNames = [[CPArray alloc] initWithArray:js.header_names];
-    scrollview = [self createTableViewForView:[self view] headerNames:[self headerNames]];
+  
+  [[SJAPIRequest sharedAPIRequest] sendRequestToEndpoint:@"header_names/" + tableName callback:function( js ) 
+  {
+  	if(scrollview) {
+      [self setTbrows:[CPArray array]];
+      [[self tableView] reloadData];
+      [scrollview removeFromSuperview];
+      scrollview = nil;
+    }
     
-    var rect = [scrollview frame];
-    rect.size.height -= 23.0;
-    
-    [scrollview setFrame:rect];
-    [[self view] addSubview:scrollview];
-    
-    [self addBottomBarWithRect:rect];
-    
-    // We need to get the rows for the table, lets do that here
-    var httpRequest = [SJHTTPRequest requestWithURL:SERVER_BASE + "/rows/"+ [self tableName]];
-    [httpRequest setParams: [[SJDataManager sharedInstance] credentials] ];
-    [self connectionWithRequest:httpRequest];
-  }
+    if (!scrollview) {
+      headerNames = [[CPArray alloc] initWithArray:js.header_names];
+      scrollview = [self createTableViewForView:[self view] headerNames:[self headerNames]];
+      
+      var rect = [scrollview frame];
+      rect.size.height -= 23.0;
+      
+      [scrollview setFrame:rect];
+      [[self view] addSubview:scrollview];
+      
+      [self addBottomBarWithRect:rect];
+      
+      // We need to get the rows for the table, lets do that here
+      [[SJAPIRequest sharedAPIRequest] sendRequestToEndpoint:@"rows/" + [self tableName] callback:function( js ) 
+  	  {
+  	  	[self handleTableRowsResponse:js];
+      }];
+    }
+  
+  }];
 }
 
 - (void)addBottomBarWithRect:(CGRect)rect
