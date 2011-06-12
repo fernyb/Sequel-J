@@ -48,22 +48,14 @@
 
 - (void)retrieveRelations
 {
-  if ([self tableName]) {
-    var httpRequest = [SJHTTPRequest requestWithURL:SERVER_BASE + "/relations/"+ [self tableName]];
-    [httpRequest setParams: [[SJDataManager sharedInstance] credentials] ];
-    [self connectionWithRequest:httpRequest];
+  if ([self tableName]) 
+  {
+    [[SJAPIRequest sharedAPIRequest] sendRequestToEndpoint:@"relations/" + [self tableName] callback:function( js ) 
+    {
+      relations = js.relations;
+      [[self tableView] reloadData];
+    }];
   }
-}
-
-- (void)requestDidFail:(id)js
-{
-  alert("SJRelationsTabController, "+ js.error);
-}
-
-- (void)requestDidFinish:(id)js
-{
-  relations = js.relations;
-  [[self tableView] reloadData];
 }
 
 - (CPInteger)numberOfRowsInTableView:(CPTableView *)aTableView
