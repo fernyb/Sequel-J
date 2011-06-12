@@ -67,7 +67,21 @@
 	
 	[scrollView setDocumentView:tableView];
 	
+	// create the bottom button bar
+	bottomButtonBar = [[CPButtonBar alloc] initWithFrame:CGRectMake(0,[theSuperView frame].size.height-23, viewWidth, 23)];
+	[bottomButtonBar setAutoresizingMask:CPViewWidthSizable | CPViewMinYMargin];
+	  
+	var addButton = [CPButtonBar plusButton];
+	[addButton setAction:@selector(showAddTableDialog:)];
+	[addButton setTarget:self];
+	[addButton setEnabled:YES];
+  
+	[bottomButtonBar setButtons:[addButton]];
+	
+	[theSuperView addSubview:bottomButtonBar];
 	[theSuperView addSubview:scrollView];
+
+	[[theSuperView superview] setButtonBar:bottomButtonBar forDividerAtIndex:0];
 }
 
 
