@@ -17,12 +17,7 @@ var sharedAPIRequest = nil;
 
 - (void)sendRequestToConnectWithOptions:(CPDictionary)options callback:(id)aCallback
 {
-    var url = SERVER_BASE + "/connect?1=1"
-    var count = [[options allKeys] count];
-    
-    for( var i =0; i < count; i++ )
-    	url += "&" + [[options allKeys] objectAtIndex:i] + "=" + [options valueForKey:[[options allKeys] objectAtIndex:i]];
-    
+    var url = SERVER_BASE + "/connect?1=1" + "&" + [options toQueryString];
     [self _sendRequestToURL:url callback:aCallback];
 }
 
