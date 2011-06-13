@@ -27,7 +27,6 @@ var StructureToolbarItemIdentifier  = @"StructureToolbarItemIdentifier",
     responseData = [[CPArray alloc] init];
     [self setupToolbar];
     
-    [[CPNotificationCenter defaultCenter] addObserver:self selector:@selector(enableQueryToolBarItem) name:@"kLoginSuccess" object:nil];
     [[CPNotificationCenter defaultCenter] addObserver:self selector:@selector(showDatabases:) name:SHOW_DATABASES_NOTIFICATION object:nil];
   }
   return self;
@@ -191,17 +190,6 @@ var StructureToolbarItemIdentifier  = @"StructureToolbarItemIdentifier",
     }
 }
 
-- (void)enableQueryToolBarItem
-{
-	var count = [[toolbar items] count],
-		items = [toolbar items];
-		
-	for(var i=0; i < count; i++) {
-		var item = [items objectAtIndex:i];
-      	if( [item itemIdentifier] == QueryToolbarItemIdentifier )
-      		[item setEnabled:YES];
-    }
-}
 
 - (id)itemForIdentifier:(CPString)anIdentifier
 {

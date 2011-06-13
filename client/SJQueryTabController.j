@@ -111,40 +111,25 @@
     queries = [queries compact];
     query = [queries count] > 1 ? [queries lastObject] : [queries objectAtIndex:0];
     
-    var httpRequest = [SJHTTPRequest requestWithURL:SERVER_BASE + "/query"];
-    [httpRequest setParams: [[SJDataManager sharedInstance] credentials] ];
-    [httpRequest setObject:query forKey:@"query"];
-    [self connectionWithRequest:httpRequest];
-  }
-}
-
-- (void)requestDidFinish:(id)js
-{
-  if (js.path.indexOf('/query') != -1) {
-    [self handleQueryResponse:js];
-  }
-}
-
-- (void)requestDidFail:(id)js
-{
-  alert(js.error);
-}
-
-
-- (void)handleQueryResponse:(id)js
-{
-  [self setHeaderNames:js.columns];
-  [self setQueryResults:js.results];
+    var querystr = [CPDictionary dictionary];
+    [querystr setObject:query forKey:@"query"];
+    
+    [[SJAPIRequest sharedAPIRequest] sendRequestToQueryWithOptions:querystr  callback:function( js ) {
+      [self setHeaderNames:js.columns];
+      [self setQueryResults:js.results];
   
-  if(bottomScrollview) {
-    [bottomScrollview removeFromSuperview];
-    bottomScrollview = nil;
+      if(bottomScrollview) {
+        [bottomScrollview removeFromSuperview];
+        bottomScrollview = nil;
+      }
+
+      bottomScrollview = [self createTableViewForView:bottomView headerNames:[self headerNames]];
+      [bottomScrollview setFrame:CGRectMake(0, topBarHeight, CGRectGetWidth([bottomScrollview frame]), CGRectGetHeight([bottomScrollview frame]) - topBarHeight)];
+      [bottomView addSubview:bottomScrollview];
+    }];
   }
-  
-  bottomScrollview = [self createTableViewForView:bottomView headerNames:[self headerNames]];
-  [bottomScrollview setFrame:CGRectMake(0, topBarHeight, CGRectGetWidth([bottomScrollview frame]), CGRectGetHeight([bottomScrollview frame]) - topBarHeight)];
-  [bottomView addSubview:bottomScrollview];
 }
+
 
 - (CPInteger)numberOfRowsInTableView:(CPTableView *)aTableView
 {

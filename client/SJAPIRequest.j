@@ -1,3 +1,5 @@
+@import "Categories/CPDictionary+Categories.j"
+
 var sharedAPIRequest = nil;
 
 @implementation SJAPIRequest : CPObject
@@ -33,7 +35,8 @@ var sharedAPIRequest = nil;
 
 - (void)sendRequestToQueryWithOptions:(CPDictionary)options callback:(id)aCallback
 {
-
+  var url = SERVER_BASE + "/query?" + [self _requestCredentialsString] + "&" + [options toQueryString];
+	[self _sendRequestToURL:url callback:aCallback];
 }
 
 - (void)sendRequestToEndpoint:(CPString)aURL callback:(id)aCallback
