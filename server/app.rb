@@ -229,10 +229,10 @@ class App < Sinatra::Base
     end
     
     sql = sql_for_table params[:table]
-    encodings ||= []
+    encodings  ||= []
     collations ||= []
-    status ||= ''
-    engines ||= ''
+    status     ||= ''
+    engines    ||= ''
     
     render status: status, engines: engines, encodings: encodings, collations: collations, sql: sql
   end

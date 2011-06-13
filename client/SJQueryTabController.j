@@ -18,6 +18,7 @@
   LPMultiLineTextField textview;
   CPArray headerNames @accessors;
   CPArray queryResults @accessors;
+  CPWindow favWindow;
 }
 
 - (void)viewDidSet
@@ -131,7 +132,7 @@
 }
 
 
-- (CPInteger)numberOfRowsInTableView:(CPTableView *)aTableView
+- (CPInteger)numberOfRowsInTableView:(CPTableView)aTableView
 {
   return [[self queryResults] count];
 }
@@ -195,9 +196,60 @@
   [CPMenu popUpContextMenu:aMenu withEvent:anEvent forView:aview];    
 }
 
+
 - (void)saveToFavoritesAction:(CPMenuItem)sender
 {
-  alert('save to favorites action');
+  if (!favWindow) {
+    favWindow = [[CPWindow alloc] initWithContentRect:CGRectMake(30,30, 400, 130) styleMask:CPDocModalWindowMask];
+    var favContentView = [favWindow contentView];
+    
+    var label = [[CPTextField alloc] initWithFrame:CGRectMake(20, 20, 150, 20)];
+    [label setAlignment:CPLeftTextAlignment];
+    [label setStringValue:@"Query Name:"];
+    [label setFont:[CPFont boldSystemFontOfSize:12.0]];
+    [favContentView addSubview:label];
+    
+    var nameField = [[CPTextField alloc] initWithFrame:CGRectMake(20, 43, 360, 28)];
+    [nameField setAlignment:CPLeftTextAlignment];
+    [nameField setStringValue:@""];  
+    [nameField setEditable:YES];
+    [nameField setEnabled:YES];
+    [nameField setBezeled:YES];
+    [nameField setFont:[CPFont boldSystemFontOfSize:12.0]];
+    [favContentView addSubview:nameField];
+      
+    var cancelBtn = [[CPButton alloc] initWithFrame:CGRectMake(250, 86, 0, 0)];
+    [cancelBtn setTitle:@"Cancel"];
+    [cancelBtn setBezelStyle:CPRoundedBezelStyle];
+    [cancelBtn sizeToFit];
+    [cancelBtn setTarget:self];
+    [cancelBtn setAction:@selector(didClickCancelSheet:)];
+    [favContentView addSubview:cancelBtn];
+    
+    var saveBtn = [[CPButton alloc] initWithFrame:CGRectMake(320, 86, 0, 0)];
+    [saveBtn setTitle:@" Save "];
+    [saveBtn setBezelStyle:CPRoundedBezelStyle];
+    [saveBtn sizeToFit];
+    [saveBtn setTarget:self];
+    [saveBtn setAction:@selector(didClickSaveSheet:)];
+    [favContentView addSubview:saveBtn];
+  }
+
+  [CPApp beginSheet: favWindow
+          modalForWindow: [[self contentView] window]
+           modalDelegate: self
+          didEndSelector: null
+             contextInfo: null];
+}
+
+- (void)didClickCancelSheet:(CPButton)sender
+{
+  [CPApp endSheet:favWindow returnCode:CPCancelButton];
+}
+
+- (void)didClickSaveSheet:(CPButton)sender
+{
+  alert('save query as name');
 }
 
 - (void)editFavoritesAction:(CPMenuItem)sender
