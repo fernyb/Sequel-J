@@ -17,4 +17,16 @@
   return [params componentsJoinedByString:"&"];
 }
 
+- (BOOL)hasKey:(CPString)aKey
+{
+  var allkeys = [self allKeys];
+  for(var i=0; i<[allkeys count]; i++) {
+    var key = [allkeys objectAtIndex:i];
+    if(key == aKey) {
+      return YES;
+    }
+  }
+  return NO;
+}
+
 @end

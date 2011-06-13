@@ -5,6 +5,8 @@
 @import "LPMultiLineTextField.j"
 @import "SJHTTPRequest.j"
 @import "Categories/CPArray+Categories.j"
+@import "Categories/CPDictionary+Categories.j"
+@import "SJConstants.j"
 
 
 @implementation SJQueryTabController : SJTabBaseController
@@ -19,6 +21,7 @@
   CPArray headerNames @accessors;
   CPArray queryResults @accessors;
   CPWindow favWindow;
+  CPTextField favNameField;
 }
 
 - (void)viewDidSet
@@ -103,32 +106,40 @@
   [bar addSubview:queryHisBtn];  
 }
 
-
-- (void)didClickRunCurrent:(CPButton)sender
+- (CPString)currentQueryString
 {
-  var query;
+  var query = [CPString string];
   if( query = [textview stringValue] ) {
     var queries = query.split(";");
     queries = [queries compact];
-    query = [queries count] > 1 ? [queries lastObject] : [queries objectAtIndex:0];
-    
-    var querystr = [CPDictionary dictionary];
-    [querystr setObject:query forKey:@"query"];
-    
-    [[SJAPIRequest sharedAPIRequest] sendRequestToQueryWithOptions:querystr  callback:function( js ) {
-      [self setHeaderNames:js.columns];
-      [self setQueryResults:js.results];
-  
-      if(bottomScrollview) {
-        [bottomScrollview removeFromSuperview];
-        bottomScrollview = nil;
-      }
-
-      bottomScrollview = [self createTableViewForView:bottomView headerNames:[self headerNames]];
-      [bottomScrollview setFrame:CGRectMake(0, topBarHeight, CGRectGetWidth([bottomScrollview frame]), CGRectGetHeight([bottomScrollview frame]) - topBarHeight)];
-      [bottomView addSubview:bottomScrollview];
-    }];
+    query = [queries count] > 1 ? [queries lastObject] : [queries objectAtIndex:0];  
   }
+  return query;
+}
+
+- (void)didClickRunCurrent:(CPButton)sender
+{
+  var query = [self currentQueryString];
+  if([query length] < 1) {
+    return;
+  }
+  
+  var querystr = [CPDictionary dictionary];
+  [querystr setObject:query forKey:@"query"];
+  
+  [[SJAPIRequest sharedAPIRequest] sendRequestToQueryWithOptions:querystr  callback:function( js ) {
+    [self setHeaderNames:js.columns];
+    [self setQueryResults:js.results];
+
+    if(bottomScrollview) {
+      [bottomScrollview removeFromSuperview];
+      bottomScrollview = nil;
+    }
+
+    bottomScrollview = [self createTableViewForView:bottomView headerNames:[self headerNames]];
+    [bottomScrollview setFrame:CGRectMake(0, topBarHeight, CGRectGetWidth([bottomScrollview frame]), CGRectGetHeight([bottomScrollview frame]) - topBarHeight)];
+    [bottomView addSubview:bottomScrollview];
+  }];
 }
 
 
@@ -155,6 +166,20 @@
   menuItem = [[CPMenuItem alloc] initWithTitle:@"Edit Favorites..." action:@selector(editFavoritesAction:) keyEquivalent:nil];
   [menuItem setTarget:self];
   [menu addItem:menuItem];
+  
+  /* CPDictionary */
+  var favs = [self queryFavorites];
+  var favKeys = [favs allKeys];
+  if([favKeys count] > 0) {
+    [menu addItem:[CPMenuItem separatorItem]];
+  }
+  
+  for(var i=0; i<[favKeys count]; i++) {
+    var keySavedName = [favKeys objectAtIndex:i];
+    menuItem = [[CPMenuItem alloc] initWithTitle:keySavedName action:@selector(didSelectSavedQuery:) keyEquivalent:nil];
+    [menuItem setTarget:self];
+    [menu addItem:menuItem];
+  }
   
   var locationMenuPoint = [[[self contentView] superview] convertPoint:[sender frame].origin fromView:sender];
   locationMenuPoint.y += 40 * 2;
@@ -209,21 +234,21 @@
     [label setFont:[CPFont boldSystemFontOfSize:12.0]];
     [favContentView addSubview:label];
     
-    var nameField = [[CPTextField alloc] initWithFrame:CGRectMake(20, 43, 360, 28)];
-    [nameField setAlignment:CPLeftTextAlignment];
-    [nameField setStringValue:@""];  
-    [nameField setEditable:YES];
-    [nameField setEnabled:YES];
-    [nameField setBezeled:YES];
-    [nameField setFont:[CPFont boldSystemFontOfSize:12.0]];
-    [favContentView addSubview:nameField];
+    favNameField = [[CPTextField alloc] initWithFrame:CGRectMake(20, 43, 360, 28)];
+    [favNameField setAlignment:CPLeftTextAlignment];
+    [favNameField setStringValue:@""];  
+    [favNameField setEditable:YES];
+    [favNameField setEnabled:YES];
+    [favNameField setBezeled:YES];
+    [favNameField setFont:[CPFont boldSystemFontOfSize:12.0]];
+    [favContentView addSubview:favNameField];
       
     var cancelBtn = [[CPButton alloc] initWithFrame:CGRectMake(250, 86, 0, 0)];
     [cancelBtn setTitle:@"Cancel"];
     [cancelBtn setBezelStyle:CPRoundedBezelStyle];
     [cancelBtn sizeToFit];
     [cancelBtn setTarget:self];
-    [cancelBtn setAction:@selector(didClickCancelSheet:)];
+    [cancelBtn setAction:@selector(didClickCancelQuerySheet:)];
     [favContentView addSubview:cancelBtn];
     
     var saveBtn = [[CPButton alloc] initWithFrame:CGRectMake(320, 86, 0, 0)];
@@ -231,10 +256,12 @@
     [saveBtn setBezelStyle:CPRoundedBezelStyle];
     [saveBtn sizeToFit];
     [saveBtn setTarget:self];
-    [saveBtn setAction:@selector(didClickSaveSheet:)];
+    [saveBtn setAction:@selector(didClickSaveQuerySheet:)];
     [favContentView addSubview:saveBtn];
   }
-
+  [favNameField becomeFirstResponder];
+  [favNameField setStringValue:@""];
+  
   [CPApp beginSheet: favWindow
           modalForWindow: [[self contentView] window]
            modalDelegate: self
@@ -242,14 +269,47 @@
              contextInfo: null];
 }
 
-- (void)didClickCancelSheet:(CPButton)sender
+- (void)didClickCancelQuerySheet:(CPButton)sender
 {
   [CPApp endSheet:favWindow returnCode:CPCancelButton];
 }
 
-- (void)didClickSaveSheet:(CPButton)sender
+- (void)didClickSaveQuerySheet:(CPButton)sender
 {
-  alert('save query as name');
+  var query = [self currentQueryString];
+  if([query length] < 1) {
+    return;
+  }
+  
+  var saveQueryName = [favNameField stringValue];
+  if(saveQueryName && [saveQueryName length] > 1 && saveQueryName != ' ') {
+   var favorites = [self queryFavorites];
+   if([favorites hasKey:saveQueryName]) {
+     alert('Name already taken, please use another.');
+     return; 
+   }
+   
+   [favorites setObject:query forKey:saveQueryName];
+   [[CPUserDefaults standardUserDefaults] setObject:favorites forKey:QUERY_FAVORITES]; 
+ }
+  [CPApp endSheet:favWindow returnCode:CPOKButton];
+}
+
+- (CPDictionary)queryFavorites
+{
+  var fav = [[CPUserDefaults standardUserDefaults] objectForKey:QUERY_FAVORITES];
+  if(!fav) {
+    fav = [CPDictionary dictionary];
+  }
+  return fav;
+}
+
+- (void)didSelectSavedQuery:(CPMenuItem)sender
+{
+  var title = [sender title];
+  var favorites = [self queryFavorites];
+  var query = [favorites objectForKey:title];
+  [textview setStringValue:query];
 }
 
 - (void)editFavoritesAction:(CPMenuItem)sender
