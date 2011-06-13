@@ -8,8 +8,6 @@
 {
   CPView		theSuperView;
   CPTableView	tableView;
-  CPURLConnection httpConnection;
-  CPArray 		responseData;
 }
 
 - (id)initWithSuperView:(CPView)aSuperView
@@ -50,7 +48,6 @@
 	[tableView setTarget:self];
     [tableView registerForDraggedTypes:[CPArray arrayWithObject:@"CPTableViewTestDragType"]];
 
-	
 	var column = [[CPTableColumn alloc] initWithIdentifier:@"SJFavouritName"];
 	[[column headerView] setStringValue:@"FAVORITES"];
 	[column setWidth:(viewWidth - 15)];

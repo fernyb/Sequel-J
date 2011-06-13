@@ -3,6 +3,7 @@
 @import "SJDataManager.j"
 @import "SJHTTPRequest.j"
 @import "SJConstants.j"
+@import "SJAPIRequest.j"
 
 var sharedLoginViewController = nil;
 
@@ -11,8 +12,6 @@ var sharedLoginViewController = nil;
   CPView contentView;
   CPView connectionView;
   CPView spinnerView;
-  CPURLConnection httpConnection;
-  CPArray responseData;
 }
 
 + (id)sharedLoginViewController
@@ -210,16 +209,16 @@ var sharedLoginViewController = nil;
   
   if(port == "") port = "3306";
 
-  var request = [SJHTTPRequest requestWithURL:SERVER_BASE + "/connect"];
-  [request setObject:username forKey:@"username"];
-  [request setObject:password forKey:@"password"];
-  [request setObject:host forKey:@"host"];
-  [request setObject:database forKey:@"database"];
-  [request setObject:port forKey:@"port"];
+  var options = [[CPDictionary alloc] initWithObjects:[username, password, host, database, port] forKeys:[@"username", @"password", @"host", @"database", @"port"]];
   
-  [[SJDataManager sharedInstance] setCredentials:[request params]];
-  
-  httpConnection = [CPURLConnection connectionWithRequest:[request toRequest] delegate:self];
+  [[SJAPIRequest sharedAPIRequest] sendRequestToConnectWithOptions:options callback:function( jsonData ) 
+  {
+    [[SJDataManager sharedInstance] setCredentials:options];
+    [[SJAPIRequest sharedAPIRequest] setCredentials:options];
+  	[[CPNotificationCenter defaultCenter] postNotificationName:@"kLoginSuccess" object:nil];
+  	[[CPNotificationCenter defaultCenter] postNotificationName:SHOW_DATABASES_NOTIFICATION object:nil];
+  	[[CPNotificationCenter defaultCenter] postNotificationName:SHOW_DATABASE_TABLES_NOTIFICATION object:nil];
+  }];
 }
 
 - (void)addToFavoritesButtonPressed:(id)sender
@@ -233,59 +232,6 @@ var sharedLoginViewController = nil;
   		port: 		[[contentView viewWithTag:105] stringValue]
   	];
 }
-
-- (void)databaseConnectionDidFail:(id)jsObject
-{
-  alert(jsObject['error']);
-  [spinnerView setHidden:YES];
-
-  [[CPNotificationCenter defaultCenter] postNotificationName:@"kLoginDidFail" object:nil];
-}
-
-- (void)databaseConnectionWasSuccess:(id)jsObject
-{
-  [[CPNotificationCenter defaultCenter] postNotificationName:@"kLoginSuccess" object:nil];
-  [[CPNotificationCenter defaultCenter] postNotificationName:SHOW_DATABASES_NOTIFICATION object:nil];
-  [[CPNotificationCenter defaultCenter] postNotificationName:SHOW_DATABASE_TABLES_NOTIFICATION object:nil];
-}
-
-
-- (void)connectionDidFinishLoading:(CPURLConnection)connection
-{
-  var json = JSON.parse([responseData componentsJoinedByString:@""]);
-  response = nil;
-  [responseData removeAllObjects];
-
-  if(json['connected'] == true) {
-    [self databaseConnectionWasSuccess:json];
-  } else {
-    [self databaseConnectionDidFail:json];
-  }
-}
-
-- (void)connection:(CPURLConnection)connection didReceiveData:(CPString)data
-{
-  //This method is called when a connection receives a response. in a
-  //multi-part request, this method will (eventually) be called multiple times,
-  //once for each part in the response.
-  
-  [responseData addObject:data];
-}
-
-- (void)connection:(CPURLConnection)connection didFailWithError:(CPString)error
-{
-    //This method is called if the request fails for any reason.
-    alert("Connection Failed: " + error);
-}
-
-- (void)clearConnection:(CPURLConnection)aConnection
-{
-    //we no longer need to hold on to a reference to this connection
-    if (aConnection == httpConnection)
-        httpConnection = nil;
-}
-
-
 
 - (void)addTitle:(CPString)aMessage fromRect:(CGRect)rect
 {
