@@ -318,6 +318,7 @@
 {
   if(!editFavWindow) {
     editFavWindow = [[SJEditFavoritesWindowController alloc] init];
+    [editFavWindow setFavorites:[self queryFavorites]];
     [editFavWindow windowLoadWithCallback:function(favwindow) {
       [CPApp beginSheet: favwindow
          modalForWindow: [[self contentView] window]
@@ -326,6 +327,7 @@
             contextInfo: null];
     }];
   } else {
+    [editFavWindow setFavorites:[self queryFavorites]];
     [CPApp beginSheet: [editFavWindow window]
        modalForWindow: [[self contentView] window]
         modalDelegate: self
