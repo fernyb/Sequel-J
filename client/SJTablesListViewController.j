@@ -131,19 +131,25 @@
 
 - (void)showDBTables:(CPNotification)aNotification
 {
-  var httpRequest = [SJHTTPRequest requestWithURL:SERVER_BASE + "/tables"];
-  [httpRequest setParams: [[SJDataManager sharedInstance] credentials] ];
+  var dbName = [aNotification object]
+  
+  if( !dbName )
+  	return;
+  
+  [[[SJAPIRequest sharedAPIRequest] credentials] setObject:dbName forKey:@"database"];
+  
+  [[SJAPIRequest sharedAPIRequest] sendRequestToTablesWithOptions:nil callback:function( jsObject ) 
+  {
+	[tableList removeAllObjects];
 
-  var dbName = [aNotification object];
-  if(dbName && dbName != null && dbName != 'undefined' && dbName != "" && [dbName length] > 0) {
-    [httpRequest setObject:dbName forKey:@"database"];
-  }
-
- if ([httpRequest objectForKey:@"database"] === "") {
-   return;
- }
-
-  httpConnection = [CPURLConnection connectionWithRequest:[httpRequest toRequest] delegate:self];
+	for(var i=0; i < jsObject.tables.length; i++) {
+    	[tableList addObject:jsObject.tables[i]];
+	}
+  
+	filteredTableList = [tableList copy];
+  
+	[tableView reloadData];
+  }];
 }
 
 - (@action)tableFilterSearchFieldDidChange:(id)sender
@@ -180,24 +186,6 @@
 - (@action)refreshTables:(id)sender
 {
 	alert( "Refresh Tables" );
-}
-
-
-- (void)handleBadResponse:(id)jsObject
-{
-  alert(jsObject.error);
-}
-
-- (void)handleGoodResponse:(id)jsObject
-{
-  [tableList removeAllObjects];
-  for(var i=0; i < jsObject.tables.length; i++) {
-    [tableList addObject:jsObject.tables[i]];
-  }
-  
-  filteredTableList = [tableList copy];
-  
-  [tableView reloadData];
 }
 
 /*
