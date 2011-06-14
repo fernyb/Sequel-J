@@ -8,7 +8,7 @@ require 'rspec'
 
 Bundler.require :default, ENV['RACK_ENV']
 
-%W(app ext/mysql ext/array).each do |file|
+%W(app ext/mysql ext/array ext/hash).each do |file|
   require File.join(File.dirname(__FILE__), '..', "#{file}.rb")
 end
 

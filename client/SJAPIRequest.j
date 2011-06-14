@@ -17,8 +17,8 @@ var sharedAPIRequest = nil;
 
 - (void)sendRequestToConnectWithOptions:(CPDictionary)options callback:(id)aCallback
 {
-    var url = SERVER_BASE + "/connect?1=1" + "&" + [options toQueryString];
-    [self _sendRequestToURL:url callback:aCallback];
+  var url = SERVER_BASE + "/api.php?endpoint=connect" + "&" + [options toQueryString];  
+  [self _sendRequestToURL:url callback:aCallback];
 }
 
 - (void)sendRequestToDatabasesWithOptions:(CPDictionary)options callback:(id)aCallback

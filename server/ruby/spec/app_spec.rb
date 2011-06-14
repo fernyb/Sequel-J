@@ -425,4 +425,18 @@ describe "App" do
       json['results'].size.should == 0
     end
   end
+  
+  describe '/api.php' do
+    it "will redirect request to the appropiate endpoint" do
+      get '/api.php?endpoint=query&query=select%20user_id,%20name%20from%20checkins%20LIMIT%200,%205'
+      response.status.should == 302
+      response.headers['Location'].should == 'http://example.org/query?query=select%20user_id%2C%20name%20from%20checkins%20LIMIT%200%2C%205'
+    end
+    
+    it "will redirect request to the appropiate endpoint with table name" do
+      get '/api.php?endpoint=table_info&table=checkins'
+      response.status.should == 302
+      response.headers['Location'].should == 'http://example.org/table_info/checkins'  
+    end
+  end
 end

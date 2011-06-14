@@ -44,12 +44,24 @@ class App < Sinatra::Base
   def render kv={}
     { connected: @connected, error: @error.to_s, path: request.path_info }.merge!(kv).to_json
   end
-  
+ 
   before do
-    self.credentials = params
-    @connected = connect ? true : false
+    unless /api\.php/ =~ request.path_info
+      self.credentials = params
+      @connected = connect ? true : false
+    end
   end
   
+  get '/api.php' do
+    endpoint_name = params.delete('endpoint')
+    table_name    = params.delete('table')
+    
+    endpoint_path = "/#{endpoint_name}"
+    endpoint_path << "/#{table_name}" if table_name
+    endpoint_path << "?" << params.to_query_string if params.keys.size > 0
+  
+    redirect to(endpoint_path)
+  end
   
   get '/connect' do
     render
