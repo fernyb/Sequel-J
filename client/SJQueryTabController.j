@@ -7,6 +7,7 @@
 @import "Categories/CPArray+Categories.j"
 @import "Categories/CPDictionary+Categories.j"
 @import "SJConstants.j"
+@import "SJEditFavoritesWindowController.j"
 
 
 @implementation SJQueryTabController : SJTabBaseController
@@ -22,6 +23,7 @@
   CPArray queryResults @accessors;
   CPWindow favWindow;
   CPTextField favNameField;
+  SJEditFavoritesWindowController editFavWindow;
 }
 
 - (void)viewDidSet
@@ -314,8 +316,24 @@
 
 - (void)editFavoritesAction:(CPMenuItem)sender
 {
-  alert('edit favorites action');
+  if(!editFavWindow) {
+    editFavWindow = [[SJEditFavoritesWindowController alloc] init];
+    [editFavWindow windowLoadWithCallback:function(favwindow) {
+      [CPApp beginSheet: favwindow
+         modalForWindow: [[self contentView] window]
+          modalDelegate: self
+         didEndSelector: null
+            contextInfo: null];
+    }];
+  } else {
+    [CPApp beginSheet: [editFavWindow window]
+       modalForWindow: [[self contentView] window]
+        modalDelegate: self
+       didEndSelector: null
+          contextInfo: null];
+  }
 }
+
 
 - (void)saveHistoryAction:(CPMenuItem)sender
 {
