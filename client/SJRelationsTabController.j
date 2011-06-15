@@ -50,7 +50,9 @@
 {
   if ([self tableName]) 
   {
-    [[SJAPIRequest sharedAPIRequest] sendRequestToEndpoint:@"relations/" + [self tableName] callback:function( js ) 
+  	var options = [[CPDictionary alloc] initWithObjects:[[self tableName]] forKeys:[@"table"]];
+
+    [[SJAPIRequest sharedAPIRequest] sendRequestToEndpoint:@"relations" withOptions:options callback:function( js ) 
     {
       relations = js.relations;
       [[self tableView] reloadData];
