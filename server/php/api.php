@@ -108,7 +108,12 @@ function sj_serve_endpoint_rows() {
 	if( !$db || empty( $_GET['table'] ) )
 		return array( 'tables' => array(), 'error' => 'Could not connect to MySQL with credentials' );
 	
-	return array( 'rows' => $db->get_results( "SELECT * FROM " . $_GET['table'] . " LIMIT 0, 100" ) );
+	if( !empty( $_GET['order_by'] ) )
+		$order_by = " ORDER BY `{$_GET['order_by']}` " . ( $_GET['order'] == 'ASC' ? 'ASC' : 'DESC' );
+	else
+		$order_by = '';
+		
+	return array( 'rows' => $db->get_results( "SELECT * FROM " . $_GET['table'] . "$order_by LIMIT 0, 100" ) );
 	
 }
 

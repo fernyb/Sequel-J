@@ -145,6 +145,20 @@
   return rowData[headerName];
 }
 
+- (void)tableView:(CPTableView)aTableView sortDescriptorsDidChange:(CPArray)oldDescriptors
+{
+    var newDescriptors = [aTableView sortDescriptors],
+    	newDescriptor = [newDescriptors objectAtIndex:0];
+    
+    var options = [[CPDictionary alloc] initWithObjects:[[self tableName], [newDescriptor key], [newDescriptor ascending] ? @"ASC" : @"DESC"] forKeys:[@"table", @"order_by", @"order"]];
+    
+    [[SJAPIRequest sharedAPIRequest] sendRequestToEndpoint:@"rows" withOptions:options callback:function( js ) 
+  	{
+  	  [self handleTableRowsResponse:js];
+    }];
+      
+}
+
 - (BOOL)tableView:(CPTableView)aTableView shouldSelectRow:(int)rowIndex
 {
  return YES;

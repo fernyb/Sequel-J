@@ -245,13 +245,15 @@
   [tableView setUsesAlternatingRowBackgroundColors:YES];
   [self setTableView:tableView];
 
-  var widthOfHeader = ([cview frame].size.width - 15) / [headerNames count];
+  var widthOfHeader = ([cview frame].size.width - 30) / [headerNames count];
 
   for(var i=0; i<[headerNames count]; i++) {
     var columnName = [headerNames objectAtIndex:i];
+    var sortDescriptor = [CPSortDescriptor sortDescriptorWithKey:columnName ascending:YES];
     var column = [[CPTableColumn alloc] initWithIdentifier:[CPString stringWithFormat:@"SJTableColumn%@", columnName]];
     [[column headerView] setStringValue:columnName];
     [column setWidth:widthOfHeader];
+    [column setSortDescriptorPrototype:sortDescriptor];
     [tableView addTableColumn:column];
   }
   
