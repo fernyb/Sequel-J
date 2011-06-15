@@ -1,4 +1,3 @@
-
 @import <Foundation/CPObject.j>
 @import "SJTabBaseController.j"
 @import "Categories/CPTableView+Categories.j"
@@ -8,7 +7,7 @@
 @import "Categories/CPDictionary+Categories.j"
 @import "SJConstants.j"
 @import "SJEditFavoritesWindowController.j"
-
+@import "SJTaskProgressWindowController.j"
 
 @implementation SJQueryTabController : SJTabBaseController
 {
@@ -77,6 +76,8 @@
   
   // Add the splitview to the view
   [[self view] addSubview:splitview];
+  
+  [SJTaskProgressWindowController sharedTaskProgressWindowController];
 }
 
 - (void)addBottomBarButtons:(CPView)bar
@@ -130,6 +131,8 @@
   var querystr = [CPDictionary dictionary];
   [querystr setObject:query forKey:@"query"];
   
+  [[SJTaskProgressWindowController sharedTaskProgressWindowController] showTaskProgressWindowForTitle:@"Running query..." withCancelCallback:function() {}];
+  
   [[SJAPIRequest sharedAPIRequest] sendRequestToQueryWithOptions:querystr callback:function( js ) {
     [self setHeaderNames:js.columns];
     [self setQueryResults:js.results];
@@ -143,6 +146,9 @@
     [bottomScrollview setFrame:CGRectMake(0, topBarHeight, CGRectGetWidth([bottomScrollview frame]), CGRectGetHeight([bottomScrollview frame]) - topBarHeight)];
     [bottomView addSubview:bottomScrollview];
     [self keepQueryInHistory:query];
+    
+    [[SJTaskProgressWindowController sharedTaskProgressWindowController] hideTaskProgressWindowForCurrentTask];
+    
   }];
 }
 
