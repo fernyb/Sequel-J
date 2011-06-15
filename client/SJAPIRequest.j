@@ -1,6 +1,8 @@
 @import "Categories/CPDictionary+Categories.j"
 
 var sharedAPIRequest = nil;
+var DownloadIFrame = null,
+    DownloadSlotNext = null;
 
 @implementation SJAPIRequest : CPObject
 {
@@ -105,6 +107,38 @@ var sharedAPIRequest = nil;
 		return;
 
 	[[self credentials] setValue:[aNotification object] forKey:@"database"];
+}
+
+
+// For Now, the only thing I know to export is the query history...
+// Change as needed in the future...
+- (void)saveContentsToDisk:(CPString)jsContent callback:(func)callback
+{  
+  var exportURL = SERVER_BASE + "/export?" + "type=sql_history&json=" + jsContent;
+
+  if (DownloadIFrame == null) {
+    DownloadIFrame = document.createElement("iframe");
+    DownloadIFrame.style.position = "absolute";
+    DownloadIFrame.style.top    = "-100px";
+    DownloadIFrame.style.left   = "-100px";
+    DownloadIFrame.style.height = "0px";
+    DownloadIFrame.style.width  = "0px";
+    DownloadIFrame.onload = function() {
+      callback();
+    };
+    document.body.appendChild(DownloadIFrame);
+  }
+  
+  var now = new Date().getTime(),
+      downloadSlot = (DownloadSlotNext && DownloadSlotNext > now)  ? DownloadSlotNext : now;
+      
+  DownloadSlotNext = downloadSlot + 2000;
+  
+  window.setTimeout(function() {
+      if (DownloadIFrame != null) {
+        DownloadIFrame.src = exportURL;
+      }
+  }, downloadSlot - now);
 }
 
 @end

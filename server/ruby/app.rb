@@ -45,6 +45,14 @@ class App < Sinatra::Base
     { connected: @connected, error: @error.to_s, path: request.path_info }.merge!(kv).to_json
   end
  
+  def send_data(data, options={})
+    status       options[:status]   if options[:status]
+    attachment   options[:filename] if options[:disposition] == 'attachment'
+    content_type options[:type]     if options[:type]
+    halt data
+  end
+
+
   before do
     unless /api\.php/ =~ request.path_info
       self.credentials = params
@@ -254,6 +262,14 @@ class App < Sinatra::Base
     fields  = results.fields
     rows    = results.rows
     render columns: fields, results: rows
+  end
+  
+  get '/export' do
+    if params['type'] == 'sql_history'
+      json = JSON.parse(params['json'])
+      send_data json.join("\n"), type: 'application/json', disposition: 'attachment', filename: 'history.sql'
+    end
+    render
   end
   
   get '/' do

@@ -10,3 +10,4 @@ SWITCH_CONTENT_RIGHT_VIEW_NOTIFICATION = @"SwitchContentRightViewNotification";
 TABLE_SELECTED_NOTIFICATION = @"TableSelectedNotification";
 
 QUERY_FAVORITES = @"query_favorites";
+QUERY_HISTORY = @"query_history";

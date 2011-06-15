@@ -24,6 +24,7 @@
   CPWindow favWindow;
   CPTextField favNameField;
   SJEditFavoritesWindowController editFavWindow;
+  CPWindow confirmClearHisWin;
 }
 
 - (void)viewDidSet
@@ -141,9 +142,32 @@
     bottomScrollview = [self createTableViewForView:bottomView headerNames:[self headerNames]];
     [bottomScrollview setFrame:CGRectMake(0, topBarHeight, CGRectGetWidth([bottomScrollview frame]), CGRectGetHeight([bottomScrollview frame]) - topBarHeight)];
     [bottomView addSubview:bottomScrollview];
+    [self keepQueryInHistory:query];
   }];
 }
 
+- (void)keepQueryInHistory:(CPString)query
+{
+  var queryHistory = [[CPUserDefaults standardUserDefaults] objectForKey:QUERY_HISTORY];
+  if(!queryHistory) {
+    queryHistory = [CPArray array];
+  }
+  if([queryHistory count] > 20) {
+   [queryHistory removeObjectAtIndex:19];
+  }
+  
+  [queryHistory addObject:query];
+  [[CPUserDefaults standardUserDefaults] setObject:queryHistory forKey:QUERY_HISTORY];
+}
+
+- (CPArray)queryHistory
+{
+  var queryHistory = [[CPUserDefaults standardUserDefaults] objectForKey:QUERY_HISTORY];
+  if(!queryHistory) {
+    queryHistory = [CPArray array];
+  }
+  return queryHistory;
+}
 
 - (CPInteger)numberOfRowsInTableView:(CPTableView)aTableView
 {
@@ -168,8 +192,6 @@
   menuItem = [[CPMenuItem alloc] initWithTitle:@"Edit Favorites..." action:@selector(editFavoritesAction:) keyEquivalent:nil];
   [menuItem setTarget:self];
   [menu addItem:menuItem];
-  
-  /* CPArray */
   
   var favs = [self queryFavorites];
   if([favs count] > 0) {
@@ -203,6 +225,20 @@
   menuItem = [[CPMenuItem alloc] initWithTitle:@"Clear Global History" action:@selector(clearGlobalHistory:) keyEquivalent:nil];
   [menuItem setTarget:self];
   [menu addItem:menuItem];
+  
+  var hist = [self queryHistory];
+  if([hist count] > 0) {
+    [menu addItem:[CPMenuItem separatorItem]];
+  }
+  
+  for(var i=0; i<[hist count]; i++) {
+    var item = [hist objectAtIndex:i];
+    
+    menuItem = [[CPMenuItem alloc] initWithTitle:item action:@selector(didSelectHistoryQuery:) keyEquivalent:nil];
+    [menuItem setRepresentedObject:@"item-" + i];
+    [menuItem setTarget:self];
+    [menu addItem:menuItem];
+  }
   
   var locationMenuPoint = [[[self contentView] superview] convertPoint:[sender frame].origin fromView:sender];
   locationMenuPoint.y += 40 * 2;
@@ -303,7 +339,6 @@
   if(!fav) {
     fav = [CPArray array];
   }
-  
   return fav;
 }
 
@@ -340,13 +375,53 @@
 
 - (void)saveHistoryAction:(CPMenuItem)sender
 {
-  alert('Save History Action');
+  var hist = [self queryHistory];
+  if(hist && [hist count] > 0) { 
+    var json = JSON.stringify(hist);
+    [[SJAPIRequest sharedAPIRequest] saveContentsToDisk:json  callback:function() {
+     // What do we do when iframe finished loading?
+    }];
+  } else {
+    alert("There is nothing to save...");
+  }
 }
 
 - (void)clearGlobalHistory:(CPMenuItem)sender
 {
-  alert('Clear Global History');
+  var alert = [CPAlert new];
+  [alert addButtonWithTitle:@"OK"];
+  [alert addButtonWithTitle:@"Cancel"];
+  [alert setMessageText:@"Are you sure you want to clear the global history list?"];
+  [alert setInformativeText:@"This action cannot be undone."];
+  [alert setAlertStyle:CPWarningAlertStyle];
+  [alert beginSheetModalForWindow:[[self contentView] window]
+                    modalDelegate:self 
+                   didEndSelector:@selector(alertDidEnd:returnCode:contextInfo:) 
+                      contextInfo:nil];
 }
+
+- (void)clearGlobalHistoryNow
+{
+  [[CPUserDefaults standardUserDefaults] setObject:[CPArray array] forKey:QUERY_HISTORY];
+}
+
+- (void)alertDidEnd:(CPAlert)sender returnCode:(int)code contextInfo:(id)context
+{
+  if (code == 1) {
+    [self clearGlobalHistoryNow];
+  }
+}
+
+- (void)didSelectHistoryQuery:(CPMenuItem)sender
+{
+  var repObj = [sender representedObject];
+  var idx = [repObj.split("-") lastObject];
+  if (idx) idx = parseInt(idx);
+  
+  var item = [[self queryHistory] objectAtIndex:idx];
+  [textview setStringValue:item];
+}
+
 
 - (void)viewDidAdjust
 {

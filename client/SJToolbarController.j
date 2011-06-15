@@ -26,6 +26,7 @@ var StructureToolbarItemIdentifier  = @"StructureToolbarItemIdentifier",
     _databases = [[CPArray alloc] init];
     responseData = [[CPArray alloc] init];
     [self setupToolbar];
+    [self enableToolBarItems];
     
     [[CPNotificationCenter defaultCenter] addObserver:self selector:@selector(showDatabases:) name:SHOW_DATABASES_NOTIFICATION object:nil];
   }
