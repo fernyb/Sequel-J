@@ -114,7 +114,7 @@ var DownloadIFrame = null,
 // Change as needed in the future...
 - (void)saveContentsToDisk:(CPString)jsContent callback:(func)callback
 {  
-  var exportURL = SERVER_BASE + "/export?" + "type=sql_history&json=" + jsContent;
+  var exportURL = SERVER_BASE + "/api.php?endpoint=export&type=sql_history&json=" + jsContent;
 
   if (DownloadIFrame == null) {
     DownloadIFrame = document.createElement("iframe");
