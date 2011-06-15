@@ -41,24 +41,15 @@
 - (void)loadTableInfo
 {
   if ([self tableName]) {
-    var httpRequest = [SJHTTPRequest requestWithURL:SERVER_BASE + "/table_info/"+ [self tableName]];
-    [httpRequest setParams: [[SJDataManager sharedInstance] credentials] ];
-    [self connectionWithRequest:httpRequest];
+    
+    var options = [[CPDictionary alloc] initWithObjects:[[self tableName]] forKeys:[@"table"]];
+
+    [[SJAPIRequest sharedAPIRequest] sendRequestToEndpoint:@"table_info" withOptions:options callback:function( js ) 
+    {
+      [self handleTableInfoResponse:js];
+    }];
   }
 }
-
-- (void)requestDidFinish:(id)js
-{
-  if (js.path.indexOf('/table_info/') != -1) {
-    [self handleTableInfoResponse:js];
-  }
-}
-
-- (void)requestDidFail:(id)js
-{
-  alert(js.error);
-}
-
 
 - (void)handleTableInfoResponse:(id)js
 {
