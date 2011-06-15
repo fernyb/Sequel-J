@@ -169,16 +169,19 @@
   [menuItem setTarget:self];
   [menu addItem:menuItem];
   
-  /* CPDictionary */
+  /* CPArray */
+  
   var favs = [self queryFavorites];
-  var favKeys = [favs allKeys];
-  if([favKeys count] > 0) {
+  if([favs count] > 0) {
     [menu addItem:[CPMenuItem separatorItem]];
   }
   
-  for(var i=0; i<[favKeys count]; i++) {
-    var keySavedName = [favKeys objectAtIndex:i];
-    menuItem = [[CPMenuItem alloc] initWithTitle:keySavedName action:@selector(didSelectSavedQuery:) keyEquivalent:nil];
+  for(var i=0; i<[favs count]; i++) {
+    var item = [favs objectAtIndex:i];
+    var keyName = [item objectForKey:@"name"];
+    
+    menuItem = [[CPMenuItem alloc] initWithTitle:keyName action:@selector(didSelectSavedQuery:) keyEquivalent:nil];
+    [menuItem setRepresentedObject:@"item-" + i];
     [menuItem setTarget:self];
     [menu addItem:menuItem];
   }
@@ -286,39 +289,38 @@
   var saveQueryName = [favNameField stringValue];
   if(saveQueryName && [saveQueryName length] > 1 && saveQueryName != ' ') {
    var favorites = [self queryFavorites];
-   if([favorites hasKey:saveQueryName]) {
-     alert('Name already taken, please use another.');
-     return; 
-   }
-   
-   [favorites setObject:query forKey:saveQueryName];
+   var dict = [[CPDictionary alloc] initWithObjects:[saveQueryName, query] forKeys:[@"name", @"value"]];
+   [favorites addObject:dict];
    [[CPUserDefaults standardUserDefaults] setObject:favorites forKey:QUERY_FAVORITES]; 
  }
   [CPApp endSheet:favWindow returnCode:CPOKButton];
 }
 
-- (CPDictionary)queryFavorites
+
+- (CPArray)queryFavorites
 {
   var fav = [[CPUserDefaults standardUserDefaults] objectForKey:QUERY_FAVORITES];
   if(!fav) {
-    fav = [CPDictionary dictionary];
+    fav = [CPArray array];
   }
+  
   return fav;
 }
 
 - (void)didSelectSavedQuery:(CPMenuItem)sender
 {
-  var title = [sender title];
-  var favorites = [self queryFavorites];
-  var query = [favorites objectForKey:title];
-  [textview setStringValue:query];
+  var repObj = [sender representedObject];
+  var idx = [repObj.split("-") lastObject];
+  if (idx) idx = parseInt(idx);
+  
+  var item = [[self queryFavorites] objectAtIndex:idx];
+  [textview setStringValue:[item objectForKey:@"value"]];
 }
 
 - (void)editFavoritesAction:(CPMenuItem)sender
 {
   if(!editFavWindow) {
     editFavWindow = [[SJEditFavoritesWindowController alloc] init];
-    [editFavWindow setFavorites:[self queryFavorites]];
     [editFavWindow windowLoadWithCallback:function(favwindow) {
       [CPApp beginSheet: favwindow
          modalForWindow: [[self contentView] window]
@@ -327,7 +329,6 @@
             contextInfo: null];
     }];
   } else {
-    [editFavWindow setFavorites:[self queryFavorites]];
     [CPApp beginSheet: [editFavWindow window]
        modalForWindow: [[self contentView] window]
         modalDelegate: self

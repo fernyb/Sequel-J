@@ -3,23 +3,38 @@
 @import "SJEditFavoriteWindow.j"
 @import "LPMultiLineTextField.j"
 @import "SJConstants.j"
+@import "Categories/CPArray+Categories.j"
 
 
 @implementation SJEditFavoritesWindowController : CPWindowController
 {
   func windowDidLoadCallback;
   @outlet CPSplitView splitview;
-  CPDictionary favorites @accessors;
   CPTextField favNameField;
   LPMultiLineTextField textview;
   CPTableView tableView;
+  CPArray favoritesList;
 }
 
 - (id)init {
   self = [super initWithWindowCibName:@"SJEditFavoritesWindow" owner:self];
-  [self setFavorites:[CPDictionary dictionary]];
+  favoritesList = nil;
   return self;
 }
+
+- (CPArray)favorites
+{
+  if(!favoritesList) {
+    var tmp = [[CPUserDefaults standardUserDefaults] objectForKey:QUERY_FAVORITES];
+    if(!tmp) {
+      favoritesList = [CPArray array];
+    } else {
+      favoritesList = [tmp copyArrayContents];
+    }
+  }
+  return favoritesList;
+}
+
 
 - (CPView)contentLeftView
 {
@@ -42,6 +57,15 @@
   
   if (windowDidLoadCallback) {
     windowDidLoadCallback([self window]);
+  }
+  [[self window] setDelegate:self];
+}
+
+- (void)windowDidBecomeKey:(CPNotification)aNotification
+{
+  favoritesList = nil;
+  if(tableView) {
+    [tableView reloadData];
   }
 }
 
@@ -77,7 +101,6 @@
   var column = [[CPTableColumn alloc] initWithIdentifier:@"SJTableFavoritesColumn"];
   [[column headerView] setStringValue:@"Favorites"];
   [column setWidth:(width - 15)];
-  //[[column headerView] setValue:[scrollView backgroundColor] forThemeAttribute:@"background-color"];
   [[column headerView] setValue:[CPColor colorWithHexString:@"626262"] forThemeAttribute:@"text-color"];
   [[column headerView] setValue:[CPFont boldSystemFontOfSize:12] forThemeAttribute:@"text-font"];
   
@@ -96,23 +119,22 @@
   [favNameField resignFirstResponder];
   [textview resignFirstResponder];
   
-  var key = [[favorites allKeys] objectAtIndex:row];
-  var query = [favorites objectForKey:key];
-  
-  [favNameField setStringValue:key];
-  [textview setStringValue:query];
+  var item = [[self favorites] objectAtIndex:row];
+  [favNameField setStringValue:[item objectForKey:@"name"]];
+  [textview setStringValue:[item objectForKey:@"value"]];
   
   return YES;
 }
 
 - (CPNumber)numberOfRowsInTableView:(CPTableView)aTableView
 {
-  return [[favorites allKeys] count];
+  return [[self favorites] count];
 }
 
 - (id)tableView:(CPTableView)aTableView objectValueForTableColumn:(CPTableColumn)aTableColumn row:(CPInteger)row
 {
-  return [[favorites allKeys] objectAtIndex:row];
+  var item = [[self favorites] objectAtIndex:row];
+  return [item objectForKey:@"name"];
 }
 
 
@@ -133,6 +155,7 @@
   [favNameField setEnabled:YES];
   [favNameField setBezeled:YES];
   [favNameField setFont:[CPFont systemFontOfSize:12.0]];
+  [favNameField setDelegate:self];
   [[self contentRightView] addSubview:favNameField];
     
     // Add the Query TextView
@@ -142,6 +165,7 @@
   [textview setBezeled:YES];
   [textview setAlignment:CPLeftTextAlignment];
   [textview setFont:[CPFont systemFontOfSize:12.0]];
+  [textview setDelegate:self];
   [[self contentRightView] addSubview:textview];
   
   var cancelBtn = [[CPButton alloc] initWithFrame:CGRectMake(CGRectGetWidth([[self contentRightView] frame]) - 128, 8 + [textview frame].size.height + [textview frame].origin.y, 100, 23)];
@@ -168,18 +192,45 @@
 
 - (void)didClickSaveBtn:(CPButton)sender
 {
-  [favorites setObject:[textview stringValue] forKey:[favNameField stringValue]];
-  [[CPUserDefaults standardUserDefaults] setObject:favorites forKey:QUERY_FAVORITES];
-  
-  [self endSheet];
+  var row = [tableView selectedRow];
+  if(row > -1) {
+    var favs = [self favorites];
+    var item = [favs objectAtIndex:row];
+    var newKey = [favNameField stringValue];
+    var newValue = [textview stringValue];
+    
+    [item setObject:newKey forKey:@"name"];
+    [item setObject:newValue forKey:@"value"];
+    
+    [[CPUserDefaults standardUserDefaults] setObject:favs forKey:QUERY_FAVORITES];
+    [self endSheet];
+  }
 }
 
 - (void)endSheet
 {
   [CPApp endSheet:[self window]];
-  [tableView deselectColumn:0];
+  [tableView deselectRow:[tableView selectedRow]];
   [favNameField setStringValue:@""];
   [textview setStringValue:@""];
+}
+
+- (void)controlTextDidChange:(CPNotification)aNotification
+{
+  var row = [tableView selectedRow];
+  if(row > -1) {
+    var item = [[self favorites] objectAtIndex:row];      
+    var sender = [aNotification object];
+    var value = [sender stringValue];
+    
+    if([sender className] == @"CPTextField") {
+      [item setObject:value forKey:@"name"];
+      [tableView reloadData];
+    }
+    else if ([sender className] == @"LPMultiLineTextField") {
+      [item setObject:value forKey:@"value"];
+    }
+  }
 }
 
 @end

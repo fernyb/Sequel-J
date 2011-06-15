@@ -66,4 +66,14 @@
 	}
 }
 
+- (CPArray)copyArrayContents
+{
+  var newArray = [CPArray array];
+  for(var i=0; i<[self count]; i++) {
+    var obj = [[self objectAtIndex:i] copy];
+    [newArray addObject:obj];
+  }
+  return newArray;
+}
+
 @end
