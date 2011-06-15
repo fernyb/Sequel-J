@@ -1,9 +1,9 @@
 @import <Foundation/Foundation.j>
-@import "Frameworks/EKSpinner/EKSpinner.j"
 @import "SJDataManager.j"
 @import "SJHTTPRequest.j"
 @import "SJConstants.j"
 @import "SJAPIRequest.j"
+@import "EKActivityIndicatorView.j"
 
 var sharedLoginViewController = nil;
 
@@ -172,8 +172,9 @@ var sharedLoginViewController = nil;
     rect.origin.y + rect.size.height  + 30, 
     140, 18)];
   
-  var spinner = [[EKSpinner alloc] initWithFrame:CGRectMake(0, 0, 18, 18) andStyle:@"medium_gray"];
-  [spinner setIsSpinning:YES];
+  var spinner = [[EKActivityIndicatorView alloc] initWithFrame:CGRectMake(0, 0, 18, 18)];
+  [spinner setColor:[CPColor colorWithHexString:@"444"]];
+  [spinner startAnimating];
   [spinner setAutoresizingMask:CPViewMinXMargin | CPViewMaxXMargin | CPViewMinYMargin | CPViewMaxYMargin];
   [spinnerView addSubview:spinner];
 
