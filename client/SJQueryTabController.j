@@ -129,7 +129,7 @@
   var querystr = [CPDictionary dictionary];
   [querystr setObject:query forKey:@"query"];
   
-  [[SJAPIRequest sharedAPIRequest] sendRequestToQueryWithOptions:querystr  callback:function( js ) {
+  [[SJAPIRequest sharedAPIRequest] sendRequestToQueryWithOptions:querystr callback:function( js ) {
     [self setHeaderNames:js.columns];
     [self setQueryResults:js.results];
 
