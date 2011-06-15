@@ -407,7 +407,7 @@
 
 - (void)alertDidEnd:(CPAlert)sender returnCode:(int)code contextInfo:(id)context
 {
-  if (code == 1) {
+  if (code == 0) {
     [self clearGlobalHistoryNow];
   }
 }
