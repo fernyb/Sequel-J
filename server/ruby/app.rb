@@ -123,7 +123,13 @@ class App < Sinatra::Base
   
   get '/rows/:table' do
     names = table_columns params[:table]
-    results = query "SELECT * FROM `#{params[:table]}` LIMIT 0,100"
+    orderby = if params['order_by']
+      " ORDER BY `#{params['order_by']}` " << (params['order'] == 'ASC' ? 'ASC ' : 'DESC ')
+    else
+      ' '
+    end
+  
+    results = query "SELECT * FROM `#{params[:table]}`#{orderby}LIMIT 0,100"
     rows = results.map {|f|
       f = f.map {|v| v.nil? ? '' : v }
       Hash[*names.zip(f).flatten]
