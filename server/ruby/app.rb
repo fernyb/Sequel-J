@@ -51,7 +51,17 @@ class App < Sinatra::Base
     content_type options[:type]     if options[:type]
     halt data
   end
-
+  
+  def handle_api_path
+    endpoint_name = params.delete('endpoint')
+    table_name    = params.delete('table')
+    
+    endpoint_path = "/#{endpoint_name}"
+    endpoint_path << "/#{table_name}" if table_name
+    endpoint_path << "?" << params.to_query_string if params.keys.size > 0
+  
+    redirect to(endpoint_path), 307
+  end
 
   before do
     unless /api\.php/ =~ request.path_info
@@ -61,14 +71,11 @@ class App < Sinatra::Base
   end
   
   get '/api.php' do
-    endpoint_name = params.delete('endpoint')
-    table_name    = params.delete('table')
-    
-    endpoint_path = "/#{endpoint_name}"
-    endpoint_path << "/#{table_name}" if table_name
-    endpoint_path << "?" << params.to_query_string if params.keys.size > 0
+    handle_api_path
+  end
   
-    redirect to(endpoint_path)
+  post '/api.php' do
+    handle_api_path
   end
   
   get '/connect' do
@@ -241,9 +248,9 @@ class App < Sinatra::Base
       
       result = query "SELECT * FROM information_schema.character_sets ORDER BY character_set_name ASC"
       encodings = result.map {|item| {collation_name: item[0], collate_set_name: item[1], description: item[2]} }
-      collation = encodings.select {|item| item[:collate_set_name] == status[:collation] }.first
-      if collation
-        result = query "SELECT * FROM information_schema.collations WHERE character_set_name = '#{collation[:collation_name]}' ORDER BY 'collation_name' ASC"
+      char_set = encodings.select {|item| item[:collate_set_name].split("_").first == status[:collation].split("_").first }.first
+      if char_set
+        result = query "SELECT * FROM information_schema.collations WHERE character_set_name = '#{char_set[:collation_name]}' ORDER BY 'collation_name' ASC"
         collations = result.map {|item| {collation_name: item[0], character_set_name: item[1], id: item[2]} }
       end
     end
@@ -253,8 +260,9 @@ class App < Sinatra::Base
     collations ||= []
     status     ||= ''
     engines    ||= ''
+    char_set   ||= {collation_name: '', collate_set_name: '', description: ''}
     
-    render status: status, engines: engines, encodings: encodings, collations: collations, sql: sql
+    render status: status, charset: char_set[:collation_name], engines: engines, encodings: encodings, collations: collations, sql: sql
   end
   
   get '/query' do
@@ -270,6 +278,19 @@ class App < Sinatra::Base
       send_data json.join("\n"), type: 'application/json', disposition: 'attachment', filename: 'history.sql'
     end
     render
+  end
+  
+  post '/update_table/:table' do
+    if params.key?('type')
+      query("ALTER TABLE `#{params['table']}` TYPE = #{params['type']}")
+      render type: params['type']
+    elsif params.key?('encoding')
+      query("ALTER TABLE `#{params['table']}` CHARACTER SET = #{params['encoding']}")
+      render encoding: params['encoding']
+    elsif params.key?('collation')
+      query("ALTER TABLE `#{params['table']}` COLLATE = #{params['collation']}")
+      render collation: params['collation']
+    end  
   end
   
   get '/' do

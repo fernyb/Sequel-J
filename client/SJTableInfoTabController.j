@@ -113,7 +113,7 @@
   else if (akey == @"encoding_menu") {
     for (var i=0; i<[js.encodings count]; i++) {
       var item = [js.encodings objectAtIndex:i];
-      if (item.collate_set_name.indexOf(js.status.collation) != -1) {
+      if (item.collation_name == js.charset) {
         [popupMenu selectItemAtIndex:i];
         break;
       }
@@ -126,7 +126,7 @@
         [popupMenu selectItemAtIndex:i];
         break;
       }
-    }    
+    }
   }
 }
 
@@ -159,19 +159,28 @@
 - (void)didSelectCollation:(CPPopUpButton)sender
 {
   var title = [sender titleOfSelectedItem];
-  alert(title);
+  var opts = [CPDictionary dictionaryWithObjects:[title] forKeys:[@"collation"]];
+  [[SJAPIRequest sharedAPIRequest] sendRequestToUpdateTable:[self tableName] options:opts callback:function (js) {
+    [self loadTableInfo];
+  }];
 }
 
 - (void)didSelectEncoding:(CPPopUpButton)sender
 {
   var title = [sender titleOfSelectedItem];
-  alert(title);
+  var opts = [CPDictionary dictionaryWithObjects:[title] forKeys:[@"encoding"]];
+  [[SJAPIRequest sharedAPIRequest] sendRequestToUpdateTable:[self tableName] options:opts callback:function (js) {
+    [self loadTableInfo];
+  }];
 }
 
 - (void)didSelecType:(CPPopUpButton)sender
 {
   var title = [sender titleOfSelectedItem];
-  alert(title);
+  var opts = [CPDictionary dictionaryWithObjects:[title] forKeys:[@"type"]];
+  [[SJAPIRequest sharedAPIRequest] sendRequestToUpdateTable:[self tableName] options:opts callback:function (js) {
+    [self loadTableInfo];
+  }];
 }
 
 

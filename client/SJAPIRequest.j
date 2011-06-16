@@ -52,6 +52,15 @@ var DownloadIFrame = null,
 	[self _sendRequestToURL:url callback:aCallback];
 }
 
+- (void)sendRequestToUpdateTable:(CPString)table_name options:(CPDictionary)opts callback:(func)callback
+{
+  var url = SERVER_BASE + "/api.php";
+  var query = "endpoint=update_table&table=" + table_name + "&" + [self _requestCredentialsString] + "&" + [opts toQueryString];
+  url += "?" + query;
+  
+  [self _sendRequestToURL:url httpMethod:@"POST" callback:callback];
+}
+
 - (void)sendRequestToEndpoint:(CPString)aURL callback:(id)aCallback
 {
 	[self sendRequestToEndpoint:aURL withOptions:nil callback:aCallback];
@@ -64,28 +73,29 @@ var DownloadIFrame = null,
 	[self _sendRequestToURL:url callback:aCallback];
 }
 
-- (void)_sendRequestToURL:(CPString)aURL callback:(id)aCallback
+- (void)_sendRequestToURL:(CPString)aURL httpMethod:(CPString)method callback:(id)aCallback
 {
 	var CFRequest = new CFHTTPRequest();
-
-	CFRequest.open("GET", aURL, true)
-    CFRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-    
-    CFRequest.oncomplete = function() {
-    	
-    	try
-    	{
-    	  var data = [CFRequest.responseText() objectFromJSON];
-		  aCallback( data );
-		}
-		catch (e)
-		{
-		 console.log(e);
-		  alert( @"Request failed for URL: " + aURL );
-		}
+  CFRequest.open(method, aURL, true);
+  CFRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+  
+  CFRequest.oncomplete = function() {
+    try {
+      var data = [CFRequest.responseText() objectFromJSON];
+      aCallback( data );
+    } 
+    catch (e) {
+      console.log(e);
+      alert( @"Request failed for URL: " + aURL );
     }
-    
-    CFRequest.send();
+  };
+  
+  CFRequest.send();
+}
+
+- (void)_sendRequestToURL:(CPString)aURL callback:(id)aCallback
+{
+  [self _sendRequestToURL:aURL httpMethod:@"GET" callback:aCallback];
 }
 
 - (CPString)_requestCredentialsString
