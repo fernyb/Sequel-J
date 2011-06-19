@@ -44,6 +44,7 @@
   // create the CPTableView
   tableView = [[CPTableView alloc] initWithFrame:[contentView bounds]];
   [tableView setDataSource:self];
+  [tableView setDelegate:self];
   [tableView setUsesAlternatingRowBackgroundColors:YES];
   
   var widthOfHeader = (viewWidth - 15) / [[self headerNames] count];
@@ -52,9 +53,20 @@
     var column = [[CPTableColumn alloc] initWithIdentifier:[CPString stringWithFormat:@"SJTableColumn%@", columnName]];
     [[column headerView] setStringValue:columnName];
     [column setWidth:widthOfHeader];
+    
+    switch (columnName) {
+      case @"Unsigned" :
+      case @"Zerofill" :
+      case @"Binary" :
+      case @"Allow Null" :
+        var checkbox = [CPCheckBox checkBoxWithTitle:@""];
+        [column setDataView:checkbox];
+      break;
+    }
+
     [tableView addTableColumn:column];
   }
-
+  
   [scrollView setDocumentView:tableView];
   
   return scrollView;
@@ -90,10 +102,37 @@
 }
 
 
+- (void)tableView:(CPTableView)aTableView setObjectValue:(CPControl)anObject forTableColumn:(CPTableColumn)tc row:(int)rowIndex
+{
+  var checkIfNeeded = function(name) {
+    var item = [tableList objectAtIndex:rowIndex];
+    item[name] = (item[name] == true ? false : true);
+  };
+  
+  switch([tc identifier]) {
+    case @"SJTableColumnUnsigned" :
+      checkIfNeeded('Unsigned');
+    break;
+    case @"SJTableColumnZerofill" :
+      checkIfNeeded('Zerofill');
+    break;
+    case @"SJTableColumnBinary" :
+      checkIfNeeded('Binary');
+    break;
+    case @"SJTableColumnAllow Null" :
+      checkIfNeeded('Allow Null');
+    break;
+  }
+}
+
+
 - (id)tableView:(CPTableView)aTableView objectValueForTableColumn:(CPTableColumn)aTableColumn row:(CPNumber)row
 {
   var field = [tableList objectAtIndex:row];
-
+  var shouldBeChecked = function(field_value) {
+    return field_value == true ? CPOnState : CPOffState;
+  };
+  
   switch([aTableColumn identifier]) {
    case @"SJTableColumnField" :
     return field['Field'];
@@ -102,7 +141,23 @@
    case @"SJTableColumnType" :
     return field['Type'];
    break;
-  
+   
+   case @"SJTableColumnUnsigned" :
+    return shouldBeChecked(field['Unsigned']);
+   break;
+   
+   case @"SJTableColumnZerofill" :
+    return shouldBeChecked(field['Zerofill']);
+   break;
+
+   case @"SJTableColumnBinary" :
+    return shouldBeChecked(field['Binary']);
+   break;
+   
+   case @"SJTableColumnAllow Null" :
+    return shouldBeChecked(field['Allow Null']);
+   break;
+        
    case @"SJTableColumnLength" :
     return field['Length'];
    break;
@@ -115,7 +170,7 @@
     return field['Extra'];
    break;
 
- 
+
    case @"SJTableColumnAllow Null" :
     return field['Null'];
    break;
