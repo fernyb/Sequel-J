@@ -8,6 +8,8 @@
   CPTableView tableView;
   CGFloat viewWidth;
   CPArray indexes;
+  CPString tableName @accessors;
+  CPWindow theWindow @accessors;
 }
 
 

@@ -50,8 +50,13 @@
   var viewWidth = [[self view] bounds].size.width;
   
   tableViewController = [[SJTableViewController alloc] initWithView:topContentView andWidth:viewWidth];
-  indexesViewController = [[SJIndexesViewController alloc] initWithView:bottomContentView andWidth:viewWidth];
+  [tableViewController setTableName:[self tableName]];
+  [tableViewController setTheWindow: [[self contentView] window] ];
 
+  indexesViewController = [[SJIndexesViewController alloc] initWithView:bottomContentView andWidth:viewWidth];
+  [indexesViewController setTableName:[self tableName]];
+  [indexesViewController setTheWindow: [[self contentView] window] ];
+  
   [[self view] addSubview:dbSplitView];
 }
 
@@ -63,6 +68,16 @@
 - (void)databaseTableSelected
 {
   [self requestTableData];
+}
+
+- (void)setTableName:(CPString)name
+{
+  [super setTableName:name];
+  [tableViewController setTableName:[self tableName]];
+  [indexesViewController setTableName:[self tableName]];
+  
+  [tableViewController setTheWindow: [[self contentView] window] ];
+  [indexesViewController setTheWindow: [[self contentView] window] ];
 }
 
 - (void)requestTableData

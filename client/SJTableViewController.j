@@ -13,6 +13,8 @@
   CPTableView tableView;
   CGFloat viewWidth;
   CPArray tableList;
+  CPString tableName @accessors;
+  CPWindow theWindow @accessors;
 }
 
 
@@ -102,11 +104,52 @@
 }
 
 
+- (void)alertDidEnd:(CPAlert)sender returnCode:(int)code contextInfo:(id)context
+{
+  //console.log(@"***** Alert Did End");
+}
+
 - (void)tableView:(CPTableView)aTableView setObjectValue:(CPControl)anObject forTableColumn:(CPTableColumn)tc row:(int)rowIndex
 {
   var checkIfNeeded = function(name) {
     var item = [tableList objectAtIndex:rowIndex];
     item[name] = (item[name] == true ? false : true);
+
+    var params = [CPDictionary dictionary];
+    [params setObject:item['Field'] forKey:@"field"];
+    [params setObject:item['Type'] forKey:@"type"];
+    [params setObject:item['Length'] forKey:@"length"];
+    [params setObject:[name lowercaseString] forKey:@"name"];
+    [params setObject:(item[name] ? @"YES" : @"NO") forKey:[name lowercaseString]];
+    [params setObject:item['Extra'] forKey:@"extra"];
+    [params setObject:(item['Allow Null'] ? @"YES" : @"NO") forKey:@"null"];
+    
+    [[SJAPIRequest sharedAPIRequest] sendUpdateRequestSchemaTable:[self tableName] query:params callback:function( js ) {
+      if (js.error != '') {
+        var error_message = "An error occurred when trying to change field '"+ item['Field'] +"' ";
+        error_message += "\n\n";
+        error_message += "MySQL said: " + js.error;
+        error_message += "\n\n";
+        error_message += js.query;
+        
+        item[name] = (item[name] ? false : true);
+        
+        var alert = [CPAlert new];
+        [alert addButtonWithTitle:@"OK"];
+        [alert setMessageText:@"Error changing field"];
+        [alert setInformativeText:error_message];
+        [alert setAlertStyle:CPCriticalAlertStyle];
+        [alert beginSheetModalForWindow:[self theWindow]
+                          modalDelegate:self 
+                         didEndSelector:@selector(alertDidEnd:returnCode:contextInfo:) 
+                            contextInfo:nil];
+      [tableView reloadData];
+      } 
+      else if (js.error == '') {
+        [self setFields:js.fields];
+        [self reloadData];
+      }
+    }];
   };
   
   switch([tc identifier]) {

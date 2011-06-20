@@ -30,6 +30,25 @@ class App < Sinatra::Base
     []
   end
   
+  def schema_table table_name
+    results = query "SHOW COLUMNS FROM `#{table_name}`"
+    fields = results.map {|row|
+      {
+        'Field'      => row[0],
+        'Type'       => (row[1] =~ /([a-z]+)/i ? $1 : ''),
+        'Length'     => (row[1] =~ /([0-9]+)/ ? $1 : ''),
+        'Unsigned'   => (row[1] =~ /unsigned/i ? true : false),
+        'Zerofill'   => (row[1] =~ /zerofill/i ? true : false),
+        'Binary'     => false, # I don't know what this field is for?
+        'Allow Null' => (row[2].to_s == 'YES'),
+        'Key'        => row[3].to_s,
+        'Default'    => (row[4].nil? ? 'NULL' : row[4]),
+        'Extra'      => row[5]
+      }
+    }
+    fields
+  end
+  
   def table_columns table_name
     results = query("SHOW COLUMNS FROM `#{table_name}`")
     results.collect {|f| f[0] }
@@ -139,23 +158,31 @@ class App < Sinatra::Base
   end
   
   get '/schema/:table' do
-    results = query "SHOW COLUMNS FROM `#{params[:table]}`"
-    fields = results.map {|row|
-      {
-        'Field'      => row[0],
-        'Type'       => (row[1] =~ /([a-z]+)/i ? $1 : ''),
-        'Length'     => (row[1] =~ /([0-9]+)/ ? $1 : ''),
-        'Unsigned'   => (row[1] =~ /unsigned/i ? true : false),
-        'Zerofill'   => (row[1] =~ /zerofill/i ? true : false),
-        'Binary'     => false, # I don't know what this field is for?
-        'Allow Null' => (row[2].to_s == 'YES'),
-        'Key'        => row[3].to_s,
-        'Default'    => (row[4].nil? ? 'NULL' : row[4]),
-        'Extra'      => row[5]
-      }
-    }
-    
+    fields = schema_table params[:table]    
     render fields: fields
+  end
+  
+  post '/schema/:table' do
+    name    = params['name']
+    field   = params['field']
+    type    = params['type']
+    length  = params['length']
+    extra   = params['extra']
+    allow_null = params['null'] == 'YES' ? 'NULL' : 'NOT NULL'
+    result  = ''
+    qstr = ''
+  
+    if params[name] == 'YES'
+      name = '' if name.upcase == 'ALLOW NULL'
+      qstr = "ALTER TABLE `#{params['table']}` CHANGE `#{field}` `#{field}` #{type}(#{length}) #{name.upcase} #{allow_null} #{extra}"
+    elsif params[name] == 'NO'
+      qstr = "ALTER TABLE `#{params['table']}` CHANGE `#{field}` `#{field}` #{type}(#{length}) #{allow_null} #{extra}"
+    end
+    query qstr
+    
+    fields = ((@error == '' || @error.nil?) ? schema_table(params[:table]) : [])
+    
+    render fields: fields, query: qstr
   end
   
   get '/indexes/:table' do
@@ -296,7 +323,7 @@ class App < Sinatra::Base
     elsif params.key?('collation')
       query("ALTER TABLE `#{params['table']}` COLLATE = #{params['collation']}")
       render collation: params['collation']
-    end  
+    end
   end
   
   get '/' do
