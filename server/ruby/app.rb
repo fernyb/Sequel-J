@@ -163,11 +163,12 @@ class App < Sinatra::Base
   end
   
   post '/schema/:table' do
-    name    = params['name']
-    field   = params['field']
-    type    = params['type']
-    length  = params['length']
-    extra   = params['extra']
+    name     = params['name']
+    field    = params['field']
+    type     = params['type']
+    length   = params['length']
+    extra    = params['extra']
+    unsigned = params['unsigned']
     allow_null = params['null'] == 'YES' ? 'NULL' : 'NOT NULL'
     result  = ''
     qstr = ''
@@ -177,6 +178,12 @@ class App < Sinatra::Base
       qstr = "ALTER TABLE `#{params['table']}` CHANGE `#{field}` `#{field}` #{type}(#{length}) #{name.upcase} #{allow_null} #{extra}"
     elsif params[name] == 'NO'
       qstr = "ALTER TABLE `#{params['table']}` CHANGE `#{field}` `#{field}` #{type}(#{length}) #{allow_null} #{extra}"
+    else
+      qstr = "ALTER TABLE `#{params['table']}` CHANGE `#{field}` `#{field}` #{type}(#{length})"
+      qstr << " UNSIGNED" if unsigned == "YES"
+      qstr << " NOT NULL"
+      qstr << " auto_increment" if extra == 'auto_increment'
+      qstr << " on update CURRENT_TIMESTAMP" if extra == 'on update CURRENT_TIMESTAMP'
     end
     query qstr
     

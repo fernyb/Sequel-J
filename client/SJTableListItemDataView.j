@@ -25,9 +25,9 @@
 	return self;
 }
 
-- (void)initWithCoder:(CPCoder)coder
+- (id)initWithCoder:(CPCoder)coder
 {
-	[super initWithCoder:coder];
+	self = [super initWithCoder:coder];
 	
 	tableIconView = [coder decodeObjectForKey:@"tableIconView"];
 	tableNameLabel = [coder decodeObjectForKey:@"tableNameLabel"];

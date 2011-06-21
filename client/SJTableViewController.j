@@ -5,6 +5,7 @@
 @import "SJHTTPRequest.j"
 @import "SJDataManager.j"
 @import "SJConstants.j"
+@import "SJTableStructureItemView.j"
 
 
 @implementation SJTableViewController : CPObject 
@@ -15,6 +16,7 @@
   CPArray tableList;
   CPString tableName @accessors;
   CPWindow theWindow @accessors;
+  CPString controllerName @accessors;
 }
 
 
@@ -29,6 +31,7 @@
   [self setupView];
   return self;
 }
+
 
 - (void)setupView
 {
@@ -63,6 +66,12 @@
       case @"Allow Null" :
         var checkbox = [CPCheckBox checkBoxWithTitle:@""];
         [column setDataView:checkbox];
+      break;
+      
+      case @"Extra" :
+        var extraDView = [[SJTableStructureItemView alloc] initWithFrame:CGRectMake(0,0, widthOfHeader, 20)];
+        [extraDView setMainController:self];
+        [column setDataView:extraDView];
       break;
     }
 
@@ -103,52 +112,81 @@
   return [tableList count];
 }
 
+- (void)extraFieldDidUpdate:(CPString)title
+{
+  var selectedRow = [tableView selectedRow];
+  if( selectedRow != -1) {
+    var oldValue = [CPString string];
+    [self updateFieldName:@"Extra" forIndex:selectedRow withCallback:function (item, idx) {
+      oldValue = [CPString stringWithString:((item['Extra'] == '' || item['Extra'] == null) ? "None" : item['Extra'])];
+      item['Extra'] = title;
+      return item;
+    } errorCallback:function (item, idx) {
+      item['Extra'] = oldValue;
+      return item;
+    }];
+  }
+}
 
 - (void)alertDidEnd:(CPAlert)sender returnCode:(int)code contextInfo:(id)context
 {
   //console.log(@"***** Alert Did End");
 }
 
+
+- (void)updateFieldName:(CPString)name forIndex:(int)rowIndex withCallback:(func)aCallback errorCallback:(func)errorCallback
+{
+  var item = [tableList objectAtIndex:rowIndex];
+  item = aCallback(item, rowIndex);
+  
+  var params = [CPDictionary dictionary];
+  [params setObject:item['Field'] forKey:@"field"];
+  [params setObject:item['Type'] forKey:@"type"];
+  [params setObject:item['Length'] forKey:@"length"];
+  [params setObject:(item['Unsigned'] ? @"YES" : @"NO") forKey:@"unsigned"];
+  [params setObject:[name lowercaseString] forKey:@"name"];
+  [params setObject:(item[name] ? @"YES" : @"NO") forKey:[name lowercaseString]];
+  [params setObject:item['Extra'] forKey:@"extra"];
+  [params setObject:(item['Allow Null'] ? @"YES" : @"NO") forKey:@"null"];
+
+  [[SJAPIRequest sharedAPIRequest] sendUpdateRequestSchemaTable:[self tableName] query:params callback:function( js ) {
+    if (js.error != '') {
+      var error_message = "An error occurred when trying to change field '"+ item['Field'] +"' ";
+      error_message += "\n\n";
+      error_message += "MySQL said: " + js.error;
+      error_message += "\n\n";
+      error_message += js.query;
+      
+      item = errorCallback(item, rowIndex);
+      
+      var alert = [CPAlert new];
+      [alert addButtonWithTitle:@"OK"];
+      [alert setMessageText:@"Error changing field"];
+      [alert setInformativeText:error_message];
+      [alert setAlertStyle:CPCriticalAlertStyle];
+      [alert beginSheetModalForWindow:[self theWindow]
+                        modalDelegate:self 
+                       didEndSelector:@selector(alertDidEnd:returnCode:contextInfo:) 
+                          contextInfo:nil];
+    [tableView reloadData];
+    } 
+    else if (js.error == '') {
+      [self setFields:js.fields];
+      [self reloadData];
+    }
+  }];
+}
+
+
 - (void)tableView:(CPTableView)aTableView setObjectValue:(CPControl)anObject forTableColumn:(CPTableColumn)tc row:(int)rowIndex
 {
-  var checkIfNeeded = function(name) {
-    var item = [tableList objectAtIndex:rowIndex];
-    item[name] = (item[name] == true ? false : true);
-
-    var params = [CPDictionary dictionary];
-    [params setObject:item['Field'] forKey:@"field"];
-    [params setObject:item['Type'] forKey:@"type"];
-    [params setObject:item['Length'] forKey:@"length"];
-    [params setObject:[name lowercaseString] forKey:@"name"];
-    [params setObject:(item[name] ? @"YES" : @"NO") forKey:[name lowercaseString]];
-    [params setObject:item['Extra'] forKey:@"extra"];
-    [params setObject:(item['Allow Null'] ? @"YES" : @"NO") forKey:@"null"];
-    
-    [[SJAPIRequest sharedAPIRequest] sendUpdateRequestSchemaTable:[self tableName] query:params callback:function( js ) {
-      if (js.error != '') {
-        var error_message = "An error occurred when trying to change field '"+ item['Field'] +"' ";
-        error_message += "\n\n";
-        error_message += "MySQL said: " + js.error;
-        error_message += "\n\n";
-        error_message += js.query;
-        
-        item[name] = (item[name] ? false : true);
-        
-        var alert = [CPAlert new];
-        [alert addButtonWithTitle:@"OK"];
-        [alert setMessageText:@"Error changing field"];
-        [alert setInformativeText:error_message];
-        [alert setAlertStyle:CPCriticalAlertStyle];
-        [alert beginSheetModalForWindow:[self theWindow]
-                          modalDelegate:self 
-                         didEndSelector:@selector(alertDidEnd:returnCode:contextInfo:) 
-                            contextInfo:nil];
-      [tableView reloadData];
-      } 
-      else if (js.error == '') {
-        [self setFields:js.fields];
-        [self reloadData];
-      }
+  var checkIfNeeded = function (name) {
+    [self updateFieldName:name forIndex:rowIndex withCallback:function (item, idx) {
+      item[name] = (item[name] == true ? false : true);
+      return item;
+    } errorCallback:function (item, idx) {
+      item[name] = (item[name] ? false : true);
+      return item;
     }];
   };
   
@@ -210,7 +248,7 @@
    break;
   
    case @"SJTableColumnExtra" :
-    return field['Extra'];
+     return (field['Extra'] == '' ? 'None' : field['Extra']);
    break;
 
 
