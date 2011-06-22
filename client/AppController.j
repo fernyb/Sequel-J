@@ -139,8 +139,30 @@
   [viewControllers addObject:queryTabController];
 
   [theWindow orderFront:self];
+  
+  [[self contentSplitView] setPosition:240 ofDividerAtIndex:0];
+  [[self contentSplitView] setDelegate:self];
 }
 
+- (float)splitView:(CPSplitView)aSplitView constrainMaxCoordinate:(float)proposedMax ofSubviewAt:(int)subviewIndex
+{
+  if (subviewIndex == 0) {
+    return 280;
+  }
+  else {
+    return proposedMax;
+  }
+}
+
+- (float)splitView:(CPSplitView)aSplitView constrainMinCoordinate:(float)proposedMin ofSubviewAt:(int)subviewIndex
+{
+  if (subviewIndex == 0) {
+      return 140;
+  }
+  else {
+      return proposedMin;
+  }
+}
 
 - (CPSplitView)contentSplitView
 {

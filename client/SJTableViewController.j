@@ -22,7 +22,7 @@
 
 - (id)initWithView:(CPView)aView  andWidth:(CGFloat)aWidth
 {
-  [self init];
+  self = [self init];
   contentView = aView;
   viewWidth = aWidth;
   tableList = [[CPArray alloc] init];
@@ -32,15 +32,74 @@
   return self;
 }
 
+- (void)addRowAction:(CPButton)btn
+{
+  console.log(@"**** Add Row Action");
+}
+
+- (void)removeRowAction:(CPButton)btn
+{
+  console.log(@"***** Remove Row Action");
+}
+
+- (void)duplicateRowAction:(CPButton)btn
+{
+  console.log(@"***** Duplicate Row Action");
+}
+
+- (void)refreshAction:(CPButton)btn
+{
+  console.log(@"***** Refresh Action");
+}
 
 - (void)setupView
 {
   var scrollview = [self addTableView];
   [contentView addSubview:scrollview];
+  [scrollview setFrame:CGRectMake(0,0, [contentView bounds].size.width, [contentView bounds].size.height - 23)];
+  [self addBottomBar];
 }
 
-- (CPScrollView)addTableView
+- (void)addBottomBar
 {
+  // create the bottom button bar
+	var bottomButtonBar = [[CPButtonBar alloc] initWithFrame:CGRectMake(0, [contentView bounds].size.height - 23, [contentView bounds].size.width, 23)];
+	[bottomButtonBar setAutoresizingMask:CPViewWidthSizable | CPViewMinYMargin];
+	
+	var addButton = [CPButtonBar plusButton];
+	[addButton setAction:@selector(addRowAction:)];
+	[addButton setTarget:self];
+	[addButton setEnabled:YES];
+	
+	var removeButton = [CPButtonBar minusButton];
+	[removeButton setAction:@selector(removeRowAction:)];
+	[removeButton setTarget:self];
+	[removeButton setEnabled:YES];
+	
+  var duplicateButton = [[CPButton alloc] initWithFrame:CGRectMake(0, 0, 35, 25)];
+  var duplicateImage = [[CPImage alloc] initWithContentsOfFile:[[CPBundle mainBundle] pathForResource:@"duplicate-icon.png"] size:CGSizeMake(13, 8)];
+  [duplicateButton setBordered:NO];
+  [duplicateButton setTarget:self];
+  [duplicateButton setAction:@selector(duplicateRowAction:)];
+  [duplicateButton setImage:duplicateImage];
+  [duplicateButton setImagePosition:CPImageOnly];
+  
+  var refreshBtn = [[CPButton alloc] initWithFrame:CGRectMake(0, 0, 35, 25)];
+  var refreshImage = [[CPImage alloc] initWithContentsOfFile:[[CPBundle mainBundle] pathForResource:@"refresh-icon.png"] size:CGSizeMake(14, 15)];
+  [refreshBtn setBordered:NO];
+  [refreshBtn setTarget:self];
+  [refreshBtn setAction:@selector(refreshAction:)];
+  [refreshBtn setImage:refreshImage];
+  [refreshBtn setImagePosition:CPImageOnly];
+  
+	[bottomButtonBar setButtons:[addButton, removeButton, duplicateButton, refreshBtn]];
+	
+	[contentView addSubview:bottomButtonBar];
+}
+
+
+- (CPScrollView)addTableView
+{	
    // create a CPScrollView that will contain the CPTableView
   var scrollView = [[CPScrollView alloc] initWithFrame:[contentView bounds]];
   [scrollView setAutoresizingMask:CPViewWidthSizable | CPViewHeightSizable];

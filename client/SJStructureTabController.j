@@ -57,6 +57,7 @@
   [indexesViewController setTableName:[self tableName]];
   [indexesViewController setTheWindow: [[self contentView] window] ];
   
+  
   [[self view] addSubview:dbSplitView];
 }
 

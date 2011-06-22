@@ -38,6 +38,54 @@
   indexes = [[CPArray alloc] init];
   var scrollview = [self addTableView];
   [contentView addSubview:scrollview];
+  [scrollview setFrame:CGRectMake(0,0, [contentView bounds].size.width, [contentView bounds].size.height - 23)];
+  
+  [self addBottomBar];
+}
+
+
+- (void)addBottomBar
+{
+  // create the bottom button bar
+	var bottomButtonBar = [[CPButtonBar alloc] initWithFrame:CGRectMake(0, [contentView bounds].size.height - 23, [contentView bounds].size.width, 23)];
+	[bottomButtonBar setAutoresizingMask:CPViewWidthSizable | CPViewMinYMargin];
+	
+	var addButton = [CPButtonBar plusButton];
+	[addButton setAction:@selector(addRowAction:)];
+	[addButton setTarget:self];
+	[addButton setEnabled:YES];
+	
+	var removeButton = [CPButtonBar minusButton];
+	[removeButton setAction:@selector(removeRowAction:)];
+	[removeButton setTarget:self];
+	[removeButton setEnabled:YES];
+	
+  var refreshBtn = [[CPButton alloc] initWithFrame:CGRectMake(0, 0, 35, 25)];
+  var refreshImage = [[CPImage alloc] initWithContentsOfFile:[[CPBundle mainBundle] pathForResource:@"refresh-icon.png"] size:CGSizeMake(14, 15)];
+  [refreshBtn setBordered:NO];
+  [refreshBtn setTarget:self];
+  [refreshBtn setAction:@selector(refreshAction:)];
+  [refreshBtn setImage:refreshImage];
+  [refreshBtn setImagePosition:CPImageOnly];
+  
+	[bottomButtonBar setButtons:[addButton, removeButton, refreshBtn]];
+	
+	[contentView addSubview:bottomButtonBar];
+}
+
+- (void)addRowAction:(CPButton)btn
+{
+  console.log(@"**** Add Row Action");
+}
+
+- (void)removeRowAction:(CPButton)btn
+{
+  console.log(@"**** Remove Row Action");
+}
+
+- (void)refreshAction:(CPButton)btn
+{
+  console.log(@"**** Refresh Action");
 }
 
 - (CPScrollView)addTableView
