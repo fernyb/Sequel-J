@@ -198,34 +198,173 @@ describe "App" do
   end
 
   describe '/schema/:table' do
-    it 'returns the schema for table_name' do
-      @mysql.should_receive(:query).with("SHOW COLUMNS FROM `table_name`").and_return([
-        ["id", "int(11) unsigned zerofill", "NO", "PRI", nil, "auto_increment"],
-        ["user_id", "int(11)", "YES", "MUL", nil, ""],
-        ["name", "varchar(255)", "YES", "", nil, ""],
-        ["description", "text", "YES", "", nil, ""],
-        ["latitude", "float", "YES", "MUL", nil, ""],
-        ["longitude", "float", "YES", "MUL", nil, ""],
-        ["created_at", "datetime", "YES", "MUL", nil, ""],
-        ["updated_at", "datetime", "YES", "", nil, ""],
-        ["test", "varchar(255)", "YES", "MUL", nil, ""]
-      ])
+    describe "GET" do
+      it 'returns the schema for table_name' do
+        @mysql.should_receive(:query).with("SHOW COLUMNS FROM `table_name`").and_return([
+          ["id", "int(11) unsigned zerofill", "NO", "PRI", nil, "auto_increment"],
+          ["user_id", "int(11)", "YES", "MUL", nil, ""],
+          ["name", "varchar(255)", "YES", "", nil, ""],
+          ["description", "text", "YES", "", nil, ""],
+          ["latitude", "float", "YES", "MUL", nil, ""],
+          ["longitude", "float", "YES", "MUL", nil, ""],
+          ["created_at", "datetime", "YES", "MUL", nil, ""],
+          ["updated_at", "datetime", "YES", "", nil, ""],
+          ["test", "varchar(255)", "YES", "MUL", nil, ""]
+        ])
       
-      get '/schema/table_name'
+        get '/schema/table_name'
       
-      json['path'].should == '/schema/table_name'
-      json['error'].should == ''
-      json['fields'].size == 9
-      json['fields'].first.keys.should include('Field', 'Type', 'Length', 'Unsigned', 'Zerofill', 'Binary', 'Allow Null', 'Key', 'Default')
+        json['path'].should == '/schema/table_name'
+        json['error'].should == ''
+        json['fields'].size == 9
+        json['fields'].first.keys.should include('Field', 'Type', 'Length', 'Unsigned', 'Zerofill', 'Binary', 'Allow Null', 'Key', 'Default')
+      end
+    
+      it 'returns error message for Mysql Error' do
+        @mysql.should_receive(:query).and_raise(Mysql::Error.new('There is an error.'))
+        get '/schema/table_name'
+      
+        json['path'].should == '/schema/table_name'
+        json['error'].should == 'There is an error.'
+        json['fields'].size == 0
+      end
     end
     
-    it 'returns error message for Mysql Error' do
-      @mysql.should_receive(:query).and_raise(Mysql::Error.new('There is an error.'))
-      get '/schema/table_name'
+    describe "POST" do
+      before do
+        @query = {
+          port:     '3306',
+          database: 'skatr_development',
+          host:     'localhost',
+          password: 'password',
+          username: 'root',
+          field:    'id',
+          type:     'int',
+          length:   '11',
+          unsigned: 'NO',
+          name:     'unsigned',
+          extra:    'auto_increment',
+          null:     'NO'
+        }
+      end
       
-      json['path'].should == '/schema/table_name'
-      json['error'].should == 'There is an error.'
-      json['fields'].size == 0
+      it "updates the id field usigned attribute when unsigned is NO" do
+        @mysql.should_receive(:query).with("ALTER TABLE `checkins` CHANGE `id` `id` int(11) NOT NULL auto_increment").and_return nil
+        @mysql.should_receive(:query).with("SHOW COLUMNS FROM `checkins`").and_return([
+            ["id", "int(11) zerofill", "NO", "PRI", nil, "auto_increment"],
+            ["user_id", "int(11)", "YES", "MUL", nil, ""],
+            ["name", "varchar(255)", "YES", "", nil, ""],
+            ["description", "text", "YES", "", nil, ""],
+            ["latitude", "float", "YES", "MUL", nil, ""],
+            ["longitude", "float", "YES", "MUL", nil, ""],
+            ["created_at", "datetime", "YES", "MUL", nil, ""],
+            ["updated_at", "datetime", "YES", "", nil, ""],
+            ["test", "varchar(255)", "YES", "MUL", nil, ""]
+          ])
+          
+        post "/schema/checkins?#{@query.to_query_string}"
+      
+        json['path'].should == '/schema/checkins'
+        json['error'].should == ''
+        json['fields'].size.should == 9
+        json['fields'].first['Field'].should == 'id'
+        json['fields'].first['Unsigned'].should be_false
+      end
+
+      it "updates the id field usigned attribute when unsigned is YES" do
+        @query[:name] = 'unsigned'
+        @query[:unsigned] = 'YES'
+        
+        @mysql.should_receive(:query).with("ALTER TABLE `checkins` CHANGE `id` `id` int(11) UNSIGNED NOT NULL auto_increment").and_return nil
+        @mysql.should_receive(:query).with("SHOW COLUMNS FROM `checkins`").and_return([
+            ["id", "int(11) unsigned zerofill", "NO", "PRI", nil, "auto_increment"],
+            ["user_id", "int(11)", "YES", "MUL", nil, ""],
+            ["name", "varchar(255)", "YES", "", nil, ""],
+            ["description", "text", "YES", "", nil, ""],
+            ["latitude", "float", "YES", "MUL", nil, ""],
+            ["longitude", "float", "YES", "MUL", nil, ""],
+            ["created_at", "datetime", "YES", "MUL", nil, ""],
+            ["updated_at", "datetime", "YES", "", nil, ""],
+            ["test", "varchar(255)", "YES", "MUL", nil, ""]
+          ])
+          
+        post "/schema/checkins?#{@query.to_query_string}"
+      
+        json['path'].should == '/schema/checkins'
+        json['error'].should == ''
+        json['fields'].size.should == 9
+        json['fields'].first['Field'].should == 'id'
+        json['fields'].first['Unsigned'].should be_true
+      end
+
+      it "updates the extra field, auto_increment" do
+        @query[:name] = ''
+        @query[:unsigned] = 'YES'
+        @query[:extra] = 'auto_increment'
+        
+        @mysql.should_receive(:query).with("ALTER TABLE `checkins` CHANGE `id` `id` int(11) UNSIGNED NOT NULL auto_increment").and_return nil
+        @mysql.should_receive(:query).with("SHOW COLUMNS FROM `checkins`").and_return([
+            ["id", "int(11) unsigned zerofill", "NO", "PRI", nil, "auto_increment"],
+            ["user_id", "int(11)", "YES", "MUL", nil, ""],
+            ["name", "varchar(255)", "YES", "", nil, ""],
+            ["description", "text", "YES", "", nil, ""],
+            ["latitude", "float", "YES", "MUL", nil, ""],
+            ["longitude", "float", "YES", "MUL", nil, ""],
+            ["created_at", "datetime", "YES", "MUL", nil, ""],
+            ["updated_at", "datetime", "YES", "", nil, ""],
+            ["test", "varchar(255)", "YES", "MUL", nil, ""]
+          ])
+          
+        post "/schema/checkins?#{@query.to_query_string}"
+      
+        json['path'].should == '/schema/checkins'
+        json['error'].should == ''
+        json['fields'].size.should == 9
+        json['fields'].first['Field'].should == 'id'
+        json['fields'].first['Extra'].should.should == 'auto_increment'
+      end  
+
+      it "updates the extra field, to be none and should not be unsigned" do
+        @query[:name] = ''
+        @query[:unsigned] = 'NO'
+        @query[:extra] = 'none'
+        
+        @mysql.should_receive(:query).with("ALTER TABLE `checkins` CHANGE `id` `id` int(11) NOT NULL").and_return nil
+        @mysql.should_receive(:query).with("SHOW COLUMNS FROM `checkins`").and_return([
+            ["id", "int(11) zerofill", "NO", "PRI", nil, ""],
+            ["user_id", "int(11)", "YES", "MUL", nil, ""],
+            ["name", "varchar(255)", "YES", "", nil, ""],
+            ["description", "text", "YES", "", nil, ""],
+            ["latitude", "float", "YES", "MUL", nil, ""],
+            ["longitude", "float", "YES", "MUL", nil, ""],
+            ["created_at", "datetime", "YES", "MUL", nil, ""],
+            ["updated_at", "datetime", "YES", "", nil, ""],
+            ["test", "varchar(255)", "YES", "MUL", nil, ""]
+          ])
+          
+        post "/schema/checkins?#{@query.to_query_string}"
+      
+        json['path'].should == '/schema/checkins'
+        json['error'].should == ''
+        json['fields'].size.should == 9
+        json['fields'].first['Field'].should == 'id'
+        json['fields'].first['Extra'].should.should == ''
+        json['fields'].first['Unsigned'].should be_false
+      end
+
+      it "can handle MySQL errors" do
+        @query[:name] = ''
+        @query[:unsigned] = 'NO'
+        @query[:extra] = 'none'
+        
+        @mysql.should_receive(:query).with("ALTER TABLE `checkins` CHANGE `id` `id` int(11) NOT NULL").and_raise(Mysql::Error.new("There is an error..."))
+
+        post "/schema/checkins?#{@query.to_query_string}"
+      
+        json['path'].should == '/schema/checkins'
+        json['error'].should == 'There is an error...'
+        json['fields'].size.should == 0
+      end                 
     end
   end
 
