@@ -229,8 +229,15 @@
       break;
       
       case @"Extra" :
+      case @"Type"  :
         var extraDView = [[SJTableStructureItemView alloc] initWithFrame:CGRectMake(0,0, widthOfHeader, 20)];
-        [extraDView setMainController:self];
+        [extraDView setColumnIdentifier:[column identifier]];
+          
+        if(columnName == @"Type") {
+          [extraDView setItems:[self typeItems]];
+        } else if (columnName == @"Extra") {
+          [extraDView setItems:[self extraItems]];  
+        }
         [column setDataView:extraDView];
       break;
       
@@ -245,6 +252,19 @@
   [scrollView setDocumentView:tableView];
   
   return scrollView;
+}
+
+- (CPArray)extraItems
+{
+  return ['none', 'auto_increment', 'on update CURRENT_TIMESTAMP'];
+}
+
+- (CPArray)typeItems
+{
+  return ['int', 'bigint', 'float', 'double', 'decimal', '', 
+          'date', 'datetime', 'timestamp', 'time', 'year', '',
+          'char', 'varchar', 'tinyblob', 'tinytext', 'blob', 'text', 'mediumblob', 'mediumtext', 'longtext', 'enum', 'set', '',
+          'bit', 'binary', 'varbinary'];
 }
 
 
@@ -275,6 +295,27 @@
 - (CPNumber)numberOfRowsInTableView:(CPTableView)aTableView
 {
   return [tableList count];
+}
+
+- (void)updateFieldWithValue:(CPString)title forColumnIdentifier:(CPString)columnIdentifier
+{
+  if (columnIdentifier == @"SJTableColumnExtra") {
+    [self extraFieldDidUpdate:title];
+  } 
+  else if(columnIdentifier == @"SJTableColumnType") {
+    [self updateFieldType:title];
+  }
+}
+
+- (void)updateFieldType:(CPString)type
+{
+  // TODO: send request to server for update...
+  var selectedRow = [tableView selectedRow];
+  if (selectedRow != -1) {
+   var item = [tableList objectAtIndex:selectedRow];
+   item['Type'] = type;
+   [tableView reloadData];
+  }
 }
 
 - (void)extraFieldDidUpdate:(CPString)title
@@ -384,6 +425,9 @@
     break;
     case @"SJTableColumnAllow Null" :
       checkIfNeeded('Allow Null');
+    break;
+    case @"SJTableColumnType" :
+      //
     break;
     case @"SJTableColumnExtra" :
       // Not sure what to do because it has a drop down...

@@ -1,13 +1,15 @@
 @import <Foundation/Foundation.j>
 @import "SJImageView.j"
 
+
 var ICON_SIZE = CGSizeMake(14, 17);
 
 @implementation SJTableStructureItemView : CPView
 {
   CPImageView iconView;
 	CPTextField	textField;
-	CPObject mainController @accessors;
+	CPArray items @accessors;
+	CPString columnIdentifier @accessors;
 }
 
 - (id)initWithFrame:(CGRect)aRect
@@ -35,22 +37,22 @@ var ICON_SIZE = CGSizeMake(14, 17);
 
 - (void)imageViewMouseDown:(CPEvent)anEvent
 {
-  var menu = [[CPMenu alloc] initWithTitle:@"Extra"];
+  var menu = [[CPMenu alloc] initWithTitle:@"Items"];
   var menuItem;
-  menuItem = [[CPMenuItem alloc] initWithTitle:@"none" action:@selector(updateExtraField:) keyEquivalent:nil];
-  [menuItem setTarget:self];
-  [menu addItem:menuItem];
-
-  menuItem = [[CPMenuItem alloc] initWithTitle:@"auto_increment" action:@selector(updateExtraField:) keyEquivalent:nil];
-  [menuItem setTarget:self];
-  [menu addItem:menuItem];
-
-  menuItem = [[CPMenuItem alloc] initWithTitle:@"on update CURRENT_TIMESTAMP" action:@selector(updateExtraField:) keyEquivalent:nil];
-  [menuItem setTarget:self];
-  [menu addItem:menuItem];
+  
+  for(var i=0; i<[items count]; i++) {
+    var itemName = [items objectAtIndex:i];
+    if (itemName != '') {
+      menuItem = [[CPMenuItem alloc] initWithTitle:itemName action:@selector(updateExtraField:) keyEquivalent:nil];
+      [menuItem setRepresentedObject:columnIdentifier];
+      [menuItem setTarget:self];
+      [menu addItem:menuItem];
+    } else {
+      [menu addItem:[CPMenuItem separatorItem]];
+    }
+  }
   
   var point = [anEvent locationInWindow];
-  
   var anEvent = [CPEvent mouseEventWithType:CPLeftMouseDown 
                                    location:point 
                               modifierFlags:0 
@@ -67,11 +69,10 @@ var ICON_SIZE = CGSizeMake(14, 17);
 - (void)updateExtraField:(CPMenuItem)menuItem
 {
   var title = [menuItem title];
-  
   var controller = [self superview]; /* CPTableView */
   if ([controller respondsToSelector:@selector(delegate)]) {
     var tableViewDelegate = [controller delegate];
-    [tableViewDelegate extraFieldDidUpdate:title];
+    [tableViewDelegate updateFieldWithValue:title forColumnIdentifier:columnIdentifier];
   }
 }
 
@@ -91,7 +92,9 @@ var ICON_SIZE = CGSizeMake(14, 17);
 	[iconView setDelegate:self];
 	
 	textField = [coder decodeObjectForKey:@"textField"];
-
+  items = [coder decodeObjectForKey:@"items"];
+  columnIdentifier = [coder decodeObjectForKey:@"columnIdentifier"];
+  
 	return self;
 }
 
@@ -100,6 +103,8 @@ var ICON_SIZE = CGSizeMake(14, 17);
 	[super encodeWithCoder:coder];
 	[coder encodeObject:iconView forKey:@"iconView"];
 	[coder encodeObject:textField forKey:@"textField"];
+	[coder encodeObject:items forKey:@"items"];
+	[coder encodeObject:columnIdentifier forKey:@"columnIdentifier"];
 }
 
 - (void)setObjectValue:(CPString)aString
