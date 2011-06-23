@@ -578,4 +578,46 @@ describe "App" do
       response.headers['Location'].should == 'http://example.org/table_info/checkins'  
     end
   end
+  
+  describe '/updatecolumn/:table' do
+    before do
+     @query = { 
+        port:              '3306',
+        database:          'skatr_development',
+        host:              'localhost',
+        password:          'password',
+        username:          'root',
+        after_column_name: 'random_id',
+        column_name:       'hello',
+        column_type:       'int',
+        column_length:     '11',
+        column_unsigned:   'NO',
+        column_zerofill:   'NO',
+        column_binary:     'NO',
+        column_default:    'NULL',
+        column_extra:      '',
+        previous_column_name: ''
+      }
+    end
+    
+    it 'will add new column' do
+      @mysql.should_receive(:query).with("ALTER TABLE `checkins` ADD `hello` int NULL DEFAULT NULL AFTER `random_id`")
+      @mysql.should_receive(:query).with("SHOW COLUMNS FROM `checkins`").at_least(2).times.and_return []
+      post "/updatecolumn/checkins?#{@query.to_query_string}"
+    end
+    
+    it 'rename column name' do
+      @query[:previous_column_name] = 'hello'
+      @query[:column_name] = 'new_hello_name'
+      
+      @mysql.should_receive(:query).
+      with("ALTER TABLE `checkins` CHANGE `hello` `new_hello_name` int(11) NULL DEFAULT NULL AFTER `random_id`")
+      
+      @mysql.should_receive(:query).with("SHOW COLUMNS FROM `checkins`").at_least(2).times.and_return([
+            ["id", "int(11) zerofill", "NO", "PRI", nil, ""],
+            ["hello", "int(11)", "YES", "MUL", nil, ""]
+      ])
+      post "/updatecolumn/checkins?#{@query.to_query_string}"  
+    end
+  end
 end

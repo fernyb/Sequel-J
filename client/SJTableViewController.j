@@ -2,10 +2,12 @@
 @import <Foundation/Foundation.j>
 @import "Categories/CPSplitView+Categories.j"
 @import "Categories/CPArray+Categories.j"
+@import "Categories/CPTableView+Categories.j"
 @import "SJHTTPRequest.j"
 @import "SJDataManager.j"
 @import "SJConstants.j"
 @import "SJTableStructureItemView.j"
+
 
 
 @implementation SJTableViewController : CPObject 
@@ -32,14 +34,113 @@
   return self;
 }
 
+- (void)tableViewSelectionDidChange:(CPNotification)aNotification
+{
+  var selectedRow = [tableView selectedRow];
+  if (selectedRow == -1) return;
+  
+  [self validateFieldNames];
+}
+
+- (void)validateFieldNames
+{
+  var objectRemoved = NO;
+  for(var i=0; i<[tableList count]; i++) {
+    var item = [tableList objectAtIndex:i];
+    if(!item['Field'].match(/[a-z0-9]/i)) {
+      if ([tableView selectedRow] != i) {
+        objectRemoved = YES;
+        [tableList removeObjectAtIndex:i];
+      }
+    }
+  }
+  
+  if(objectRemoved) [tableView reloadData];
+}
+
 - (void)addRowAction:(CPButton)btn
 {
-  console.log(@"**** Add Row Action");
+  if(!tableList) {
+    return;
+  }
+  
+  var columnIndex = [tableView indexForColumnIdentifier:@"SJTableColumnField"];
+  
+  if(columnIndex != -1) {
+    if ([tableView selectedRow] != -1) {
+      [tableView deselectRow:[tableView selectedRow]];
+    }
+    [self validateFieldNames];
+    
+    tableList.push({
+      'Field'      : '',
+      'Type'       : 'int',
+      'Length'     : '11',
+      'Unsigned'   : false,
+      'Zerofill'   : false,
+      'Binary'     : false,
+      'Allow Null' : true,
+      'Key'        : '',
+      'Default'    : 'NULL',
+      'Extra'      : ''
+    });
+    [tableView reloadData];
+  
+    var rowIndex = [tableList count] - 1;
+    var anIndexSet = [CPIndexSet indexSetWithIndex:rowIndex];
+    [tableView selectRowIndexes:anIndexSet byExtendingSelection:NO];
+    [tableView editColumn:columnIndex row:rowIndex withEvent:nil select:YES];
+  }
 }
+
+- (void)addRowActionAlertDidEnd:(CPAlert)sender returnCode:(int)code contextInfo:(id)context
+{
+  // do nothing for now...
+}
+
 
 - (void)removeRowAction:(CPButton)btn
 {
-  console.log(@"***** Remove Row Action");
+  var row = [tableView selectedRow];
+  if (row == -1) {
+    return;
+  }
+  
+  var item = [tableList objectAtIndex:row];
+  
+  if(item['Field'] == '') {
+    [tableList removeObjectAtIndex:row];
+    [tableView reloadData];
+    return;
+  }
+  
+  var params = [CPDictionary dictionary];
+  [params setObject:item['Field'] forKey:@"column_name"];
+  
+  [[SJAPIRequest sharedAPIRequest] sendRemoveColumnRequestTable:[self tableName] query:params callback:function( js ) {
+    if (js.error != '') {
+      var error_message = "An error occurred.";
+      error_message += "\n\n";
+      error_message += "MySQL said: " + js.error;
+      error_message += "\n\n";
+      error_message += js.query;
+    
+      var alert = [CPAlert new];
+      [alert addButtonWithTitle:@"OK"];
+      [alert setMessageText:@"Error removing field"];
+      [alert setInformativeText:error_message];
+      [alert setAlertStyle:CPCriticalAlertStyle];
+      [alert beginSheetModalForWindow:[self theWindow]
+                        modalDelegate:self 
+                       didEndSelector:@selector(addRowActionAlertDidEnd:returnCode:contextInfo:) 
+                          contextInfo:nil];
+    [tableView reloadData];
+    } 
+    else if (js.error == '') {
+      [self setFields:js.fields];
+      [self reloadData];
+    }
+  }];
 }
 
 - (void)duplicateRowAction:(CPButton)btn
@@ -132,6 +233,10 @@
         [extraDView setMainController:self];
         [column setDataView:extraDView];
       break;
+      
+      default :
+        [column setEditable:YES];
+      break;
     }
 
     [tableView addTableColumn:column];
@@ -141,6 +246,7 @@
   
   return scrollView;
 }
+
 
 - (void)adjustView
 {
@@ -237,6 +343,23 @@
 }
 
 
+- (BOOL)tableView:(CPTableView)aTableView shouldEditTableColumn:(CPTableColumn)aTableColumn row:(int)rowIndex
+{
+  switch([aTableColumn identifier]) {
+    case @"Unsigned" :
+    case @"Zerofill" :
+    case @"Binary" :
+    case @"Allow Null" :
+    case @"Extra" :
+      return NO;
+    break;
+    default :
+      return YES;
+    break;
+  }
+}
+
+
 - (void)tableView:(CPTableView)aTableView setObjectValue:(CPControl)anObject forTableColumn:(CPTableColumn)tc row:(int)rowIndex
 {
   var checkIfNeeded = function (name) {
@@ -262,8 +385,70 @@
     case @"SJTableColumnAllow Null" :
       checkIfNeeded('Allow Null');
     break;
+    case @"SJTableColumnExtra" :
+      // Not sure what to do because it has a drop down...
+    break;
+    default :
+      var item = [tableList objectAtIndex:rowIndex];
+      var name = [[[tc identifier] componentsSeparatedByString:@"SJTableColumn"] lastObject];
+      if(anObject != item[name]) {
+        var previousValue = item[name];
+        item[name] = anObject;
+        [self tableRowDidUpdate:rowIndex withPreviousValue:previousValue];
+      }
+    break;
   }
 }
+
+
+- (void)tableRowDidUpdate:(CPInteger)row withPreviousValue:(CPString)previousValue
+{
+  var before_item = (([tableList count] - 1) <= row) ? [tableList objectAtIndex:(row - 1)] : null;
+  var after_column_name = '';
+  if(before_item) {
+    after_column_name = before_item['Field'];
+  }
+  
+  var item = [tableList objectAtIndex:row];
+  
+  var params = [CPDictionary dictionary];
+  [params setObject:after_column_name forKey:@"after_column_name"];
+  [params setObject:previousValue forKey:@"previous_column_name"];
+  [params setObject:item['Field'] forKey:@"column_name"];
+  [params setObject:item['Type'] forKey:@"column_type"];
+  [params setObject:item['Length'] forKey:@"column_length"];
+  [params setObject:(item['Unsigned'] ? @"YES" : @"NO")  forKey:@"column_unsigned"];
+  [params setObject:(item['Zerofill'] ? @"YES" : @"NO")  forKey:@"column_zerofill"];
+  [params setObject:(item['Binary'] ? @"YES" : @"NO")  forKey:@"column_binary"];
+  [params setObject:item['Default'] forKey:@"column_default"];
+  [params setObject:item['Extra'] forKey:@"column_extra"];
+
+  [[SJAPIRequest sharedAPIRequest] sendUpdateColumnRequestTable:[self tableName] query:params callback:function( js ) {
+    if (js.error != '') {
+      var error_message = "An error occurred.";
+      error_message += "\n\n";
+      error_message += "MySQL said: " + js.error;
+      error_message += "\n\n";
+      error_message += js.query;
+    
+      var alert = [CPAlert new];
+      [alert addButtonWithTitle:@"OK"];
+      [alert setMessageText:@"Error changing field"];
+      [alert setInformativeText:error_message];
+      [alert setAlertStyle:CPCriticalAlertStyle];
+      [alert beginSheetModalForWindow:[self theWindow]
+                        modalDelegate:self 
+                       didEndSelector:@selector(addRowActionAlertDidEnd:returnCode:contextInfo:) 
+                          contextInfo:nil];
+    [tableView reloadData];
+    } 
+    else if (js.error == '') {
+      [self setFields:js.fields];
+      [self reloadData];
+    }
+  }];
+}
+
 
 
 - (id)tableView:(CPTableView)aTableView objectValueForTableColumn:(CPTableColumn)aTableColumn row:(CPNumber)row

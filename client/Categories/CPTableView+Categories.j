@@ -14,4 +14,16 @@
   }];
 }
 
+- (CPInteger)indexForColumnIdentifier:(CPString)tableColumnIdentifier
+{
+  var columns = [self tableColumns];
+  for(var i=0; i<[columns count]; i++) {
+    if([[columns objectAtIndex:i] identifier] == tableColumnIdentifier) {
+      return i;
+    }
+  }
+  
+  return -1;
+}
+
 @end

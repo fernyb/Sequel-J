@@ -333,6 +333,31 @@ class App < Sinatra::Base
     end
   end
   
+  post '/updatecolumn/:table' do
+    fields = schema_table(params[:table])
+    name = fields.detect {|item| item['Field'] == params['previous_column_name'] }
+    
+    qstr = "ALTER TABLE `#{params[:table]}` "
+    if name.nil?
+      qstr << "ADD `#{params['column_name']}` #{params['column_type']} "
+    else
+      qstr << "CHANGE `#{params['previous_column_name']}` `#{params['column_name']}` #{params['column_type']}(#{params['column_length']}) "
+    end
+    qstr << "NULL DEFAULT NULL "
+    qstr << "AFTER `#{params['after_column_name']}`" if params['after_column_name'] != ''
+    
+    query(qstr)
+    fields = schema_table(params[:table])
+    render fields: fields, query: qstr
+  end
+  
+  post '/removecolumn/:table' do
+    qstr = "ALTER TABLE `#{params[:table]}` DROP `#{params['column_name']}`"
+    query(qstr)
+    fields = schema_table(params[:table])
+    render fields: fields, query: qstr
+  end
+  
   get '/' do
     'Hello World'
   end
