@@ -241,6 +241,10 @@
         [column setDataView:extraDView];
       break;
       
+      case @"Key" :
+        [column setEditable:NO];
+      break;
+      
       default :
         [column setEditable:YES];
       break;
@@ -309,12 +313,9 @@
 
 - (void)updateFieldType:(CPString)type
 {
-  // TODO: send request to server for update...
   var selectedRow = [tableView selectedRow];
   if (selectedRow != -1) {
-   var item = [tableList objectAtIndex:selectedRow];
-   item['Type'] = type;
-   [tableView reloadData];
+    [self updateColumnName:@"Type" withValue:type forRow:selectedRow];
   }
 }
 
@@ -392,6 +393,7 @@
     case @"Binary" :
     case @"Allow Null" :
     case @"Extra" :
+    case @"Key" :
       return NO;
     break;
     default :
@@ -436,28 +438,32 @@
       var item = [tableList objectAtIndex:rowIndex];
       var name = [[[tc identifier] componentsSeparatedByString:@"SJTableColumn"] lastObject];
       if(anObject != item[name]) {
-        var previousValue = item[name];
-        item[name] = anObject;
-        [self tableRowDidUpdate:rowIndex withPreviousValue:previousValue];
+        [self updateColumnName:name withValue:anObject forRow:rowIndex];
       }
     break;
   }
 }
 
 
-- (void)tableRowDidUpdate:(CPInteger)row withPreviousValue:(CPString)previousValue
+- (void)updateColumnName:(CPString)columnName withValue:(CPString)aValue forRow:(CPInteger)row
 {
-  var before_item = (([tableList count] - 1) <= row) ? [tableList objectAtIndex:(row - 1)] : null;
-  var after_column_name = '';
-  if(before_item) {
-    after_column_name = before_item['Field'];
-  }
-  
   var item = [tableList objectAtIndex:row];
+  var name = [columnName lowercaseString].replace(" ", "_");
+  var previous_value = item[columnName];
+  item[columnName] = aValue;
+  [tableView reloadData];
+  
+  var after_column = ((row - 1) < 0) ? '' : [tableList objectAtIndex:(row - 1)];
+  var after_column_name = '';
+  if (after_column != '') {
+    after_column_name = after_column['Field'];
+  }
   
   var params = [CPDictionary dictionary];
   [params setObject:after_column_name forKey:@"after_column_name"];
-  [params setObject:previousValue forKey:@"previous_column_name"];
+  [params setObject:previous_value forKey:@"previous_value"];
+  [params setObject:columnName forKey:@"update_column_name"];
+  
   [params setObject:item['Field'] forKey:@"column_name"];
   [params setObject:item['Type'] forKey:@"column_type"];
   [params setObject:item['Length'] forKey:@"column_length"];
@@ -474,7 +480,9 @@
       error_message += "MySQL said: " + js.error;
       error_message += "\n\n";
       error_message += js.query;
-    
+      
+      item[columnName] = previous_value;
+      
       var alert = [CPAlert new];
       [alert addButtonWithTitle:@"OK"];
       [alert setMessageText:@"Error changing field"];
@@ -492,7 +500,6 @@
     }
   }];
 }
-
 
 
 - (id)tableView:(CPTableView)aTableView objectValueForTableColumn:(CPTableColumn)aTableColumn row:(CPNumber)row

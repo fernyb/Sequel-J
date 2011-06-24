@@ -582,21 +582,22 @@ describe "App" do
   describe '/updatecolumn/:table' do
     before do
      @query = { 
-        port:              '3306',
-        database:          'skatr_development',
-        host:              'localhost',
-        password:          'password',
-        username:          'root',
-        after_column_name: 'random_id',
-        column_name:       'hello',
-        column_type:       'int',
-        column_length:     '11',
-        column_unsigned:   'NO',
-        column_zerofill:   'NO',
-        column_binary:     'NO',
-        column_default:    'NULL',
-        column_extra:      '',
-        previous_column_name: ''
+        port:                '3306',
+        database:            'skatr_development',
+        host:                'localhost',
+        password:            'password',
+        username:            'root',
+        after_column_name:   'random_id',
+        column_name:         'hello',
+        column_type:         'int',
+        column_length:       '11',
+        column_unsigned:     'NO',
+        column_zerofill:     'NO',
+        column_binary:       'NO',
+        column_default:      'NULL',
+        column_extra:        '',
+        previous_value:      '',
+        update_column_name:  ''
       }
     end
     
@@ -607,7 +608,7 @@ describe "App" do
     end
     
     it 'rename column name' do
-      @query[:previous_column_name] = 'hello'
+      @query[:previous_value] = 'hello'
       @query[:column_name] = 'new_hello_name'
       
       @mysql.should_receive(:query).
@@ -618,6 +619,62 @@ describe "App" do
             ["hello", "int(11)", "YES", "MUL", nil, ""]
       ])
       post "/updatecolumn/checkins?#{@query.to_query_string}"  
+    end
+
+    it 'update column type' do
+      @query[:previous_value] = 'text'
+      @query[:update_column_name] = 'Type'
+      @query[:column_name] = 'hello'
+      @query[:column_type] = 'varchar'
+      @query[:column_length] = ''
+      
+      @mysql.should_receive(:query).
+      with("ALTER TABLE `checkins` CHANGE `hello` `hello` varchar(255) NULL DEFAULT NULL AFTER `random_id`")
+      
+      @mysql.should_receive(:query).with("SHOW COLUMNS FROM `checkins`").at_least(1).times.and_return([
+            ["id", "int(11) zerofill", "NO", "PRI", nil, ""],
+            ["hello", "int(11)", "YES", "MUL", nil, ""]
+      ])
+      post "/updatecolumn/checkins?#{@query.to_query_string}"  
+    end  
+    
+    it "update column length" do
+      @query.merge!({
+        after_column_name: 'name',
+        previous_value: '',
+        update_column_name: 'Length',
+        column_name: 'description',
+        column_type: 'text',
+        column_length: '255'
+      })
+      
+      @mysql.should_receive(:query).
+      with("ALTER TABLE `checkins` CHANGE `description` `description` text(255) NULL DEFAULT NULL AFTER `name`")
+      
+      @mysql.should_receive(:query).with("SHOW COLUMNS FROM `checkins`").at_least(1).times.and_return([
+            ["id", "int(11) zerofill", "NO", "PRI", nil, ""],
+            ["hello", "int(11)", "YES", "MUL", nil, ""]
+      ])
+      post "/updatecolumn/checkins?#{@query.to_query_string}"
+    end
+    
+    it "update column Field" do
+      @query.merge!({
+        previous_value: 'description',
+        update_column_name: 'Field',
+        column_name: 'description2',
+        column_type: 'text',
+        column_length: '',
+      })
+      
+      @mysql.should_receive(:query).
+      with("ALTER TABLE `checkins` CHANGE `description` `description2` text NULL DEFAULT NULL AFTER `random_id`")
+      
+      @mysql.should_receive(:query).with("SHOW COLUMNS FROM `checkins`").at_least(1).times.and_return([
+            ["id", "int(11) zerofill", "NO", "PRI", nil, ""],
+            ["hello", "int(11)", "YES", "MUL", nil, ""]
+      ])
+      post "/updatecolumn/checkins?#{@query.to_query_string}"
     end
   end
 end

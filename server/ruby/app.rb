@@ -333,16 +333,28 @@ class App < Sinatra::Base
     end
   end
   
-  post '/updatecolumn/:table' do
-    fields = schema_table(params[:table])
-    name = fields.detect {|item| item['Field'] == params['previous_column_name'] }
+  post '/updatecolumn/:table' do  
+    qstr = "ALTER TABLE `#{params[:table]}` "    
+    update_column_name = params['update_column_name']
     
-    qstr = "ALTER TABLE `#{params[:table]}` "
-    if name.nil?
-      qstr << "ADD `#{params['column_name']}` #{params['column_type']} "
+    if update_column_name == 'Type'
+      params['column_length'] = '255' if params['column_length'] == ''
+      qstr << "CHANGE `#{params['column_name']}` `#{params['column_name']}` #{params['column_type']}(#{params['column_length']}) "
+    elsif update_column_name == 'Length'
+      qstr << "CHANGE `#{params['column_name']}` `#{params['column_name']}` #{params['column_type']}(#{params['column_length']}) "  
+    elsif update_column_name == 'Field'
+      qstr << "CHANGE `#{params['previous_value']}` `#{params['column_name']}` #{params['column_type']} "
     else
-      qstr << "CHANGE `#{params['previous_column_name']}` `#{params['column_name']}` #{params['column_type']}(#{params['column_length']}) "
+      fields = schema_table(params[:table])
+      name = fields.detect {|item| item['Field'] == params['previous_value'] }
+      
+      if name.nil?
+        qstr << "ADD `#{params['column_name']}` #{params['column_type']} "
+      else
+        qstr << "CHANGE `#{params['previous_value']}` `#{params['column_name']}` #{params['column_type']}(#{params['column_length']}) "
+      end
     end
+    
     qstr << "NULL DEFAULT NULL "
     qstr << "AFTER `#{params['after_column_name']}`" if params['after_column_name'] != ''
     
