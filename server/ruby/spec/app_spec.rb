@@ -676,5 +676,45 @@ describe "App" do
       ])
       post "/updatecolumn/checkins?#{@query.to_query_string}"
     end
+    
+    it "update column default with type int" do
+      @query.merge!({
+        after_column_name: 'updated_at',
+        previous_value: 'NULL',
+        update_column_name: 'Default',
+        column_name: 'user_id',
+        column_type: 'int',
+        column_length: '11',
+        column_default: '0',
+      })
+      @mysql.should_receive(:query).
+      with("ALTER TABLE `checkins` CHANGE `user_id` `user_id` int(11) NULL DEFAULT '0' AFTER `updated_at`")
+      
+      @mysql.should_receive(:query).with("SHOW COLUMNS FROM `checkins`").at_least(1).times.and_return([
+            ["id", "int(11) zerofill", "NO", "PRI", nil, ""],
+            ["hello", "int(11)", "YES", "MUL", nil, ""]
+      ])
+      post "/updatecolumn/checkins?#{@query.to_query_string}"
+    end
+
+    it "update column default with type varchar" do
+      @query.merge!({
+        after_column_name: 'updated_at',
+        previous_value: 'NULL',
+        update_column_name: 'Default',
+        column_name: 'user_id',
+        column_type: 'varchar',
+        column_length: '255',
+        column_default: 'hello',
+      })
+      @mysql.should_receive(:query).
+      with("ALTER TABLE `checkins` CHANGE `user_id` `user_id` varchar(255) NULL DEFAULT 'hello' AFTER `updated_at`")
+      
+      @mysql.should_receive(:query).with("SHOW COLUMNS FROM `checkins`").at_least(1).times.and_return([
+            ["id", "int(11) zerofill", "NO", "PRI", nil, ""],
+            ["hello", "int(11)", "YES", "MUL", nil, ""]
+      ])
+      post "/updatecolumn/checkins?#{@query.to_query_string}"
+    end    
   end
 end
