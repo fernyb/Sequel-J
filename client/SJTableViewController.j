@@ -60,6 +60,11 @@
 
 - (void)addRowAction:(CPButton)btn
 {
+  [self addRowWithAttributes:nil];
+}
+
+- (void)addRowWithAttributes:(id)attributes
+{
   if(!tableList) {
     return;
   }
@@ -72,7 +77,7 @@
     }
     [self validateFieldNames];
     
-    tableList.push({
+    var default_attributes =  {
       'Field'      : '',
       'Type'       : 'int',
       'Length'     : '11',
@@ -83,13 +88,37 @@
       'Key'        : '',
       'Default'    : 'NULL',
       'Extra'      : ''
-    });
-    [tableView reloadData];
-  
-    var rowIndex = [tableList count] - 1;
-    var anIndexSet = [CPIndexSet indexSetWithIndex:rowIndex];
-    [tableView selectRowIndexes:anIndexSet byExtendingSelection:NO];
-    [tableView editColumn:columnIndex row:rowIndex withEvent:nil select:YES];
+    };
+    
+    if(attributes != nil || attributes != null || attributes != 'undefined') {
+      for (var key in attributes) {
+        var currentValue = default_attributes[key];
+        if(currentValue != 'undefined') {
+          default_attributes[key] = attributes[key];
+        }
+      }
+    }
+    
+    tableList.push(default_attributes);
+    
+    var name_num = 0;
+    var determine_name = function (name) {
+      for(var i=0; i<[tableList count]; i++) {
+        var item = [tableList objectAtIndex:i];
+        var fieldName = item['Field'];
+        if(fieldName == name) {
+          name = name.split(" ")[0];
+          name_num += 1;
+          return determine_name(name +" "+ name_num);
+        }
+      }
+      return name;
+    };
+    
+    var itemFieldName = determine_name("Untitled");
+    console.log("New Field Name: "+ itemFieldName);
+    
+    [self updateColumnName:@"Field" withValue:itemFieldName forRow:([tableList count] - 1) actionName:@"add"];
   }
 }
 
@@ -145,7 +174,11 @@
 
 - (void)duplicateRowAction:(CPButton)btn
 {
-  console.log(@"***** Duplicate Row Action");
+  var selectedRow = [tableView selectedRow];
+  if( selectedRow != -1) {
+    var item = [tableList objectAtIndex:selectedRow];  
+    [self addRowWithAttributes:item];
+  }
 }
 
 
@@ -320,7 +353,7 @@
 {
   var selectedRow = [tableView selectedRow];
   if (selectedRow != -1) {
-    [self updateColumnName:@"Type" withValue:type forRow:selectedRow];
+    [self updateColumnName:@"Type" withValue:type forRow:selectedRow actionName:@"update"];
   }
 }
 
@@ -443,14 +476,14 @@
       var item = [tableList objectAtIndex:rowIndex];
       var name = [[[tc identifier] componentsSeparatedByString:@"SJTableColumn"] lastObject];
       if(anObject != item[name]) {
-        [self updateColumnName:name withValue:anObject forRow:rowIndex];
+        [self updateColumnName:name withValue:anObject forRow:rowIndex actionName:@"update"];
       }
     break;
   }
 }
 
 
-- (void)updateColumnName:(CPString)columnName withValue:(CPString)aValue forRow:(CPInteger)row
+- (void)updateColumnName:(CPString)columnName withValue:(CPString)aValue forRow:(CPInteger)row actionName:(CPString)actName
 {
   var item = [tableList objectAtIndex:row];
   var name = [columnName lowercaseString].replace(" ", "_");
@@ -477,6 +510,7 @@
   [params setObject:(item['Binary'] ? @"YES" : @"NO")  forKey:@"column_binary"];
   [params setObject:item['Default'] forKey:@"column_default"];
   [params setObject:item['Extra'] forKey:@"column_extra"];
+  [params setObject:actName forKey:@"action_name"];
 
   [[SJAPIRequest sharedAPIRequest] sendUpdateColumnRequestTable:[self tableName] query:params callback:function( js ) {
     if (js.error != '') {
@@ -502,6 +536,9 @@
     else if (js.error == '') {
       [self setFields:js.fields];
       [self reloadData];
+      setTimeout(function() {
+        [tableView selectRowIndexes:[CPIndexSet indexSetWithIndex:row] byExtendingSelection:NO];
+      }, 0);
     }
   }];
 }

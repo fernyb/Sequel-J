@@ -343,7 +343,12 @@ class App < Sinatra::Base
     elsif update_column_name == 'Length'
       qstr << "CHANGE `#{params['column_name']}` `#{params['column_name']}` #{params['column_type']}(#{params['column_length']}) "  
     elsif update_column_name == 'Field'
-      qstr << "CHANGE `#{params['previous_value']}` `#{params['column_name']}` #{params['column_type']} "
+      if params['action_name'] == 'duplicate' || params['action_name'] == 'add'
+        qstr << "ADD `#{params['column_name']}` "
+        qstr << (params['column_length'] == '' ? "#{params['column_type']} " : "#{params['column_type']}(#{params['column_length']}) ")  
+      else
+        qstr << "CHANGE `#{params['previous_value']}` `#{params['column_name']}` #{params['column_type']} "
+      end
     elsif update_column_name == 'Default'
       qstr << "CHANGE `#{params['column_name']}` `#{params['column_name']}` #{params['column_type']}(#{params['column_length']}) "
     else

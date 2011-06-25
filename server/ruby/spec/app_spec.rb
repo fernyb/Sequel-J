@@ -705,7 +705,7 @@ describe "App" do
         column_name: 'user_id',
         column_type: 'varchar',
         column_length: '255',
-        column_default: 'hello',
+        column_default: 'hello'
       })
       @mysql.should_receive(:query).
       with("ALTER TABLE `checkins` CHANGE `user_id` `user_id` varchar(255) NULL DEFAULT 'hello' AFTER `updated_at`")
@@ -715,6 +715,72 @@ describe "App" do
             ["hello", "int(11)", "YES", "MUL", nil, ""]
       ])
       post "/updatecolumn/checkins?#{@query.to_query_string}"
-    end    
+    end
+    
+    it "creates new column when it doesn't exist"  do
+      @query.merge!({
+        after_column_name: 'hello3Copy',
+        previous_value: '',
+        update_column_name: 'Field',
+        column_name: 'helloNOW',
+        column_type: 'int',
+        column_length: '11',
+        column_default: '0',
+        action_name: 'duplicate'
+      })
+      @mysql.should_receive(:query).
+      with("ALTER TABLE `checkins` ADD `helloNOW` int(11) NULL DEFAULT '0' AFTER `hello3Copy`")
+      
+      @mysql.should_receive(:query).with("SHOW COLUMNS FROM `checkins`").at_least(1).times.and_return([
+            ["id", "int(11) zerofill", "NO", "PRI", nil, ""],
+            ["hello", "int(11)", "YES", "MUL", nil, ""]
+      ])
+      post "/updatecolumn/checkins?#{@query.to_query_string}" 
+    end
+    
+    it "creates coloumn when action_name is add" do
+      @query.merge!({
+        after_column_name: 'updated_at',
+        previous_value: '',
+        update_column_name: 'Field',
+        column_name: 'Untitled',
+        column_type: 'int',
+        column_length: '11',
+        column_default: 'NULL',
+        column_extra: '',
+        action_name: 'add'
+      })
+      @mysql.should_receive(:query).
+      with("ALTER TABLE `checkins` ADD `Untitled` int(11) NULL DEFAULT NULL AFTER `updated_at`")
+      
+      @mysql.should_receive(:query).with("SHOW COLUMNS FROM `checkins`").at_least(1).times.and_return([
+            ["id", "int(11) zerofill", "NO", "PRI", nil, ""],
+            ["hello", "int(11)", "YES", "MUL", nil, ""]
+      ])
+      post "/updatecolumn/checkins?#{@query.to_query_string}" 
+    end
+    
+    it "duplicate column when action_name is duplicate with type text" do
+      @query.merge!({
+        after_column_name: 'updated_at',
+        previous_value: '',
+        update_column_name: 'Field',
+        column_name: 'Untitled',
+        column_type: 'text',
+        column_length: '',
+        column_default: 'NULL',
+        column_extra: '',
+        action_name: 'duplicate'
+      })
+    
+      @mysql.should_receive(:query).
+      with("ALTER TABLE `checkins` ADD `Untitled` text NULL DEFAULT NULL AFTER `updated_at`")
+      
+      @mysql.should_receive(:query).with("SHOW COLUMNS FROM `checkins`").at_least(1).times.and_return([
+            ["id", "int(11) zerofill", "NO", "PRI", nil, ""],
+            ["hello", "int(11)", "YES", "MUL", nil, ""]
+      ])
+      post "/updatecolumn/checkins?#{@query.to_query_string}"
+    end  
   end
 end
