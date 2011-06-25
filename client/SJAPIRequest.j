@@ -73,6 +73,12 @@ var DownloadIFrame = null,
 	[self _sendRequestToURL:url callback:aCallback];
 }
 
+- (void)sendRequestToEndpoint:(CPString)name tableName:(CPString)tableName callback:(func)callback
+{
+	var url = SERVER_BASE + @"/api.php?endpoint=" + name + @"&table=" + tableName + @"&" + [self _requestCredentialsString];
+	[self _sendRequestToURL:url callback:callback];
+}
+
 - (void)sendUpdateRequestSchemaTable:(CPString)table_name query:(CPDictionary)opts callback:(func)callback
 {
   var url = SERVER_BASE + "/api.php";
@@ -99,6 +105,7 @@ var DownloadIFrame = null,
    
   [self _sendRequestToURL:url httpMethod:@"POST" callback:callback];
 }
+
 
 - (void)_sendRequestToURL:(CPString)aURL httpMethod:(CPString)method callback:(id)aCallback
 {

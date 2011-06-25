@@ -148,10 +148,15 @@
   console.log(@"***** Duplicate Row Action");
 }
 
+
 - (void)refreshAction:(CPButton)btn
 {
-  console.log(@"***** Refresh Action");
+  [[SJAPIRequest sharedAPIRequest] sendRequestToEndpoint:@"schema" tableName:[self tableName] callback:function (js) {
+    [self setFields:js.fields];
+    [self reloadData];
+  }];
 }
+
 
 - (void)setupView
 {
