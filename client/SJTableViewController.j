@@ -116,8 +116,6 @@
     };
     
     var itemFieldName = determine_name("Untitled");
-    console.log("New Field Name: "+ itemFieldName);
-    
     [self updateColumnName:@"Field" withValue:itemFieldName forRow:([tableList count] - 1) actionName:@"add"];
   }
 }
