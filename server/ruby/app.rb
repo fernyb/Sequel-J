@@ -49,6 +49,26 @@ class App < Sinatra::Base
     fields
   end
   
+  def table_indexes table_name
+    results = query "SHOW INDEX FROM `#{table_name}`"
+    fields = results.map {|row|
+      {
+        'Non_unique'   => row[1],
+        'Key_name'     => row[2],
+        'Seq_in_index' => row[3],
+        'Column_name'  => row[4],
+        'Collation'    => row[5],
+        'Cardinality'  => row[6],
+        'Sub_part'     => row[7].nil? ? 'NULL' : row[7],
+        'Packed'       => row[8].nil? ? 'NULL' : row[8],
+        'Null'         => row[9],
+        'Index_type'   => row[10],
+        'Comment'      => row[11]
+      }
+    }
+    fields
+  end
+  
   def table_columns table_name
     results = query("SHOW COLUMNS FROM `#{table_name}`")
     results.collect {|f| f[0] }
@@ -193,26 +213,15 @@ class App < Sinatra::Base
   end
   
   get '/indexes/:table' do
-    results = query "SHOW INDEX FROM `#{params[:table]}`"
-    fields = results.map {|row|
-      {
-        'Non_unique'   => row[1],
-        'Key_name'     => row[2],
-        'Seq_in_index' => row[3],
-        'Column_name'  => row[4],
-        'Collation'    => row[5],
-        'Cardinality'  => row[6],
-        'Sub_part'     => row[7].nil? ? 'NULL' : row[7],
-        'Packed'       => row[8].nil? ? 'NULL' : row[8],
-        'Null'         => row[9],
-        'Index_type'   => row[10],
-        'Comment'      => row[11]
-      }
-    }
-    
+    fields = table_indexes params[:table]
     render indexes: fields
   end
   
+  post '/add_index/:table' do
+    query "ALTER TABLE `#{params[:table]}` ADD #{params['type'].upcase} `#{params['name']}` (`#{params['index_column']}`)"
+    fields = table_indexes params[:table]
+    render indexes: fields
+  end
   
   get '/relations/:table' do
     sql = sql_for_table params[:table]

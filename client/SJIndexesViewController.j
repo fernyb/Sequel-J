@@ -4,28 +4,29 @@
 
 @implementation SJIndexesViewController : CPObject 
 {
-  CPView contentView;
+  CPView contentView @accessors;
   CPTableView tableView;
   CGFloat viewWidth;
-  CPArray indexes;
+  CPArray fields @accessors;
   CPString tableName @accessors;
   CPWindow theWindow @accessors;
+  CPWindow addIndexWindow;
+  id controller @accessors;
+  
+  CPPopUpButton nameKeyType;
+  CPTextField nameKeyName;
+  CPPopUpButton nameKeyIndexedColumns;
 }
 
 
 - (id)initWithView:(CPView)aView  andWidth:(CGFloat)aWidth
 {
-  [self init];
+  self = [self init];
   contentView = aView;
   viewWidth = aWidth;
   
   [self setupView];
   return self;
-}
-
-- (void)setIndexes:(CPArray)idxs
-{
-  indexes = idxs;
 }
 
 - (void)reloadData
@@ -35,7 +36,7 @@
 
 - (void)setupView
 {
-  indexes = [[CPArray alloc] init];
+  fields = [[CPArray alloc] init];
   var scrollview = [self addTableView];
   [contentView addSubview:scrollview];
   [scrollview setFrame:CGRectMake(0,0, [contentView bounds].size.width, [contentView bounds].size.height - 23)];
@@ -73,10 +74,127 @@
 	[contentView addSubview:bottomButtonBar];
 }
 
+- (void)selectKeyTypeAction:(CPPopUpButton)sender
+{
+  // console.log(@"*** Select Key Type");
+}
+
+- (void)selectColumnToIndex:(CPPopUpButton)sender
+{
+  // console.log(@"**** Select Column to index");
+}
+
 - (void)addRowAction:(CPButton)btn
 {
-  console.log(@"**** Add Row Action");
+  if (!addIndexWindow) {
+    addIndexWindow = [[CPWindow alloc] initWithContentRect:CGRectMake(30,30, 360, 160) styleMask:CPDocModalWindowMask];
+    var indexContentView = [addIndexWindow contentView];
+    
+    var labelKeyType = [[CPTextField alloc] initWithFrame:CGRectMake(20, 20, 110, 20)];
+    [labelKeyType setAlignment:CPRightTextAlignment];
+    [labelKeyType setStringValue:@"Key Type:"];
+    [labelKeyType setFont:[CPFont boldSystemFontOfSize:12.0]];
+    [indexContentView addSubview:labelKeyType];
+    
+    nameKeyType = [[CPPopUpButton alloc] initWithFrame:CGRectMake(135, 20 - 4, 200, 24)];
+    [nameKeyType setTarget:self];
+	  [nameKeyType setAction:@selector(selectKeyTypeAction:)];
+    [nameKeyType setTitle:@"INDEX"];
+	  [nameKeyType addItemWithTitle:@"PRIMARY KEY"];
+	  [nameKeyType addItemWithTitle:@"UNIQUE"];
+	  [nameKeyType addItemWithTitle:@"FULLTEXT"];
+    [indexContentView addSubview:nameKeyType];
+    
+    // ---
+    var labelKeyName = [[CPTextField alloc] initWithFrame:CGRectMake(20, (24 * 2) + 2, 110, 20)];
+    [labelKeyName setAlignment:CPRightTextAlignment];
+    [labelKeyName setStringValue:@"Key Name:"];
+    [labelKeyName setFont:[CPFont boldSystemFontOfSize:12.0]];
+    [indexContentView addSubview:labelKeyName];
+    
+    nameKeyName = [[CPTextField alloc] initWithFrame:CGRectMake(132, (24 * 2) - 4, 205, 28)];
+    [nameKeyName setAlignment:CPLeftTextAlignment];
+    [nameKeyName setStringValue:@""];  
+    [nameKeyName setEditable:YES];
+    [nameKeyName setEnabled:YES];
+    [nameKeyName setBezeled:YES];
+    [nameKeyName setFont:[CPFont boldSystemFontOfSize:12.0]];
+    [indexContentView addSubview:nameKeyName];
+    
+    // -----
+    var labelKeyIndexedColumns = [[CPTextField alloc] initWithFrame:CGRectMake(20, (26 * 3) + 2, 110, 20)];
+    [labelKeyIndexedColumns setAlignment:CPRightTextAlignment];
+    [labelKeyIndexedColumns setStringValue:@"Indexed Columns:"];
+    [labelKeyIndexedColumns setFont:[CPFont boldSystemFontOfSize:12.0]];
+    [indexContentView addSubview:labelKeyIndexedColumns];
+    
+    nameKeyIndexedColumns = [[CPPopUpButton alloc] initWithFrame:CGRectMake(135, (26 * 3) - 2, 200, 24)];
+    [nameKeyIndexedColumns setTarget:self];
+	  [nameKeyIndexedColumns setAction:@selector(selectColumnToIndex:)];
+    [indexContentView addSubview:nameKeyIndexedColumns];
+    
+    var cancelBtn = [[CPButton alloc] initWithFrame:CGRectMake(225, (30 * 4) - 3, 0, 0)];
+    [cancelBtn setTitle:@"Cancel"];
+    [cancelBtn sizeToFit];
+    [cancelBtn setTarget:self];
+    [cancelBtn setAction:@selector(didClickCancelAction:)];
+    [indexContentView addSubview:cancelBtn];
+    
+    var saveBtn = [[CPButton alloc] initWithFrame:CGRectMake(292, (30 * 4) - 3, 0, 0)];
+    [saveBtn setTitle:@" Add "];
+    [saveBtn sizeToFit];
+    [saveBtn setTarget:self];
+    [saveBtn setAction:@selector(didClickAddIndexAction:)];
+    [indexContentView addSubview:saveBtn];
+  }
+  
+  [nameKeyIndexedColumns removeAllItems];
+  var columns = [self columns];
+	for(var i=0; i<[columns count]; i++) {
+	  [nameKeyIndexedColumns addItemWithTitle:[columns objectAtIndex:i]];
+	}
+
+  [CPApp beginSheet: addIndexWindow
+          modalForWindow: [[self contentView] window]
+           modalDelegate: self
+          didEndSelector: null
+             contextInfo: null];
 }
+
+- (void)didClickCancelAction:(CPButton)sender
+{
+  [self endAddIndexWindow];
+}
+
+- (void)didClickAddIndexAction:(CPButton)sender
+{
+  var params = [CPDictionary dictionary];
+  [params setObject:[nameKeyType title] forKey:@"type"];
+  [params setObject:[nameKeyName stringValue] forKey:@"name"];
+  [params setObject:[nameKeyIndexedColumns title] forKey:@"index_column"];
+
+  [[SJAPIRequest sharedAPIRequest] sendAddIndexRequestTable:[self tableName] query:params callback:function(js) {
+    if(js.error == '') {  
+      [self setFields:js.indexes];
+      [tableView reloadData];
+    } else {
+      [self setFields:js.indexes];
+      [tableView reloadData];
+    }
+    [self endAddIndexWindow];
+  }];
+}
+
+- (void)endAddIndexWindow
+{
+  [CPApp endSheet:addIndexWindow returnCode:CPCancelButton];
+}
+
+- (CPArray)columns
+{
+  return [[self controller] columns];
+}
+
 
 - (void)removeRowAction:(CPButton)btn
 {
@@ -85,7 +203,10 @@
 
 - (void)refreshAction:(CPButton)btn
 {
-  console.log(@"**** Refresh Action");
+  [[SJAPIRequest sharedAPIRequest] sendRequestToEndpoint:@"indexes" tableName:[self tableName] callback:function (js) {
+    [self setFields:js.indexes];
+    [self reloadData];
+  }];
 }
 
 - (CPScrollView)addTableView
@@ -130,13 +251,13 @@
 
 - (CPNumber)numberOfRowsInTableView:(CPTableView)aTableView
 {
-  return [indexes count];
+  return [fields count];
 }
 
 
 - (id)tableView:(CPTableView)aTableView objectValueForTableColumn:(CPTableColumn)aTableColumn row:(CPNumber)row
 {
-  var field = [indexes objectAtIndex:row];
+  var field = [fields objectAtIndex:row];
   
   switch([aTableColumn identifier]) {
     case @"SJTableColumnNon_unique" :

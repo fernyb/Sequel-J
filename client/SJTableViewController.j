@@ -34,6 +34,16 @@
   return self;
 }
 
+- (CPArray)columns
+{
+  var columns = [CPArray array];
+  for(var i=0; i<[tableList count]; i++) {
+    var item = [tableList objectAtIndex:i];
+    [columns addObject:item['Field']];
+  }
+  return columns;
+}
+
 - (void)tableViewSelectionDidChange:(CPNotification)aNotification
 {
   var selectedRow = [tableView selectedRow];

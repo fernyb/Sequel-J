@@ -783,4 +783,33 @@ describe "App" do
       post "/updatecolumn/checkins?#{@query.to_query_string}"
     end  
   end
+  
+  describe '/add_index/:table' do
+    before :each do
+      @query = {
+        type: 'INDEX',
+        name: 'udid_idx',
+        index_column: 'udid'
+      }
+    end
+    
+    it 'adds an index of type INDEX' do
+      @mysql.should_receive(:query).with("ALTER TABLE `checkins` ADD INDEX `udid_idx` (`udid`)")
+      @mysql.should_receive(:query).with("SHOW INDEX FROM `checkins`").and_return []
+      post "/add_index/checkins?#{@query.to_query_string}"
+    end
+    
+    it 'adds an index of type FULLTEXT' do
+      @query[:type] = 'fulltext'
+      @query.merge!({
+        type: 'fulltext',
+        name: 'untitled_fulltext_idx',
+        index_column: 'Untitled'
+      })
+      
+      @mysql.should_receive(:query).with("ALTER TABLE `checkins` ADD FULLTEXT `untitled_fulltext_idx` (`Untitled`)")
+      @mysql.should_receive(:query).with("SHOW INDEX FROM `checkins`").and_return []
+      post "/add_index/checkins?#{@query.to_query_string}"
+    end
+  end
 end

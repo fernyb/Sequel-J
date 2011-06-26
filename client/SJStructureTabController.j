@@ -56,9 +56,14 @@
   indexesViewController = [[SJIndexesViewController alloc] initWithView:bottomContentView andWidth:viewWidth];
   [indexesViewController setTableName:[self tableName]];
   [indexesViewController setTheWindow: [[self contentView] window] ];
-  
+  [indexesViewController setController:self];
   
   [[self view] addSubview:dbSplitView];
+}
+
+- (CPArray)columns
+{
+  return [tableViewController columns];
 }
 
 - (void)viewWillAppear
@@ -118,7 +123,7 @@
 
 - (void)handleIndexesResponse:(id)js
 {
-  [indexesViewController setIndexes:js.indexes];
+  [indexesViewController setFields:js.indexes];
   [indexesViewController reloadData];
 }
 
