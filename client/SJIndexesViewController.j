@@ -1,5 +1,6 @@
 @import <Foundation/Foundation.j>
 @import "Categories/CPArray+Categories.j"
+@import "Categories/CPAlert+Categories.j"
 
 
 @implementation SJIndexesViewController : CPObject 
@@ -198,7 +199,34 @@
 
 - (void)removeRowAction:(CPButton)btn
 {
-  console.log(@"**** Remove Row Action");
+  var selectedRow = [tableView selectedRow];
+  if (selectedRow != -1) {
+    var item = [fields objectAtIndex:selectedRow];
+    
+    var didEndCallback = function (returnCode, contextInfo) {
+      if(returnCode == 0) {
+        var params = [CPDictionary dictionary];
+        [params setObject:item['Key_name'] forKey:@"name"];
+        [params setObject:item['Column_name'] forKey:@"index_column"];
+
+        [[SJAPIRequest sharedAPIRequest] sendRemoveIndexRequestTable:[self tableName] query:params callback:function (js) {
+          [self setFields:js.indexes];
+          [self reloadData];
+        }];
+      }
+    };
+    
+    var alert = [CPAlert new];
+    [alert addButtonWithTitle:@"Delete"];    
+    [alert addButtonWithTitle:@"Cancel"];
+    [alert setMessageText:@"Delete index '"+ item['Key_name'] +"'?"];
+    [alert setInformativeText:@"Are you sure you want to delete the index '"+ item['Key_name'] +"'? This action cannot be undone."];
+    [alert setAlertStyle:CPWarningAlertStyle];
+    [alert beginSheetModalForWindow:[self theWindow]
+                      modalDelegate:self 
+                      didEndCallback:didEndCallback
+                      contextInfo:nil];
+  }
 }
 
 - (void)refreshAction:(CPButton)btn

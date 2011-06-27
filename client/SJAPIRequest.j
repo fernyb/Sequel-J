@@ -115,6 +115,16 @@ var DownloadIFrame = null,
   [self _sendRequestToURL:url httpMethod:@"POST" callback:callback];
 }
 
+- (void)sendRemoveIndexRequestTable:(CPString)table_name query:(CPDictionary)opts callback:(func)callback
+{
+  var url = SERVER_BASE + "/api.php";
+  var query = "endpoint=remove_index&table=" + table_name + "&" + [self _requestCredentialsString] + "&" + [opts toQueryString];
+  url += "?" + query;
+   
+  [self _sendRequestToURL:url httpMethod:@"POST" callback:callback];
+}
+
+
 - (void)_sendRequestToURL:(CPString)aURL httpMethod:(CPString)method callback:(id)aCallback
 {
 	var CFRequest = new CFHTTPRequest();

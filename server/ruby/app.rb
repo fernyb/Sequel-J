@@ -223,6 +223,12 @@ class App < Sinatra::Base
     render indexes: fields
   end
   
+  post '/remove_index/:table' do
+    query "ALTER TABLE `#{params[:table]}` DROP INDEX `#{params['name']}`"
+    fields = table_indexes params[:table]
+    render indexes: fields
+  end
+  
   get '/relations/:table' do
     sql = sql_for_table params[:table]
     parts = sql.split("\n").map {|part| part.strip }

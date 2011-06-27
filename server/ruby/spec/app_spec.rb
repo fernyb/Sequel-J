@@ -812,4 +812,19 @@ describe "App" do
       post "/add_index/checkins?#{@query.to_query_string}"
     end
   end
+  
+  describe '/drop_index/:table' do
+    before :each do
+      @query = {
+        name: 'udid_idx',
+        index_column: 'udid'
+      }
+    end
+    
+    it 'drops index of type INDEX' do
+      @mysql.should_receive(:query).with("ALTER TABLE `people` DROP INDEX `udid_idx`")
+      @mysql.should_receive(:query).with("SHOW INDEX FROM `people`").and_return []
+      post "/remove_index/people?#{@query.to_query_string}"
+    end  
+  end
 end
