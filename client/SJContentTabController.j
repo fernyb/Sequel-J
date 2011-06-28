@@ -30,6 +30,10 @@
   CPLog("Fetch Header Names For Table Name: "+ tableName);
   
   if(tableName == null || tableName == 'undefined' || tableName == '') {
+    headerNames = [];
+    tbrows = [];
+    [self setTbrows:nil];
+    [[self tableView] reloadData];
     return;
   }
   

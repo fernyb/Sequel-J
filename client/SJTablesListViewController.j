@@ -367,6 +367,9 @@
           tableList = [js.tables copy];
           filteredTableList = [tableList copy];
           [tableView reloadData];
+          [tableView selectRowIndexes:[CPIndexSet indexSetWithIndex:-1] byExtendingSelection:NO];
+          [[CPNotificationCenter defaultCenter] postNotificationName:TABLE_SELECTED_NOTIFICATION object:nil];
+
         } else {
           console.log(js.error);
         }
