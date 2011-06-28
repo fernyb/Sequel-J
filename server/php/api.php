@@ -41,6 +41,10 @@ function sj_serve_api_request() {
 		case 'query':
 			echo json_encode( sj_serve_endpoint_query() );
 			exit;
+		
+		case 'remove_table':
+			echo json_encode( sj_serve_endpoint_remove_table() );
+			exit;
 						
 	endswitch;
 
@@ -187,7 +191,25 @@ function sj_serve_endpoint_query() {
 		$rows[] = array_values( (array) $row );
 	}
 	
-	return array( 'columns' => $columns, 'results' => $result );
+	return array( 'columns' => $columns, 'results' => $result, 'error' => '' );
+}
+
+function sj_serve_endpoint_remove_table() {
+	
+	if( empty( $_GET['table'] ) )
+		return array( 'tables' => array(), 'error' => 'A table was not specified' );
+	
+	$db = sj_connect_to_mysql_from_get();
+
+	if( !$db )
+		return array( 'tables' => array(), 'error' => 'Could not connect to MySQL with credentials' );
+	
+	$db->query( "DROP TABLE `" . $_GET['table'] . "`" );
+	
+	if( !$db->last_error )
+		return sj_serve_endpoint_tables();
+	
+	return array( 'tables' => array(), 'error' => 'Unable to remove table: ' . $db->last_error );
 }
 
 /* Helper Functions */
