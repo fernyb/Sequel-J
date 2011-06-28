@@ -851,4 +851,14 @@ describe "App" do
       json['tables'].should include('t1', 't2', 't3')
     end
   end
+  
+  describe '/remove_table/:table' do
+    it 'can drop table' do
+      @mysql.should_receive(:query).with("DROP TABLE `test_one`")
+      @mysql.should_receive(:list_tables).and_return ['t1', 't2', 't3']
+    
+      post "/remove_table/test_one"
+      json['path'].should == '/remove_table/test_one'
+    end
+  end
 end

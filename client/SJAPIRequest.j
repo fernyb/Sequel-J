@@ -48,6 +48,15 @@ var DownloadIFrame = null,
   [self _sendRequestToURL:url httpMethod:@"POST" callback:callback];  
 }
 
+- (void)sendRequestRemoveTable:(CPString)table_name callback:(func)callback
+{
+  var url = SERVER_BASE + "/api.php";
+  var query = "endpoint=remove_table&table=" + table_name + "&" + [self _requestCredentialsString];
+  url += "?" + query;
+  
+  [self _sendRequestToURL:url httpMethod:@"POST" callback:callback];
+}
+
 - (void)sendRequestToTablesWithOptions:(CPDictionary)options callback:(id)aCallback
 {
 	var url = SERVER_BASE + "/api.php?endpoint=tables&" + [self _requestCredentialsString];

@@ -3,6 +3,7 @@
 @import "SJConstants.j"
 @import "SJTableListItemDataView.j"
 @import "SJAPIRequest.j"
+@import "Categories/CPAlert+Categories.j"
 
 
 @implementation SJTablesListViewController : CPObject
@@ -97,10 +98,10 @@
   [addButton setEnabled:YES];
   
   var settingsButton = [CPButtonBar actionPopupButton];
-  [settingsButton setAction:@selector(showSettingsPopup:)];
+  [settingsButton setAction:@selector(settingsItemSelectedAction:)];
   [settingsButton setTarget:self];
   [settingsButton setEnabled:YES];
-  [settingsButton addItemsWithTitles:[@"Rename Table...", @"Duplicate Table..."]];
+  [settingsButton addItemsWithTitles:[@"Rename Table...", @"Duplicate Table...", @"Truncate Table", @"Remove Table"]];
   
    var refreshButton = [CPButtonBar plusButton];
   [refreshButton setAction:@selector(refreshTables:)];
@@ -337,6 +338,54 @@
 {
   return [@"InnoDB", @"MRG_MYISAM", @"BLACKHOLE", @"CSV", @"MEMORY", @"ARCHIVE", @"MyISAM"];
 }
+
+- (void)settingsItemSelectedAction:(id)sender
+{
+  var item = [sender selectedItem];
+  console.log(@"Selected Menu Item: "+ [item title]);
+
+  switch([item title]) {
+    case @"Remove Table" :
+      [self removeTable];
+    break;
+  }
+}
+
+- (void)removeTable
+{  
+  var selectedRow = [tableView selectedRow];
+  if (selectedRow == -1) {
+    return;
+  }
+  var tableName = [tableList objectAtIndex:selectedRow];
+  
+  var didEndCallback = function (returnCode, contextInfo) {
+    if(returnCode == 0) {
+      [[SJAPIRequest sharedAPIRequest] sendRequestRemoveTable:tableName callback:function (js) {
+        if(js.error == '') {
+          [tableList removeAllObjects];
+          tableList = [js.tables copy];
+          filteredTableList = [tableList copy];
+          [tableView reloadData];
+        } else {
+          console.log(js.error);
+        }
+      }];
+    }
+  };
+ 
+  var alert = [CPAlert new];
+  [alert addButtonWithTitle:@"Delete"];    
+  [alert addButtonWithTitle:@"Cancel"];
+  [alert setMessageText:@"Delete table '"+ tableName +"'?"];
+  [alert setInformativeText:@"Are you sure you want to delete the table '"+ tableName +"'? This action cannot be undone."];
+  [alert setAlertStyle:CPWarningAlertStyle];
+  [alert beginSheetModalForWindow:[[self contentView] window]
+                    modalDelegate:self 
+                    didEndCallback:didEndCallback
+                    contextInfo:nil];
+}
+
 
 /*
 *

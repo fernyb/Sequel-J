@@ -156,6 +156,12 @@ class App < Sinatra::Base
     render tables: tables
   end
   
+  post '/remove_table/:table' do
+    query "DROP TABLE `#{params[:table]}`"
+    tables = database_list_tables
+    render tables: tables
+  end
+  
   get '/columns/:table' do
     results = query "SHOW COLUMNS FROM `#{params[:table]}`"
     columns = results.map {|d|
