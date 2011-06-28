@@ -42,11 +42,16 @@ describe "App" do
     
     it 'returns connected true when it connects' do
       Mysql.should_receive(:new).with(*['127.0.0.1', '', '' ,'']).and_return @mysql
+      @mysql.should_receive(:query).with("SHOW CHARACTER SET").
+      and_return(Struct.new(:rows).new([{'Description' => 'UTF-8 Unicode', 'Charset' => 'utf8'}]))
+      
       get '/connect'
       
       json['connected'].should be_true
       json['error'].should == ''
       json['path'].should == '/connect'
+      json['character_sets'].first['Description'].should == 'UTF-8 Unicode'
+      json['character_sets'].first['Charset'].should == 'utf8'
     end
   end
   
@@ -826,5 +831,24 @@ describe "App" do
       @mysql.should_receive(:query).with("SHOW INDEX FROM `people`").and_return []
       post "/remove_index/people?#{@query.to_query_string}"
     end  
+  end
+  
+  describe '/add_table/:table' do
+    before do
+      @query = {
+        table_encoding: 'utf8',
+        table_type: 'MyISAM'
+      }
+    end
+    
+    it 'creates new table' do
+      @mysql.should_receive(:query).
+      with("CREATE TABLE `test_five` (id INT NOT NULL) DEFAULT CHARACTER SET `utf8` ENGINE = `MyISAM`")
+      @mysql.should_receive(:list_tables).and_return ['t1', 't2', 't3']
+      
+      post "/add_table/test_five?#{@query.to_query_string}"
+      json['path'].should == '/add_table/test_five'
+      json['tables'].should include('t1', 't2', 't3')
+    end
   end
 end

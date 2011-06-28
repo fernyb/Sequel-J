@@ -16,8 +16,11 @@
   CPSearchField	tableFilterSearchField;
   CPButtonBar	bottomButtonBar;
   CPString databaseName @accessors;
+  
   CPWindow addTableWindow;
+  CPTextField fieldTableName;
   CPPopUpButton fieldTableType;
+  CPPopUpButton fieldTableEncoding;
   CPArray characterSets @accessors;
 }
 
@@ -205,7 +208,7 @@
     [labelTableName setFont:[CPFont boldSystemFontOfSize:12.0]];
     [addContentView addSubview:labelTableName];
     
-    var fieldTableName = [[CPTextField alloc] initWithFrame:CGRectMake(132, 16, 205, 28)];
+    fieldTableName = [[CPTextField alloc] initWithFrame:CGRectMake(132, 16, 205, 28)];
     [fieldTableName setAlignment:CPLeftTextAlignment];
     [fieldTableName setStringValue:@""];  
     [fieldTableName setEditable:YES];
@@ -221,7 +224,7 @@
     [labelTableEncoding setFont:[CPFont boldSystemFontOfSize:12.0]];
     [addContentView addSubview:labelTableEncoding];
 
-    var fieldTableEncoding = [[CPPopUpButton alloc] initWithFrame:CGRectMake(135, (24 * 2) - 2, 200, 24)];
+    fieldTableEncoding = [[CPPopUpButton alloc] initWithFrame:CGRectMake(135, (24 * 2) - 2, 200, 24)];
     [fieldTableEncoding setTarget:self];
 	  [fieldTableEncoding setAction:@selector(selectedTableEncoding:)];
 	  [fieldTableEncoding setTitle:@"Default"];
@@ -294,7 +297,30 @@
 
 - (void)didClickAddTableAction:(CPButton)sender
 {
-  [self endAddTableWindowSheet];
+  var newTableName = [fieldTableName stringValue];
+  var selectedEncodingIndex = [fieldTableEncoding selectedIndex] - 2;
+  var selectedEncoding = [characterSets objectAtIndex:selectedEncodingIndex];
+  var selectedTableTypeIndex = [fieldTableType selectedIndex] - 2;
+  var selectedTableType = [[self tableTypes] objectAtIndex:selectedTableTypeIndex];
+  
+  var params = [CPDictionary dictionary];
+  [params setObject:selectedEncoding['Charset'] forKey:@"table_encoding"];
+  [params setObject:selectedTableType forKey:@"table_type"];
+  
+  [[SJAPIRequest sharedAPIRequest] sendRequestAddTable:newTableName query:params callback:function (js) {
+    if(js.error == '') {
+      [tableList removeAllObjects];
+      for(var i=0; i < js.tables.length; i++) {
+    	  [tableList addObject:js.tables[i]];
+	    }
+	    filteredTableList = [tableList copy];
+	    [tableView reloadData];
+    } else {
+      console.log(js.error);
+    }
+    
+    [self endAddTableWindowSheet];
+  }];
 }
 
 - (void)endAddTableWindowSheet

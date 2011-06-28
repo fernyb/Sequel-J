@@ -80,6 +80,15 @@ class App < Sinatra::Base
     results.size == 2 ? results.last : ''
   end
   
+  def database_list_tables
+    begin
+      @mysql.list_tables
+    rescue Mysql::Error => e
+      @error = e
+      []
+    end
+  end
+  
   def render kv={}
     { connected: @connected, error: @error.to_s, path: request.path_info }.merge!(kv).to_json
   end
@@ -139,6 +148,12 @@ class App < Sinatra::Base
       @error = e      
       render tables: []
     end
+  end
+  
+  post '/add_table/:table' do
+    query "CREATE TABLE `#{params[:table]}` (id INT NOT NULL) DEFAULT CHARACTER SET `#{params['table_encoding']}` ENGINE = `#{params['table_type']}`"
+    tables = database_list_tables
+    render tables: tables
   end
   
   get '/columns/:table' do
