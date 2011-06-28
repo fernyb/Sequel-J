@@ -59,7 +59,7 @@ function sj_serve_endpoint_connect() {
 	$db = new ezSQL_mysql;
 	
 	if( $db->connect( $credentials['username'], $credentials['password'], $credentials['host'] . ( $credentials['port'] ? ':' . $credentials['port'] : '' ) ) )
-		return array( 'connected' => true );
+		return array( 'connected' => true, 'error' => '' );
 	
 	else
 		return array( 'connected' => false, 'error' => 'Could not connect to MySQL with credentials' );
@@ -75,7 +75,7 @@ function sj_serve_endpoint_databases() {
 	$db = sj_connect_to_mysql_from_get();
 	
 	if( !$db )
-		return array( 'databases' => array(), 'error' => 'Could not connect to MySQL with credentials' );
+		return array( 'databases' => array(), 'error' => 'Could not connect to MySQL with credentials', 'error' => '' );
 	
 	return array( 'databases' => $db->get_col( "SHOW DATABASES" ) );
 }
@@ -87,7 +87,7 @@ function sj_serve_endpoint_tables() {
 	if( !$db )
 		return array( 'tables' => array(), 'error' => 'Could not connect to MySQL with credentials' );
 	
-	return array( 'tables' => $db->get_col( 'SHOW TABLES' ) );
+	return array( 'tables' => $db->get_col( 'SHOW TABLES' ), 'error' => '' );
 }
 
 function sj_serve_endpoint_header_names() {
@@ -97,7 +97,7 @@ function sj_serve_endpoint_header_names() {
 	if( !$db || empty( $_GET['table'] ) )
 		return array( 'tables' => array(), 'error' => 'Could not connect to MySQL with credentials' );
 	
-	return array( 'header_names' => $db->get_col( "SHOW COLUMNS FROM " . $_GET['table'] ) );
+	return array( 'header_names' => $db->get_col( "SHOW COLUMNS FROM " . $_GET['table'] ), 'error' => '' );
 	
 }
 
@@ -113,7 +113,7 @@ function sj_serve_endpoint_rows() {
 	else
 		$order_by = '';
 		
-	return array( 'rows' => $db->get_results( "SELECT * FROM " . $_GET['table'] . "$order_by LIMIT 0, 100" ) );
+	return array( 'rows' => $db->get_results( "SELECT * FROM " . $_GET['table'] . "$order_by LIMIT 0, 100" ), 'error' => '' );
 	
 }
 
@@ -124,7 +124,7 @@ function sj_serve_endpoint_relations() {
 	if( !$db || empty( $_GET['table'] ) )
 		return array( 'tables' => array(), 'error' => 'Could not connect to MySQL with credentials' );
 	
-	return array( 'relations' => array() );
+	return array( 'relations' => array(), 'error' => '' );
 	
 }
 
@@ -157,7 +157,8 @@ function sj_serve_endpoint_table_info() {
 		'engines' 	=> $db->get_col( "SELECT Engine FROM information_schema.engines WHERE support IN ('DEFAULT', 'YES')" ),
 		'encodings' => $encoding,
 		'collations'=>  $collations,
-		'sql'		=> end($create_table)
+		'sql'		=> end($create_table),
+		'error'		=> ''
 	);
 	
 }
