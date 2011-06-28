@@ -11,3 +11,5 @@ TABLE_SELECTED_NOTIFICATION = @"TableSelectedNotification";
 
 QUERY_FAVORITES = @"query_favorites";
 QUERY_HISTORY = @"query_history";
+
+LOGIN_SUCCESS_NOTIFICATION = @"kLoginSuccess";

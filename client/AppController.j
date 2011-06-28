@@ -45,9 +45,9 @@
 
 - (void)applicationDidFinishLaunching:(CPNotification)aNotification
 {
-    [[CPNotificationCenter defaultCenter] addObserver:self selector:@selector(switchView:) name:SWITCH_CONTENT_RIGHT_VIEW_NOTIFICATION object:nil];
-    [[CPNotificationCenter defaultCenter] addObserver:self selector:@selector(didLogin:) name:@"kLoginSuccess" object:nil];
-    [[CPNotificationCenter defaultCenter] addObserver:self selector:@selector(databaseTableSelected:) name:TABLE_SELECTED_NOTIFICATION object:nil];
+  [[CPNotificationCenter defaultCenter] addObserver:self selector:@selector(switchView:) name:SWITCH_CONTENT_RIGHT_VIEW_NOTIFICATION object:nil];
+  [[CPNotificationCenter defaultCenter] addObserver:self selector:@selector(didLogin:) name:LOGIN_SUCCESS_NOTIFICATION object:nil];
+  [[CPNotificationCenter defaultCenter] addObserver:self selector:@selector(databaseTableSelected:) name:TABLE_SELECTED_NOTIFICATION object:nil];
 
 	var name = [[theWindow contentView] viewWithTag:100];
 	[theWindow makeFirstResponder:name];
@@ -100,9 +100,11 @@
 - (void)didLogin:(CPNotification)aNotification
 {
   [self switchToView:@"SJContentTabController"];
+  var character_sets = [aNotification object];
   
   [[[self contentLeftView] subviews] makeObjectsPerformSelector:@selector(removeFromSuperview)];
-  tablesListViewController = [[SJTablesListViewController alloc] initWithSuperView:[self contentLeftView]]; 
+  tablesListViewController = [[SJTablesListViewController alloc] initWithSuperView:[self contentLeftView]];
+  [tablesListViewController setCharacterSets:character_sets];
 }
 
 

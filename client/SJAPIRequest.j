@@ -28,7 +28,7 @@ var DownloadIFrame = null,
 
 - (void)sendRequestToConnectWithOptions:(CPDictionary)options callback:(id)aCallback
 {
-  var url = SERVER_BASE + "/api.php?endpoint=connect" + "&" + [options toQueryString];  
+  var url = SERVER_BASE + "/api.php?endpoint=connect" + "&" + [options toQueryString];
   [self _sendRequestToURL:url callback:aCallback];
 }
 
@@ -124,6 +124,12 @@ var DownloadIFrame = null,
   [self _sendRequestToURL:url httpMethod:@"POST" callback:callback];
 }
 
+- (void)requestTablesForDatabase:(CPString)database_name callback:(func)callback
+{
+  [[self credentials] setObject:database_name forKey:@"database"];
+  var url = SERVER_BASE + "/api.php?endpoint=tables&" + [self _requestCredentialsString];
+  [self _sendRequestToURL:url httpMethod:@"GET" callback:callback];
+}
 
 - (void)_sendRequestToURL:(CPString)aURL httpMethod:(CPString)method callback:(id)aCallback
 {

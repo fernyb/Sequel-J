@@ -212,13 +212,15 @@ var sharedLoginViewController = nil;
 
   var options = [[CPDictionary alloc] initWithObjects:[username, password, host, database, port] forKeys:[@"username", @"password", @"host", @"database", @"port"]];
   
-  [[SJAPIRequest sharedAPIRequest] sendRequestToConnectWithOptions:options callback:function( jsonData ) 
+  [[SJAPIRequest sharedAPIRequest] sendRequestToConnectWithOptions:options callback:function( js ) 
   {
-    [[SJDataManager sharedInstance] setCredentials:options];
-    [[SJAPIRequest sharedAPIRequest] setCredentials:options];
-  	[[CPNotificationCenter defaultCenter] postNotificationName:@"kLoginSuccess" object:nil];
-  	[[CPNotificationCenter defaultCenter] postNotificationName:SHOW_DATABASES_NOTIFICATION object:nil];
-  	[[CPNotificationCenter defaultCenter] postNotificationName:SHOW_DATABASE_TABLES_NOTIFICATION object:nil];
+    if (js.error == '') {
+      [[SJDataManager sharedInstance] setCredentials:options];
+      [[SJAPIRequest sharedAPIRequest] setCredentials:options];
+  	  [[CPNotificationCenter defaultCenter] postNotificationName:LOGIN_SUCCESS_NOTIFICATION object:js.character_sets];
+  	  [[CPNotificationCenter defaultCenter] postNotificationName:SHOW_DATABASES_NOTIFICATION object:nil];
+  	  [[CPNotificationCenter defaultCenter] postNotificationName:SHOW_DATABASE_TABLES_NOTIFICATION object:nil];
+	  }
   }];
 }
 

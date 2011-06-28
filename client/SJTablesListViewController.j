@@ -2,6 +2,7 @@
 @import "SJHTTPRequest.j"
 @import "SJConstants.j"
 @import "SJTableListItemDataView.j"
+@import "SJAPIRequest.j"
 
 
 @implementation SJTablesListViewController : CPObject
@@ -14,12 +15,17 @@
   CPArray 		responseData;
   CPSearchField	tableFilterSearchField;
   CPButtonBar	bottomButtonBar;
+  CPString databaseName @accessors;
+  CPWindow addTableWindow;
+  CPPopUpButton fieldTableType;
+  CPArray characterSets @accessors;
 }
 
 - (id)initWithSuperView:(CPView)aSuperView
 {
   if (self = [super init]) {
     theSuperView = aSuperView;
+    characterSets = [CPArray array];
     [self setupView];
     tableList = [[CPArray alloc] init];
     filteredTableList = [[CPArray alloc] init];
@@ -28,6 +34,11 @@
     [[CPNotificationCenter defaultCenter] addObserver:self selector:@selector(showDBTables:) name:SHOW_DATABASE_TABLES_NOTIFICATION object:nil];
   }
   return self;
+}
+
+- (CPView)contentView
+{
+  return theSuperView;
 }
 
 - (void)setupView
@@ -92,6 +103,9 @@
   [refreshButton setAction:@selector(refreshTables:)];
   [refreshButton setTarget:self];
   [refreshButton setEnabled:YES];
+  var refreshImage = [[CPImage alloc] initWithContentsOfFile:[[CPBundle mainBundle] pathForResource:@"refresh-icon.png"] size:CGSizeMake(14, 15)];
+  [refreshButton setImage:refreshImage];
+  [refreshButton setImagePosition:CPImageOnly];
   
   [bottomButtonBar setButtons:[addButton, settingsButton, refreshButton]];
   
@@ -106,8 +120,6 @@
 
 - (BOOL)tableView:(CPTableView)aTableView shouldSelectRow:(CPInteger)aRow
 {
-  // FIXME: Find out what 'SJSelectedDBTableRow' notification does...
-  // [[CPNotificationCenter defaultCenter] postNotificationName:@"SJSelectedDBTableRow" object:[tableList objectAtIndex:aRow]];
   var tablename = [filteredTableList objectAtIndex:aRow];
   [[CPNotificationCenter defaultCenter] postNotificationName:TABLE_SELECTED_NOTIFICATION object:tablename];
 
@@ -131,24 +143,27 @@
 
 - (void)showDBTables:(CPNotification)aNotification
 {
-  var dbName = [aNotification object]
-  
-  if( !dbName )
-  	return;
-  
-  [[[SJAPIRequest sharedAPIRequest] credentials] setObject:dbName forKey:@"database"];
-  
-  [[SJAPIRequest sharedAPIRequest] sendRequestToTablesWithOptions:nil callback:function( jsObject ) 
-  {
-	[tableList removeAllObjects];
+  databaseName = [aNotification object];
+  if (!databaseName)
+    return;
+    
+  [self loadDatabaseTables];
+}
 
-	for(var i=0; i < jsObject.tables.length; i++) {
-    	[tableList addObject:jsObject.tables[i]];
-	}
-  
-	filteredTableList = [tableList copy];
-  
-	[tableView reloadData];
+- (void)loadDatabaseTables
+{
+  [[[SJAPIRequest sharedAPIRequest] credentials] setObject:[self databaseName] forKey:@"database"];
+  [[SJAPIRequest sharedAPIRequest] requestTablesForDatabase:[self databaseName] callback:function( js) {
+    if(js.error == '') {
+      [tableList removeAllObjects];
+      for(var i=0; i < js.tables.length; i++) {
+    	  [tableList addObject:js.tables[i]];
+	    }
+	    filteredTableList = [tableList copy];
+	    [tableView reloadData];
+    } else {
+      console.log(js.error);
+    }
   }];
 }
 
@@ -180,12 +195,121 @@
 
 - (@action)showAddTableDialog:(id)sender
 {
-	alert( 'Add Table' );
+  if (!addTableWindow) {
+    addTableWindow = [[CPWindow alloc] initWithContentRect:CGRectMake(30,30, 360, 160) styleMask:CPDocModalWindowMask];
+    var addContentView = [addTableWindow contentView];
+    
+    var labelTableName = [[CPTextField alloc] initWithFrame:CGRectMake(20, 20, 110, 20)];
+    [labelTableName setAlignment:CPRightTextAlignment];
+    [labelTableName setStringValue:@"Table Name:"];
+    [labelTableName setFont:[CPFont boldSystemFontOfSize:12.0]];
+    [addContentView addSubview:labelTableName];
+    
+    var fieldTableName = [[CPTextField alloc] initWithFrame:CGRectMake(132, 16, 205, 28)];
+    [fieldTableName setAlignment:CPLeftTextAlignment];
+    [fieldTableName setStringValue:@""];  
+    [fieldTableName setEditable:YES];
+    [fieldTableName setEnabled:YES];
+    [fieldTableName setBezeled:YES];
+    [fieldTableName setFont:[CPFont boldSystemFontOfSize:12.0]];
+    [addContentView addSubview:fieldTableName];
+    
+    // ---
+    var labelTableEncoding = [[CPTextField alloc] initWithFrame:CGRectMake(20, (24 * 2) + 2, 110, 20)];
+    [labelTableEncoding setAlignment:CPRightTextAlignment];
+    [labelTableEncoding setStringValue:@"Table Encoding:"];
+    [labelTableEncoding setFont:[CPFont boldSystemFontOfSize:12.0]];
+    [addContentView addSubview:labelTableEncoding];
+
+    var fieldTableEncoding = [[CPPopUpButton alloc] initWithFrame:CGRectMake(135, (24 * 2) - 2, 200, 24)];
+    [fieldTableEncoding setTarget:self];
+	  [fieldTableEncoding setAction:@selector(selectedTableEncoding:)];
+	  [fieldTableEncoding setTitle:@"Default"];
+	  if([characterSets count] > 0) {
+      [fieldTableEncoding addItem:[CPMenuItem separatorItem]];
+    }
+	  for(var i=0; i<[characterSets count]; i++) {
+	    var item = [characterSets objectAtIndex:i];
+      var name = item['Description'] +" ("+ item['Charset'] +")";
+	    [fieldTableEncoding addItemWithTitle:name];
+	  }
+    [addContentView addSubview:fieldTableEncoding];
+    
+    // -----
+    var labelTableType = [[CPTextField alloc] initWithFrame:CGRectMake(20, (26 * 3) + 2, 110, 20)];
+    [labelTableType setAlignment:CPRightTextAlignment];
+    [labelTableType setStringValue:@"Table Type:"];
+    [labelTableType setFont:[CPFont boldSystemFontOfSize:12.0]];
+    [addContentView addSubview:labelTableType];
+    
+    fieldTableType = [[CPPopUpButton alloc] initWithFrame:CGRectMake(135, (26 * 3) - 2, 200, 24)];
+    [fieldTableType setTarget:self];
+	  [fieldTableType setAction:@selector(selectedTableType:)];
+	  [fieldTableType setTitle:@"Default"];
+	  var types = [self tableTypes];
+	  if([types count] > 0) {
+      [fieldTableType addItem:[CPMenuItem separatorItem]];
+    }
+    for(var i=0; i<[types count]; i++) {
+       [fieldTableType addItemWithTitle:[types objectAtIndex:i]];
+    }
+    [addContentView addSubview:fieldTableType];
+    
+    var cancelBtn = [[CPButton alloc] initWithFrame:CGRectMake(225, (30 * 4) - 3, 0, 0)];
+    [cancelBtn setTitle:@"Cancel"];
+    [cancelBtn sizeToFit];
+    [cancelBtn setTarget:self];
+    [cancelBtn setAction:@selector(didClickCancelAction:)];
+    [addContentView addSubview:cancelBtn];
+    
+    var saveBtn = [[CPButton alloc] initWithFrame:CGRectMake(292, (30 * 4) - 3, 0, 0)];
+    [saveBtn setTitle:@" Add "];
+    [saveBtn sizeToFit];
+    [saveBtn setTarget:self];
+    [saveBtn setAction:@selector(didClickAddTableAction:)];
+    [addContentView addSubview:saveBtn];
+  }
+
+  [CPApp beginSheet: addTableWindow
+          modalForWindow: [[self contentView] window]
+           modalDelegate: self
+          didEndSelector: null
+             contextInfo: null];  
+}
+
+- (void)selectedTableEncoding:(CPPopUpButton)sender
+{
+  // console.log("Selected Table Encoding");
+}
+
+- (void)selectedTableType:(CPPopUpButton)sender
+{
+  // console.log("Selected Table Type");
+}
+
+- (void)didClickCancelAction:(CPButton)sender
+{
+  [self endAddTableWindowSheet];
+}
+
+- (void)didClickAddTableAction:(CPButton)sender
+{
+  [self endAddTableWindowSheet];
+}
+
+- (void)endAddTableWindowSheet
+{
+  [CPApp endSheet:addTableWindow returnCode:CPCancelButton];
 }
 
 - (@action)refreshTables:(id)sender
 {
-	alert( "Refresh Tables" );
+  [self loadDatabaseTables];
+}
+
+- (CPArray)tableTypes
+{
+  return [@"InnoDB", @"MRG_MYISAM", @"BLACKHOLE", @"CSV", @"MEMORY", @"ARCHIVE", @"MyISAM"];
 }
 
 /*

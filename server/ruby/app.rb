@@ -118,7 +118,9 @@ class App < Sinatra::Base
   end
   
   get '/connect' do
-    render
+    results = query "SHOW CHARACTER SET"    
+    rows = results.rows
+    render character_sets: rows
   end
   
   get '/databases' do
@@ -318,6 +320,12 @@ class App < Sinatra::Base
     char_set   ||= {collation_name: '', collate_set_name: '', description: ''}
     
     render status: status, charset: char_set[:collation_name], engines: engines, encodings: encodings, collations: collations, sql: sql
+  end
+  
+  get '/character_sets' do
+    results = query "SHOW CHARACTER SET"
+    rows = results.rows
+    render character_sets: rows
   end
   
   get '/query' do
