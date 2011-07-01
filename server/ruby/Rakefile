@@ -5,8 +5,6 @@ task :spec do
   RSpec::Core::RakeTask.new(:spec) do |t|
    t.pattern = "spec/**/*_spec.rb"
    t.rspec_opts = ['--options', "#{File.dirname(__FILE__)}/spec/spec.opts"]
-   t.rcov = true
-   t.rcov_opts = %w{--rails --exclude osx\/objc,gems\/,spec\/,features\/}
    t.verbose = true
   end
 end

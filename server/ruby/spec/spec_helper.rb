@@ -5,6 +5,7 @@ require 'bundler'
 require 'sinatra'
 require 'rack/test'
 require 'rspec'
+require 'mysql'
 
 Bundler.require :default, ENV['RACK_ENV']
 

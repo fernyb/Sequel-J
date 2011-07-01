@@ -2,7 +2,7 @@ APP_ROOT = File.dirname(__FILE__)
 
 require 'rubygems'
 
-gem 'bundler', '1.0.14'
+gem 'bundler', '>= 1.0.14'
 require 'bundler'
 
 ENVIRONMENT = (ENV['RACK_ENV'] || 'production')

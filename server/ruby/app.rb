@@ -151,13 +151,23 @@ class App < Sinatra::Base
   end
   
   post '/add_table/:table' do
-    query "CREATE TABLE `#{params[:table]}` (id INT NOT NULL) DEFAULT CHARACTER SET `#{params['table_encoding']}` ENGINE = `#{params['table_type']}`"
+    q = "CREATE TABLE `#{params[:table]}` (id INT NOT NULL)"
+    q << " DEFAULT CHARACTER SET `#{params['table_encoding']}`" if params['table_encoding'] != ''
+    q << " ENGINE = `#{params['table_type']}`" if params['table_type'] != ''
+    
+    query q
     tables = database_list_tables
     render tables: tables
   end
   
   post '/remove_table/:table' do
     query "DROP TABLE `#{params[:table]}`"
+    tables = database_list_tables
+    render tables: tables
+  end
+  
+  post '/truncate_table/:table' do
+    query "TRUNCATE TABLE `#{params[:table]}`"
     tables = database_list_tables
     render tables: tables
   end

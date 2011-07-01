@@ -850,6 +850,51 @@ describe "App" do
       json['path'].should == '/add_table/test_five'
       json['tables'].should include('t1', 't2', 't3')
     end
+    
+    it 'creates new table with defaults' do
+      @query.merge!({
+        table_encoding: '',
+        table_type: ''
+      })
+      
+      @mysql.should_receive(:query).
+      with("CREATE TABLE `test_five` (id INT NOT NULL)")
+      @mysql.should_receive(:list_tables).and_return ['t1', 't2', 't3']
+      
+      post "/add_table/test_five?#{@query.to_query_string}"
+      json['path'].should == '/add_table/test_five'
+      json['tables'].should include('t1', 't2', 't3')  
+    end
+    
+    it 'creates new table with encoding defaults' do
+      @query.merge!({
+        table_encoding: '',
+        table_type: 'InnoDB'
+      })
+      
+      @mysql.should_receive(:query).
+      with("CREATE TABLE `test_five` (id INT NOT NULL) ENGINE = `InnoDB`")
+      @mysql.should_receive(:list_tables).and_return ['t1', 't2', 't3']
+      
+      post "/add_table/test_five?#{@query.to_query_string}"
+      json['path'].should == '/add_table/test_five'
+      json['tables'].should include('t1', 't2', 't3')  
+    end
+
+    it 'creates new table with type defaults' do
+      @query.merge!({
+        table_encoding: 'utf8',
+        table_type: ''
+      })
+      
+      @mysql.should_receive(:query).
+      with("CREATE TABLE `test_five` (id INT NOT NULL) DEFAULT CHARACTER SET `utf8`")
+      @mysql.should_receive(:list_tables).and_return ['t1', 't2', 't3']
+      
+      post "/add_table/test_five?#{@query.to_query_string}"
+      json['path'].should == '/add_table/test_five'
+      json['tables'].should include('t1', 't2', 't3')  
+    end    
   end
   
   describe '/remove_table/:table' do
@@ -859,6 +904,16 @@ describe "App" do
     
       post "/remove_table/test_one"
       json['path'].should == '/remove_table/test_one'
+    end
+  end
+  
+  describe '/truncate_table/:table' do
+    it 'can truncate table' do
+      @mysql.should_receive(:query).with("TRUNCATE TABLE `test_one`")
+      @mysql.should_receive(:list_tables).and_return ['t1', 't2', 't3']
+    
+      post "/truncate_table/test_one"
+      json['path'].should == '/truncate_table/test_one'
     end
   end
 end

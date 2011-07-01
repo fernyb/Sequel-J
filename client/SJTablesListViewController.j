@@ -300,9 +300,17 @@
 {
   var newTableName = [fieldTableName stringValue];
   var selectedEncodingIndex = [fieldTableEncoding selectedIndex] - 2;
-  var selectedEncoding = [characterSets objectAtIndex:selectedEncodingIndex];
   var selectedTableTypeIndex = [fieldTableType selectedIndex] - 2;
-  var selectedTableType = [[self tableTypes] objectAtIndex:selectedTableTypeIndex];
+  
+  var selectedEncoding = {'Charset' : ''};
+  if (selectedEncodingIndex > 0) {
+    selectedEncoding = [characterSets objectAtIndex:selectedEncodingIndex];
+  }
+  
+  var selectedTableType = '';
+  if (selectedTableTypeIndex > 0) {
+    selectedTableType = [[self tableTypes] objectAtIndex:selectedTableTypeIndex];
+  }
   
   var params = [CPDictionary dictionary];
   [params setObject:selectedEncoding['Charset'] forKey:@"table_encoding"];
@@ -348,7 +356,45 @@
     case @"Remove Table" :
       [self removeTable];
     break;
+    case @"Truncate Table" :
+      [self truncateTable];
+    break;
   }
+}
+
+- (void)truncateTable
+{
+  var selectedRow = [tableView selectedRow];
+  if (selectedRow == -1) {
+    return;
+  }
+  var tableName = [tableList objectAtIndex:selectedRow];
+  
+  var didEndCallback = function (returnCode, contextInfo) {
+    if(returnCode == 0) {
+      [[SJAPIRequest sharedAPIRequest] sendRequestTruncateTable:tableName callback:function (js) {
+        if(js.error == '') {
+          [tableList removeAllObjects];
+          tableList = [js.tables copy];
+          filteredTableList = [tableList copy];
+          [tableView reloadData];
+        } else {
+          console.log(js.error);
+        }
+      }];
+    }
+  };
+  
+  var alert = [CPAlert new];
+  [alert addButtonWithTitle:@"Truncate"];    
+  [alert addButtonWithTitle:@"Cancel"];
+  [alert setMessageText:@"Truncate table '"+ tableName +"'?"];
+  [alert setInformativeText:@"Are you sure you want to truncate the table '"+ tableName +"'? This action cannot be undone."];
+  [alert setAlertStyle:CPWarningAlertStyle];
+  [alert beginSheetModalForWindow:[[self contentView] window]
+                    modalDelegate:self 
+                    didEndCallback:didEndCallback
+                    contextInfo:nil];
 }
 
 - (void)removeTable
