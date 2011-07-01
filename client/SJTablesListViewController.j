@@ -4,6 +4,7 @@
 @import "SJTableListItemDataView.j"
 @import "SJAPIRequest.j"
 @import "Categories/CPAlert+Categories.j"
+@import "SJDuplicateTableWindowController.j"
 
 
 @implementation SJTablesListViewController : CPObject
@@ -23,6 +24,7 @@
   CPPopUpButton fieldTableType;
   CPPopUpButton fieldTableEncoding;
   CPArray characterSets @accessors;
+  SJDuplicateTableWindowController duptableWinController;
 }
 
 - (id)initWithSuperView:(CPView)aSuperView
@@ -359,16 +361,46 @@
     case @"Truncate Table" :
       [self truncateTable];
     break;
+    case @"Duplicate Table..." :
+      [self duplicateTable];
+    break;
   }
 }
 
-- (void)truncateTable
+- (CPString)selectedTableName
 {
   var selectedRow = [tableView selectedRow];
   if (selectedRow == -1) {
+    return @"";
+  }
+ return [tableList objectAtIndex:selectedRow];
+}
+
+
+- (void)duplicateTable
+{
+  var tableName = [self selectedTableName];
+  if(tableName == @"") return;
+  
+  if(!duptableWinController) {
+    duptableWinController = [[SJDuplicateTableWindowController alloc] init];
+  }
+  [duptableWinController setTableName:tableName];
+  
+  [CPApp beginSheet: [duptableWinController window]
+        modalForWindow: [[self contentView] window]
+         modalDelegate: self
+        didEndSelector: null
+           contextInfo: null];
+}
+
+
+- (void)truncateTable
+{
+  var tableName = [self selectedTableName];
+  if (tableName == @"") {
     return;
   }
-  var tableName = [tableList objectAtIndex:selectedRow];
   
   var didEndCallback = function (returnCode, contextInfo) {
     if(returnCode == 0) {
