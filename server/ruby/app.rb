@@ -30,6 +30,34 @@ class App < Sinatra::Base
     []
   end
   
+  def status_table table_name
+    results = query "SHOW TABLE STATUS LIKE '#{table_name}'"
+    status = results.map {|item|
+      item = item.map {|value| value.nil? ? '' : value }
+      {
+        name:            item[0],
+        engine:          item[1],
+        version:         item[2],
+        row_format:      item[3],
+        rows:            item[4],
+        avg_row_length:  item[5],
+        data_length:     item[6],
+        max_data_length: item[7],
+        index_length:    item[8],
+        data_free:       item[9],
+        auto_increment:  item[10],
+        create_time:     item[11],
+        update_time:     item[12],
+        check_time:      item[13],
+        collation:       item[14],
+        checksum:        item[15],
+        create_options:  item[16],
+        comment:         item[17]
+      }
+    }.first
+    status
+  end
+  
   def schema_table table_name
     results = query "SHOW COLUMNS FROM `#{table_name}`"
     fields = results.map {|row|
@@ -170,6 +198,20 @@ class App < Sinatra::Base
     query "TRUNCATE TABLE `#{params[:table]}`"
     tables = database_list_tables
     render tables: tables
+  end
+  
+  post '/duplicate_table/:table' do
+    sql = sql_for_table params[:table]
+    sql.gsub!("CREATE TABLE `#{params[:table]}`", "CREATE TABLE `#{params['name']}`")
+    sql.gsub!(/AUTO_INCREMENT=\d+/, '') if params['duplicate_content'] != 'YES'
+    query sql
+    
+    if params['duplicate_content'] == 'YES'
+      query "INSERT INTO `#{params['name']}` SELECT * FROM `#{params[:table]}`"
+    end
+    
+    tables = database_list_tables
+    render tables: tables, sql: sql
   end
   
   get '/columns/:table' do

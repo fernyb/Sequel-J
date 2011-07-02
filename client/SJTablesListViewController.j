@@ -386,12 +386,26 @@
     duptableWinController = [[SJDuplicateTableWindowController alloc] init];
   }
   [duptableWinController setTableName:tableName];
+  [duptableWinController setParentController:self];
+  [duptableWinController willDisplayController];
   
   [CPApp beginSheet: [duptableWinController window]
         modalForWindow: [[self contentView] window]
          modalDelegate: self
         didEndSelector: null
            contextInfo: null];
+}
+
+- (void)duplicateTableComplete:(id)js
+{
+  if (js.error == '') {
+    [tableList removeAllObjects];
+    tableList = [js.tables copy];
+    filteredTableList = [tableList copy];
+    [tableView reloadData];
+  } else {
+    console.log(js.error);
+  }
 }
 
 

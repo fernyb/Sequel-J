@@ -916,4 +916,39 @@ describe "App" do
       json['path'].should == '/truncate_table/test_one'
     end
   end
+  
+  describe '/duplicate_table/:table' do
+    before do
+      @query = {
+        duplicate_content: 'NO',
+        name: 'names_copy'
+      }
+      
+      @sql_code = File.open("#{DIR_PATH}/fixture/names.sql") {|f| f.read }
+    end
+    
+    it 'can duplicate a table' do
+      @mysql.should_receive(:query).with("SHOW CREATE TABLE `names`").and_return(['names', @sql_code])
+      @mysql.should_receive(:query).with("CREATE TABLE `names_copy` (\n  `Number` int(11) NOT NULL AUTO_INCREMENT,\n  `Gender` varchar(6) NOT NULL,\n  `GivenName` varchar(50) NOT NULL,\n  `MiddleInitial` varchar(2) NOT NULL,\n  `Surname` varchar(50) NOT NULL,\n  `StreetAddress` varchar(150) NOT NULL,\n  `City` varchar(200) NOT NULL,\n  `State` varchar(100) NOT NULL,\n  `ZipCode` mediumint(9) NOT NULL,\n  `Country` varchar(3) NOT NULL,\n  `EmailAddress` varchar(255) NOT NULL,\n  `TelephoneNumber` varchar(15) NOT NULL,\n  `MothersMaiden` varchar(100) NOT NULL,\n  `Birthday` varchar(15) NOT NULL,\n  `CCType` varchar(100) NOT NULL,\n  `CCNumber` bigint(20) NOT NULL,\n  `CVV2` smallint(6) NOT NULL,\n  `CCExpires` varchar(12) NOT NULL,\n  `NationalID` varchar(255) NOT NULL,\n  `description` text,\n  PRIMARY KEY (`Number`),\n  KEY `Gender` (`Gender`),\n  KEY `City` (`City`),\n  KEY `State` (`State`),\n  KEY `ZipCode` (`ZipCode`),\n  KEY `Country` (`Country`),\n  KEY `EmailAddress` (`EmailAddress`),\n  KEY `CCNumber` (`CCNumber`)\n) ENGINE=MyISAM  DEFAULT CHARSET=latin1")
+      
+      @mysql.should_receive(:list_tables).and_return ['t1', 't2', 't3']
+      post "/duplicate_table/names?#{@query.to_query_string}"
+      
+      json['sql'].should match(/CREATE TABLE `names_copy`/)
+      json['sql'].should_not match(/AUTO_INCREMENT=\d+/)
+    end
+    
+    it 'can duplicate a table and content' do
+      @query.merge!({ duplicate_content: 'YES' })
+      @mysql.should_receive(:query).with("SHOW CREATE TABLE `names`").and_return(['names', @sql_code])
+      @mysql.should_receive(:query).with("CREATE TABLE `names_copy` (\n  `Number` int(11) NOT NULL AUTO_INCREMENT,\n  `Gender` varchar(6) NOT NULL,\n  `GivenName` varchar(50) NOT NULL,\n  `MiddleInitial` varchar(2) NOT NULL,\n  `Surname` varchar(50) NOT NULL,\n  `StreetAddress` varchar(150) NOT NULL,\n  `City` varchar(200) NOT NULL,\n  `State` varchar(100) NOT NULL,\n  `ZipCode` mediumint(9) NOT NULL,\n  `Country` varchar(3) NOT NULL,\n  `EmailAddress` varchar(255) NOT NULL,\n  `TelephoneNumber` varchar(15) NOT NULL,\n  `MothersMaiden` varchar(100) NOT NULL,\n  `Birthday` varchar(15) NOT NULL,\n  `CCType` varchar(100) NOT NULL,\n  `CCNumber` bigint(20) NOT NULL,\n  `CVV2` smallint(6) NOT NULL,\n  `CCExpires` varchar(12) NOT NULL,\n  `NationalID` varchar(255) NOT NULL,\n  `description` text,\n  PRIMARY KEY (`Number`),\n  KEY `Gender` (`Gender`),\n  KEY `City` (`City`),\n  KEY `State` (`State`),\n  KEY `ZipCode` (`ZipCode`),\n  KEY `Country` (`Country`),\n  KEY `EmailAddress` (`EmailAddress`),\n  KEY `CCNumber` (`CCNumber`)\n) ENGINE=MyISAM AUTO_INCREMENT=2000 DEFAULT CHARSET=latin1")
+      @mysql.should_receive(:query).with("INSERT INTO `names_copy` SELECT * FROM `names`")
+      
+      @mysql.should_receive(:list_tables).and_return ['t1', 't2', 't3']
+      post "/duplicate_table/names?#{@query.to_query_string}"
+      
+      json['sql'].should match(/CREATE TABLE `names_copy`/)
+      json['sql'].should match(/AUTO_INCREMENT=\d+/)
+    end
+  end
 end
