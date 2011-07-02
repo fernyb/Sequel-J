@@ -55,13 +55,20 @@
 {
     [super setThemeState:aState];
     [tableNameLabel setThemeState:aState];
-       
 }
 
 - (void)unsetThemeState:(CPThemeState)aState
 {
     [super unsetThemeState:aState];
     [tableNameLabel unsetThemeState:aState];
+}
+
+
+- (BOOL)respondsToSelector:(SEL)aSelector
+{
+  var b = [super respondsToSelector:aSelector];
+  CPLog(aSelector);
+  return b;
 }
 
 @end

@@ -5,6 +5,7 @@
 @import "SJAPIRequest.j"
 @import "Categories/CPAlert+Categories.j"
 @import "SJDuplicateTableWindowController.j"
+@import "SJRenameTableWindowController.j"
 
 
 @implementation SJTablesListViewController : CPObject
@@ -81,7 +82,7 @@
   [[column headerView] setStringValue:@"TABLES"];
   [column setWidth:(viewWidth - 15)];
   [column setDataView:[[SJTableListItemDataView alloc] initWithFrame:CGRectMake(0,0,viewWidth,20)]];
-  
+        
   [[column headerView] setValue:[CPColor colorWithHexString:@"DEE4EA"] forThemeAttribute:@"background-color"];
   [[column headerView] setValue:[CPColor colorWithHexString:@"626262"] forThemeAttribute:@"text-color"];
   [[column headerView] setValue:[CPFont boldSystemFontOfSize:12] forThemeAttribute:@"text-font"];
@@ -352,8 +353,7 @@
 - (void)settingsItemSelectedAction:(id)sender
 {
   var item = [sender selectedItem];
-  console.log(@"Selected Menu Item: "+ [item title]);
-
+  
   switch([item title]) {
     case @"Remove Table" :
       [self removeTable];
@@ -363,6 +363,9 @@
     break;
     case @"Duplicate Table..." :
       [self duplicateTable];
+    break;
+    case @"Rename Table..." :
+      [self renameTable];
     break;
   }
 }
@@ -376,6 +379,36 @@
  return [tableList objectAtIndex:selectedRow];
 }
 
+- (void)renameTable
+{
+  var tableName = [self selectedTableName];
+  if(tableName == @"") return;
+  
+  if(!duptableWinController) {
+    duptableWinController = [[SJRenameTableWindowController alloc] init];
+  }
+  [duptableWinController setTableName:tableName];
+  [duptableWinController setParentController:self];
+  [duptableWinController willDisplayController];
+  
+  [CPApp beginSheet: [duptableWinController window]
+        modalForWindow: [[self contentView] window]
+         modalDelegate: self
+        didEndSelector: null
+           contextInfo: null];
+}
+
+- (void)renameTableComplete:(id)js
+{
+  if (js.error == '') {
+    [tableList removeAllObjects];
+    tableList = [js.tables copy];
+    filteredTableList = [tableList copy];
+    [tableView reloadData];
+  } else {
+    console.log(js.error);
+  }  
+}
 
 - (void)duplicateTable
 {
