@@ -214,6 +214,12 @@ class App < Sinatra::Base
     render tables: tables, sql: sql
   end
   
+  post '/rename_table/:table' do
+    query "RENAME TABLE `#{params[:table]}` TO `#{params['name']}`"
+    tables = database_list_tables
+    render tables: tables
+  end
+  
   get '/columns/:table' do
     results = query "SHOW COLUMNS FROM `#{params[:table]}`"
     columns = results.map {|d|

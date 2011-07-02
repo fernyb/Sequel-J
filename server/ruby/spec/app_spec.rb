@@ -951,4 +951,18 @@ describe "App" do
       json['sql'].should match(/AUTO_INCREMENT=\d+/)
     end
   end
+  
+  describe '/rename_table/:table' do
+    before do
+      @query = {
+        name: 'new_table_name'
+      }
+    end
+    
+    it 'can rename table' do
+      @mysql.should_receive(:query).with("RENAME TABLE `names` TO `new_table_name`")
+      @mysql.should_receive(:list_tables).and_return ['t1', 't2', 't3']
+      post "/rename_table/names?#{@query.to_query_string}"
+    end
+  end
 end
