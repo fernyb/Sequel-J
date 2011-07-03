@@ -78,12 +78,6 @@
   bottomBar = [[CPButtonBar alloc] initWithFrame:CGRectMake(0, originY, rect.size.width, 23.0)];    
   [bottomBar setAutoresizingMask:CPViewWidthSizable | CPViewMinYMargin];
   
-  var img = [[CPImage alloc] initWithContentsOfFile:[[CPBundle mainBundle] pathForResource:@"button_bar_spacer.png"]];
-  [bottomBar setValue:[CPColor colorWithPatternImage:img] forThemeAttribute:@"bezel-color"];
-  [bottomBar setValue:[CPColor colorWithPatternImage:img] forThemeAttribute:@"button-bezel-color" inState:CPThemeStateNormal];
-  // TODO: add in the alternate image
-  [bottomBar setValue:[CPColor colorWithPatternImage:img] forThemeAttribute:@"button-bezel-color" inState:CPThemeStateHighlighted];
-  
   [[self view] addSubview:bottomBar];
   
   var addButton = [CPButtonBar plusButton];
@@ -96,13 +90,42 @@
   [minusButton setTarget:self];
   [minusButton setEnabled:YES];
   
-  [bottomBar setButtons:[addButton, minusButton]];
+  var duplicateButton = [[CPButton alloc] initWithFrame:CGRectMake(0, 0, 35, 25)];
+  var duplicateImage = [[CPImage alloc] initWithContentsOfFile:[[CPBundle mainBundle] pathForResource:@"duplicate-icon.png"] size:CGSizeMake(13, 8)];
+  [duplicateButton setBordered:NO];
+  [duplicateButton setTarget:self];
+  [duplicateButton setAction:@selector(duplicateRowAction:)];
+  [duplicateButton setImage:duplicateImage];
+  [duplicateButton setImagePosition:CPImageOnly];
+  
+  var refreshBtn = [[CPButton alloc] initWithFrame:CGRectMake(0, 0, 35, 25)];
+  var refreshImage = [[CPImage alloc] initWithContentsOfFile:[[CPBundle mainBundle] pathForResource:@"refresh-icon.png"] size:CGSizeMake(14, 15)];
+  [refreshBtn setBordered:NO];
+  [refreshBtn setTarget:self];
+  [refreshBtn setAction:@selector(refreshAction:)];
+  [refreshBtn setImage:refreshImage];
+  [refreshBtn setImagePosition:CPImageOnly];
+  
+  [bottomBar setButtons:[addButton, minusButton, duplicateButton, refreshBtn]];
   [bottomBar setHasResizeControl:NO];
 }
 
 - (void)addRow:(id)sender
 {
-  alert('Add Row');
+  var columns = [[self tableView] tableColumns];
+  var newRow = {};
+  for(var i=0; i<[columns count]; i++) {
+    var column = [column objectAtIndex:i];
+    var columnName = [[column headerView] stringValue];
+    newRow[columnName] = 'NULL';
+  }
+  
+  if([columns count] > 0) {
+    [[self tbrows] addObject:newRow];
+    [[self tableView] reloadData];
+    [[self tableView] selectRowIndexes:[CPIndexSet indexSetWithIndex:([[self tbrows] count] - 1)] byExtendingSelection:NO];
+    [[self tableView] editColumn:0 row:([[self tbrows] count] - 1) withEvent:nil select:YES];
+  }
 }
 
 - (void)removeRow:(id)sender
@@ -110,6 +133,22 @@
   alert('Remove Row');
 }
 
+- (void)duplicateRowAction:(CPButton)sender
+{
+  alert('Duplicate Row Action');
+}
+
+- (void)refreshAction:(CPButton)sender
+{
+  // TODO: Add Navigation paging
+  var params = [CPDictionary dictionary];
+  [params setObject:@"0" forKey:@"offset"];
+  [params setObject:@"100" forKey:@"limit"];
+  
+  [[SJAPIRequest sharedAPIRequest] sendRequestTableRows:[self tableName] query:params callback:function (js) {
+  	[self handleTableRowsResponse:js];
+  }];
+}
 
 - (void)handleTableRowsResponse:(id)js
 {
@@ -148,6 +187,15 @@
 
   return rowData[headerName];
 }
+
+- (void)tableView:(CPTableView)aTableView setObjectValue:(CPControl)anObject forTableColumn:(CPTableColumn)aTableColumn row:(int)rowIndex
+{
+  var rowData = [[self tbrows] objectAtIndex:rowIndex];
+  var headerName = [[aTableColumn headerView] stringValue];
+  
+  rowData[headerName] = anObject;
+}
+
 
 - (void)tableView:(CPTableView)aTableView sortDescriptorsDidChange:(CPArray)oldDescriptors
 {

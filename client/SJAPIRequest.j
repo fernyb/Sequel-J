@@ -84,6 +84,16 @@ var DownloadIFrame = null,
   [self _sendRequestToURL:url httpMethod:@"POST" callback:callback];  
 }
 
+- (void)sendRequestTableRows:(CPString)table_name query:(CPDictionary)opts callback:(func)callback
+{
+  var url = SERVER_BASE + "/api.php";
+  var query = "endpoint=rows&table=" + table_name + "&" + [self _requestCredentialsString] + "&" + [opts toQueryString];
+  url += "?" + query;
+  
+  [self _sendRequestToURL:url httpMethod:@"GET" callback:callback];  
+}
+
+
 - (void)sendRequestToTablesWithOptions:(CPDictionary)options callback:(id)aCallback
 {
 	var url = SERVER_BASE + "/api.php?endpoint=tables&" + [self _requestCredentialsString];
