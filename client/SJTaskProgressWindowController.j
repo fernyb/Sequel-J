@@ -9,6 +9,7 @@ var sharedTaskProgressWindowController = nil;
 	EKActivityIndicatorView activityIndicator;
 	CPButton				cancelButton;
 	id						callback;
+	BOOL					isEnqueued @accessors;
 }
 
 + (id)sharedTaskProgressWindowController
@@ -67,20 +68,35 @@ var sharedTaskProgressWindowController = nil;
 {
 	[cancelButton setHidden:YES];
 	[taskNameTextField setStringValue:aTitle];
+	[self setIsEnqueued:YES];
 	callback = nil;
-	[[self window] orderFront:self];
+	
+	setTimeout( function() {
+		if( [self isEnqueued] )
+			[[self window] orderFront:self];
+	
+	}, 2000 );
 }
 
 - (void)showTaskProgressWindowForTitle:(CPString)aTitle withCancelCallback:(id)aCallback
 {
 	[cancelButton setHidden:NO];
+	[self setIsEnqueued:YES];
+
 	[taskNameTextField setStringValue:aTitle];
-	[[self window] orderFront:self];
+	
+	setTimeout( function() {
+		if( [self isEnqueued] )
+			[[self window] orderFront:self];
+	
+	}, 2000 );
+	
 	callback = aCallback;
 }
 
 - (void)hideTaskProgressWindowForCurrentTask
 {
+	[self setIsEnqueued:NO];
 	[[self window] orderOut:self];
 }
 
