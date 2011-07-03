@@ -37,6 +37,9 @@
     return;
   }
   
+  [[SJTaskProgressWindowController sharedTaskProgressWindowController] showTaskProgressWindowForTitle:@"Fetching results..." withCancelCallback:function() {}];
+
+  
   [[SJAPIRequest sharedAPIRequest] sendRequestForHeaderNamesForTable:tableName callback:function( js ) 
   {
   	if(scrollview) {
@@ -62,6 +65,8 @@
       [[SJAPIRequest sharedAPIRequest] sendRequestForRowsForTable:tableName callback:function( js ) 
   	  {
   	  	[self handleTableRowsResponse:js];
+		[[SJTaskProgressWindowController sharedTaskProgressWindowController] hideTaskProgressWindowForCurrentTask];
+
       }];
     }
   
@@ -202,9 +207,12 @@
     
     var options = [[CPDictionary alloc] initWithObjects:[[self tableName], [newDescriptor key], [newDescriptor ascending] ? @"ASC" : @"DESC"] forKeys:[@"table", @"order_by", @"order"]];
     
+	[[SJTaskProgressWindowController sharedTaskProgressWindowController] showTaskProgressWindowForTitle:@"Sorting results..." withCancelCallback:function() {}];
+
     [[SJAPIRequest sharedAPIRequest] sendRequestToEndpoint:@"rows" withOptions:options callback:function( js ) 
   	{
-  	  [self handleTableRowsResponse:js];
+		[[SJTaskProgressWindowController sharedTaskProgressWindowController] hideTaskProgressWindowForCurrentTask];
+		[self handleTableRowsResponse:js];
     }];
       
 }
