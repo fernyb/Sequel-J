@@ -183,7 +183,7 @@
   var rowData = [[self tbrows] objectAtIndex:rowIndex];
   var headerName = [[aTableColumn headerView] stringValue];
 
-  return rowData[headerName].replace(/(\r\n|\n|\r)/gm,"");
+  return rowData[headerName] > '' ? rowData[headerName].replace(/(\r\n|\n|\r)/gm,"") : rowData[headerName];
 }
 
 - (void)tableView:(CPTableView)aTableView setObjectValue:(CPControl)anObject forTableColumn:(CPTableColumn)aTableColumn row:(int)rowIndex
