@@ -37,9 +37,7 @@
     return;
   }
   
-  var options = [[CPDictionary alloc] initWithObjects:[tableName] forKeys:[@"table"]];
-  
-  [[SJAPIRequest sharedAPIRequest] sendRequestToEndpoint:@"header_names" withOptions:options callback:function( js ) 
+  [[SJAPIRequest sharedAPIRequest] sendRequestForHeaderNamesForTable:tableName callback:function( js ) 
   {
   	if(scrollview) {
       [self setTbrows:[CPArray array]];
@@ -61,7 +59,7 @@
       [self addBottomBarWithRect:rect];
       
       // We need to get the rows for the table, lets do that here
-      [[SJAPIRequest sharedAPIRequest] sendRequestToEndpoint:@"rows" withOptions:options callback:function( js ) 
+      [[SJAPIRequest sharedAPIRequest] sendRequestForRowsForTable:tableName callback:function( js ) 
   	  {
   	  	[self handleTableRowsResponse:js];
       }];

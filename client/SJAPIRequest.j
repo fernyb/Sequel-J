@@ -121,6 +121,21 @@ var DownloadIFrame = null,
 	[self sendRequestToEndpoint:aURL withOptions:nil callback:aCallback];
 }
 
+- (void)sendRequestForHeaderNamesForTable:(CPString)aTableName callback:(id)aCallback
+{
+	var options = [[CPDictionary alloc] initWithObjects:[aTableName] forKeys:[@"table"]];
+
+	[self sendRequestToEndpoint:@"header_names" withOptions:options callback:aCallback];
+}
+
+- (void)sendRequestForRowsForTable:(CPString)aTableName callback:(id)aCallback
+{
+	var options = [[CPDictionary alloc] initWithObjects:[aTableName] forKeys:[@"table"]];
+
+	[self sendRequestToEndpoint:@"rows" withOptions:options callback:aCallback];
+}
+
+
 - (void)sendRequestToEndpoint:(CPString)aURL withOptions:(CPDictionary)options callback:(id)aCallback
 {
 	var url = SERVER_BASE + @"/api.php?endpoint=" + aURL + @"&" + [self _requestCredentialsString] + "&" + [options toQueryString];
