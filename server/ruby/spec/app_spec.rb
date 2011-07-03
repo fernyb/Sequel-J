@@ -135,9 +135,10 @@ describe "App" do
     it 'returns column for table_name' do
       @mysql.should_receive(:query).with('SHOW COLUMNS FROM `table_name`').and_return [['field', 'type', 'null', 'key', 'default', 'extra']]
       get '/header_names/table_name'
-
+			
+			json['header_names'].first['name'].should == 'field'
+			json['header_names'].first['type'].should == 'type'
       json['header_names'].size.should == 1
-      json['header_names'].first.should == 'field'
       json['error'].should == ''
       json['path'].should == '/header_names/table_name'
     end

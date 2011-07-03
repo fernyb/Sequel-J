@@ -99,7 +99,9 @@ class App < Sinatra::Base
   
   def table_columns table_name
     results = query("SHOW COLUMNS FROM `#{table_name}`")
-    results.collect {|f| f[0] }
+    results.map {|f| 
+			{'name' => f[0], 'type' => f[1]}
+		}
   end
   
   def sql_for_table table_name
@@ -248,11 +250,13 @@ class App < Sinatra::Base
     else
       ' '
     end
-  
+
+ 		column_names = names.collect {|n| n['name'] }
+
     results = query "SELECT * FROM `#{params[:table]}`#{orderby}LIMIT 0,100"
     rows = results.map {|f|
       f = f.map {|v| v.nil? ? '' : v }
-      Hash[*names.zip(f).flatten]
+      Hash[*column_names.zip(f).flatten]
     }
     
     render rows: rows
