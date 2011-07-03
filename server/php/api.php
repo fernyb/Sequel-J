@@ -101,7 +101,13 @@ function sj_serve_endpoint_header_names() {
 	if( !$db || empty( $_GET['table'] ) )
 		return array( 'tables' => array(), 'error' => 'Could not connect to MySQL with credentials' );
 	
-	return array( 'header_names' => $db->get_col( "SHOW COLUMNS FROM " . $_GET['table'] ), 'error' => '' );
+	$columns = $db->get_results( "SHOW COLUMNS FROM " . $_GET['table'] );
+	$column_names = array();
+	
+	foreach( $columns as $column )
+		$column_names[] = array( 'name' => $column->Field, 'type' => $column->Type );
+	
+	return array( 'header_names' => $column_names, 'error' => '' );
 	
 }
 

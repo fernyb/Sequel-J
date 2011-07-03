@@ -248,10 +248,26 @@
   var widthOfHeader = ([cview frame].size.width - 30) / [headerNames count];
 
   for(var i=0; i<[headerNames count]; i++) {
-    var columnName = [headerNames objectAtIndex:i];
+    var columnName = typeof( [headerNames objectAtIndex:i].name ) == @"string" ?  [headerNames objectAtIndex:i].name : [headerNames objectAtIndex:i];
+    var columnType = typeof( [headerNames objectAtIndex:i].type ) == @"string" ?  [headerNames objectAtIndex:i].type : '';
+
     var sortDescriptor = [CPSortDescriptor sortDescriptorWithKey:columnName ascending:YES];
     var column = [[CPTableColumn alloc] initWithIdentifier:[CPString stringWithFormat:@"SJTableColumn%@", columnName]];
+    var dataView = [[CPTextField alloc] initWithFrame:CGRectMakeZero()];  
+    [dataView setLineBreakMode:CPLineBreakByTruncatingTail];
+    
+    //calculate the column widths based off data type
+    if( columnType.indexOf('int') >=0 )
+    	widthOfHeader = 45;
+    
+    else if( columnType.indexOf('datetime') >= 0 )
+    	widthOfHeader = 130;
+    
+    else if( columnType.indexOf('varchar') >= 0 || columnType.indexOf('text') >= 0 )
+    	widthOfHeader = 205;
+    
     [[column headerView] setStringValue:columnName];
+    [column setDataView: dataView];
     [column setWidth:widthOfHeader];
     [column setSortDescriptorPrototype:sortDescriptor];
     [tableView addTableColumn:column];
