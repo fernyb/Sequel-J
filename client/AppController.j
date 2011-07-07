@@ -146,6 +146,7 @@
   [[self contentSplitView] setDelegate:self];
 }
 
+
 - (float)splitView:(CPSplitView)aSplitView constrainMaxCoordinate:(float)proposedMax ofSubviewAt:(int)subviewIndex
 {
   if (subviewIndex == 0) {

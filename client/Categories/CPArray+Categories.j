@@ -17,6 +17,15 @@
   }
 }
 
+- (CPArray)collect:(Function)func
+{
+  var items = [CPArray array]; 
+  for(var i=0; i<[self count]; i++) {
+    [items addObject:func([self objectAtIndex:i])];
+  }
+  return items;
+}
+
 - (CPArray)compact
 {
   var results = [CPArray array];

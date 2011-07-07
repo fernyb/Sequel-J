@@ -41,8 +41,7 @@
   
   [[SJTaskProgressWindowController sharedTaskProgressWindowController] showTaskProgressWindowForTitle:@"Fetching results..." withCancelCallback:function() {}];
 
-  
-  [[SJAPIRequest sharedAPIRequest] sendRequestForHeaderNamesForTable:tableName callback:function( js ) 
+  [[SJAPIRequest sharedAPIRequest] sendRequestToEndpoint:@"schema" tableName:tableName callback:function ( js ) 
   {
   	if(scrollview) {
       [self setTbrows:[CPArray array]];
@@ -52,7 +51,12 @@
     }
     
     if (!scrollview) {
-      headerNames = [[CPArray alloc] initWithArray:js.header_names];
+      var names = [js.fields collect:function (f) {
+        return f['Field'];
+      }];
+      
+      headerNames = [[CPArray alloc] initWithArray:names];
+    
       scrollview = [self createTableViewForView:[self view] headerNames:[self headerNames]];
       
       var rect = [scrollview frame];

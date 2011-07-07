@@ -131,28 +131,6 @@ describe "App" do
     end
   end
   
-  describe '/header_names/:table' do
-    it 'returns column for table_name' do
-      @mysql.should_receive(:query).with('SHOW COLUMNS FROM `table_name`').and_return [['field', 'type', 'null', 'key', 'default', 'extra']]
-      get '/header_names/table_name'
-			
-			json['header_names'].first['name'].should == 'field'
-			json['header_names'].first['type'].should == 'type'
-      json['header_names'].size.should == 1
-      json['error'].should == ''
-      json['path'].should == '/header_names/table_name'
-    end
-    
-    it 'returns error message when Mysql throws an error' do
-      @mysql.should_receive(:query).and_raise(Mysql::Error.new('There was an error...'))
-      get '/header_names/table_name'
-      
-      json['path'].should == '/header_names/table_name'
-      json['error'].should == 'There was an error...'
-      json['header_names'].size.should == 0
-    end
-  end
-  
   describe '/rows/:table' do
     it 'returns rows for table_name' do
       @mysql.should_receive(:query).with("SHOW COLUMNS FROM `table_name`").and_return([

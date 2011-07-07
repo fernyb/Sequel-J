@@ -130,12 +130,6 @@ var DownloadIFrame = null,
 	[self sendRequestToEndpoint:aURL withOptions:nil callback:aCallback];
 }
 
-- (void)sendRequestForHeaderNamesForTable:(CPString)aTableName callback:(id)aCallback
-{
-	var options = [[CPDictionary alloc] initWithObjects:[aTableName] forKeys:[@"table"]];
-
-	[self sendRequestToEndpoint:@"header_names" withOptions:options callback:aCallback];
-}
 
 - (void)sendRequestForRowsForTable:(CPString)aTableName callback:(id)aCallback
 {

@@ -255,12 +255,7 @@ class App < Sinatra::Base
     
     render columns: columns
   end
-  
-  get '/header_names/:table' do
-    names = table_columns params[:table]
-    render header_names: names
-  end
-  
+
   get '/rows/:table' do
     rows = table_rows params[:table]
     render rows: rows
