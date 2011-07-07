@@ -1,5 +1,6 @@
-
 @import <Foundation/CPObject.j>
+@import "CPArray+Categories.j"
+
 
 @implementation CPDictionary (SJDictionaryAdditions)
 
@@ -11,11 +12,17 @@
   for(var i=0; i<[keys count]; i++) {
     var k = [keys objectAtIndex:i];
     var v = [self objectForKey:k];
-    [params addObject:k + "=" + v];
+    
+    if ([v respondsToSelector:@selector(toQueryStringWithPrefix:)]) {
+      [params addObject:[v toQueryStringWithPrefix:k]];
+    } else if (typeof(v) == "string") {
+      [params addObject:k + "=" + v];
+    }
   }
   
   return [params componentsJoinedByString:"&"];
 }
+
 
 - (BOOL)hasKey:(CPString)aKey
 {

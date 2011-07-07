@@ -1,6 +1,8 @@
-
 @import <Foundation/CPObject.j>
 @import "SJTabBaseController.j"
+@import "Categories/CPDictionary+Categories.j"
+@import "Categories/CPArray+Categories.j"
+
 
 @implementation SJContentTabController : SJTabBaseController
 {
@@ -58,6 +60,11 @@
       
       [scrollview setFrame:rect];
       [[self view] addSubview:scrollview];
+      
+      var columns = [[self tableView] tableColumns];
+      for(var i=0; i<[columns count]; i++) {
+        [[columns objectAtIndex:i] setEditable:YES];
+      }
       
       [self addBottomBarWithRect:rect];
       
@@ -191,12 +198,44 @@
   return rowData[headerName] > '' ? rowData[headerName].replace(/(\r\n|\n|\r)/gm,"") : rowData[headerName];
 }
 
-- (void)tableView:(CPTableView)aTableView setObjectValue:(CPControl)anObject forTableColumn:(CPTableColumn)aTableColumn row:(int)rowIndex
+- (void)tableView:(CPTableView)aTableView setObjectValue:(id)anObject forTableColumn:(CPTableColumn)aTableColumn row:(int)rowIndex
 {
   var rowData = [[self tbrows] objectAtIndex:rowIndex];
-  var headerName = [[aTableColumn headerView] stringValue];
+  var header_name = [[aTableColumn headerView] stringValue];
   
-  rowData[headerName] = anObject;
+  var columns = [[self tableView] tableColumns];
+  var where_fields = [CPArray array];
+  
+  for(var i=0; i<[columns count]; i++) {
+    var column = [columns objectAtIndex:i];
+    var columnName = [[column headerView] stringValue];
+    
+    var rowValue = rowData[columnName];
+    
+    var field_kv = [CPDictionary dictionaryWithObjectsAndKeys: columnName, @"name", rowValue, @"value"];
+    [where_fields addObject:field_kv];
+  }
+  
+  var params = [CPDictionary dictionary];
+  [params setObject:header_name forKey:@"field_name"];
+  [params setObject:anObject forKey:@"field_value"];
+  [params setObject:where_fields forKey:@"where_fields"];
+
+  // TODO: replace the actual values of offset and limit when it has been implemented.
+  // They will be used to return the rows that will be displayed
+  [params setObject:@"0" forKey:@"offset"];
+  [params setObject:@"100" forKey:@"limit"];
+  
+  rowData[header_name] = anObject;
+ 
+  [[SJAPIRequest sharedAPIRequest] sendUpdateTable:[self tableName] query:params callback:function (js) {
+    if (js.error =='') {
+      [self setTbrows:js.rows];
+      [[self tableView] reloadData];
+    } else {
+      console.log(js.error)
+    }
+  }];
 }
 
 

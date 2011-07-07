@@ -966,4 +966,58 @@ describe "App" do
       post "/rename_table/names?#{@query.to_query_string}"
     end
   end
+
+  describe '/update_table_row/:table' do
+    before do
+      @query = {
+        field_name: 'id',
+        field_value: '101',
+        offset: '0',
+        limit: '100'
+      }
+      
+      @where_fields = {
+        id: '4',
+        name: 'fernyb',
+        description: 'hello'
+      }
+    end
+    
+    
+    it 'can update a row' do
+      update_query = "UPDATE `checkins` SET `id` = '101' WHERE `id` = '4' AND `name` = 'fernyb' AND `description` = 'hello' LIMIT 1"
+      @mysql.should_receive(:query).with(update_query)
+      
+      @mysql.should_receive(:query).with("SHOW COLUMNS FROM `checkins`").and_return([])
+      @mysql.should_receive(:query).with("SELECT * FROM `checkins` LIMIT 0,100").and_return([
+        {'id' => '2', 'name' => 'query'}
+      ])
+      
+      where_query = @where_fields.to_query_string_with_key('where_fields')
+    
+      post "/update_table_row/checkins?#{@query.to_query_string}&#{where_query}"
+      
+      json['path'].should == '/update_table_row/checkins'
+      json['query'].should == update_query
+    end
+    
+    it 'can update a row when a field is NULL / blank' do
+      @where_fields.merge!(description: '')
+      
+      update_query = "UPDATE `checkins` SET `id` = '101' WHERE `id` = '4' AND `name` = 'fernyb' AND `description` IS NULL LIMIT 1"
+      @mysql.should_receive(:query).with(update_query)
+      
+      @mysql.should_receive(:query).with("SHOW COLUMNS FROM `checkins`").and_return([])
+      @mysql.should_receive(:query).with("SELECT * FROM `checkins` LIMIT 0,100").and_return([
+        {'id' => '2', 'name' => 'query'}
+      ])
+      
+      where_query = @where_fields.to_query_string_with_key('where_fields')
+    
+      post "/update_table_row/checkins?#{@query.to_query_string}&#{where_query}"
+      
+      json['path'].should == '/update_table_row/checkins'
+      json['query'].should == update_query
+    end
+  end  
 end

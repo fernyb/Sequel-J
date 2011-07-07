@@ -97,6 +97,24 @@ class App < Sinatra::Base
     fields
   end
   
+  def table_rows table_name
+    names = table_columns table_name
+    orderby = if params['order_by']
+      " ORDER BY `#{params['order_by']}` " << (params['order'] == 'ASC' ? 'ASC ' : 'DESC ')
+    else
+      ' '
+    end
+
+ 		column_names = names.collect {|n| n['name'] }
+
+    results = query "SELECT * FROM `#{table_name}`#{orderby}LIMIT 0,100"
+    rows = results.map {|f|
+      f = f.map {|v| v.nil? ? '' : v }
+      Hash[*column_names.zip(f).flatten]
+    }
+    rows 
+  end
+  
   def table_columns table_name
     results = query("SHOW COLUMNS FROM `#{table_name}`")
     results.map {|f| 
@@ -244,23 +262,23 @@ class App < Sinatra::Base
   end
   
   get '/rows/:table' do
-    names = table_columns params[:table]
-    orderby = if params['order_by']
-      " ORDER BY `#{params['order_by']}` " << (params['order'] == 'ASC' ? 'ASC ' : 'DESC ')
-    else
-      ' '
-    end
-
- 		column_names = names.collect {|n| n['name'] }
-
-    results = query "SELECT * FROM `#{params[:table]}`#{orderby}LIMIT 0,100"
-    rows = results.map {|f|
-      f = f.map {|v| v.nil? ? '' : v }
-      Hash[*column_names.zip(f).flatten]
-    }
-    
+    rows = table_rows params[:table]
     render rows: rows
   end
+
+  post '/update_table_row/:table' do
+    if params['where_fields']
+      where_fields = params['where_fields'][0].map {|k,v|
+        v.nil? || v == '' ? "`#{k}` IS NULL" : "`#{k}` = '#{v}'"
+      }.join(" AND ")
+    
+      s = "UPDATE `#{params[:table]}` SET `#{params['field_name']}` = '#{params['field_value']}' WHERE #{where_fields} LIMIT 1"
+      query s
+    end
+  
+    rows = table_rows params[:table]
+    render rows: rows, query: s
+  end  
   
   get '/schema/:table' do
     fields = schema_table params[:table]    

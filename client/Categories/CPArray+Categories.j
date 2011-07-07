@@ -76,4 +76,18 @@
   return newArray;
 }
 
+- (CPString)toQueryStringWithPrefix:(CPString)prex
+{
+  var query = [CPArray array];
+  for(var i=0; i<[self count]; i++) {
+    var kv = [self objectAtIndex:i];
+    var name = [kv objectForKey:@"name"];
+    var value = [kv objectForKey:@"value"];
+    var s = prex + "[]["+ name +"]=" + value;
+    [query addObject:s];
+  }
+  
+  return [query componentsJoinedByString:@"&"];
+}
+
 @end

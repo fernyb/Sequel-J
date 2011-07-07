@@ -21,4 +21,9 @@ set :run, false
 
 disable :run, :reload
 
-run App.new
+# Middleware
+require "#{APP_ROOT}/middleware/endpoint.rb"
+
+use Endpoint
+
+run App
