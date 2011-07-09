@@ -2,15 +2,19 @@
 @import "SJTabBaseController.j"
 @import "Categories/CPDictionary+Categories.j"
 @import "Categories/CPArray+Categories.j"
+@import "Categories/CPTableView+Categories.j"
 
 
 @implementation SJContentTabController : SJTabBaseController
 {
   CPScrollView scrollview;
   CPArray headerNames;
+  CPArray columnFields;
   CPArray tbrows;
   CPString cachedTableName;
   CPButtonBar bottomBar;
+  BOOL clickedAddRow;
+  CPInteger newRowAtIndex;
 }
 
 - (void)viewWillAppear
@@ -51,7 +55,9 @@
     }
     
     if (!scrollview) {
-      var names = [js.fields collect:function (f) {
+      columnFields = js.fields;
+      
+      var names = [columnFields collect:function (f) {
         return f['Field'];
       }];
       
@@ -64,6 +70,7 @@
       
       [scrollview setFrame:rect];
       [[self view] addSubview:scrollview];
+      [[self tableView] setDelegate:self];
       
       var columns = [[self tableView] tableColumns];
       for(var i=0; i<[columns count]; i++) {
@@ -126,19 +133,34 @@
 
 - (void)addRow:(id)sender
 {
-  var columns = [[self tableView] tableColumns];
-  var newRow = {};
-  for(var i=0; i<[columns count]; i++) {
-    var column = [column objectAtIndex:i];
-    var columnName = [[column headerView] stringValue];
-    newRow[columnName] = 'NULL';
-  }
+  var defaultValueForName = function(aName) {
+    for(var i=0; i<[columnFields count]; i++) {
+      var item = [columnFields objectAtIndex:i];
+      if (item['Field'] == aName) {
+        return item['Default'];
+      }
+    }
+    return null;
+  };
   
+  var columns = [[self tableView] tableColumns];
+    
   if([columns count] > 0) {
+    var newRow = {};
+
+    for(var i=0; i<[columns count]; i++) {
+      var column = [columns objectAtIndex:i];  
+      var columnName = [[column headerView] stringValue];
+      var columnValue = defaultValueForName(columnName);
+      newRow[columnName] = columnValue;
+    }
+
     [[self tbrows] addObject:newRow];
     [[self tableView] reloadData];
     [[self tableView] selectRowIndexes:[CPIndexSet indexSetWithIndex:([[self tbrows] count] - 1)] byExtendingSelection:NO];
     [[self tableView] editColumn:0 row:([[self tbrows] count] - 1) withEvent:nil select:YES];
+    clickedAddRow = YES;
+    newRowAtIndex = [[self tbrows] count] - 1;
   }
 }
 
@@ -198,15 +220,19 @@
 {
   var rowData = [[self tbrows] objectAtIndex:rowIndex];
   var headerName = [[aTableColumn headerView] stringValue];
-
+  
   return rowData[headerName] > '' ? rowData[headerName].replace(/(\r\n|\n|\r)/gm,"") : rowData[headerName];
 }
 
 - (void)tableView:(CPTableView)aTableView setObjectValue:(id)anObject forTableColumn:(CPTableColumn)aTableColumn row:(int)rowIndex
-{
+{ 
+  if(clickedAddRow == @"YES") {
+    return;
+  }
+  
   var rowData = [[self tbrows] objectAtIndex:rowIndex];
   var header_name = [[aTableColumn headerView] stringValue];
-  
+    
   var columns = [[self tableView] tableColumns];
   var where_fields = [CPArray array];
   
@@ -215,7 +241,7 @@
     var columnName = [[column headerView] stringValue];
     
     var rowValue = rowData[columnName];
-    
+
     var field_kv = [CPDictionary dictionaryWithObjectsAndKeys: columnName, @"name", rowValue, @"value"];
     [where_fields addObject:field_kv];
   }
@@ -224,7 +250,8 @@
   [params setObject:header_name forKey:@"field_name"];
   [params setObject:anObject forKey:@"field_value"];
   [params setObject:where_fields forKey:@"where_fields"];
-
+  [params setObject:(clickedAddRow ? @"YES" : @"NO") forKey:@"add_row"];
+  
   // TODO: replace the actual values of offset and limit when it has been implemented.
   // They will be used to return the rows that will be displayed
   [params setObject:@"0" forKey:@"offset"];
@@ -263,6 +290,55 @@
 - (BOOL)tableView:(CPTableView)aTableView shouldSelectRow:(int)rowIndex
 {
  return YES;
+}
+
+
+- (void)tableViewSelectionDidChange:(CPNotification)notification
+{
+  if(clickedAddRow == YES) {
+    [self sendUpdatedRowAtIndex:newRowAtIndex];
+  }
+  
+  clickedAddRow = NO;
+  newRowAtIndex = -1;
+}
+
+
+- (void)sendUpdatedRowAtIndex:(CPInteger)rowIndex
+{
+  var rowData = [[self tbrows] objectAtIndex:rowIndex];
+
+  var columns = [[self tableView] tableColumns];
+  var where_fields = [CPArray array];
+  
+  for(var i=0; i<[columns count]; i++) {
+    var column = [columns objectAtIndex:i];
+    var columnName = [[column headerView] stringValue];
+    var rowValue = rowData[columnName];
+    
+    var field_kv = [CPDictionary dictionaryWithObjectsAndKeys: columnName, @"name", rowValue, @"value"];
+    [where_fields addObject:field_kv];
+  }
+  
+  var params = [CPDictionary dictionary];
+  [params setObject:@"" forKey:@"field_name"];
+  [params setObject:@"" forKey:@"field_value"];
+  [params setObject:where_fields forKey:@"where_fields"];
+  [params setObject:(clickedAddRow ? @"YES" : @"NO") forKey:@"add_row"];
+  
+  // TODO: replace the actual values of offset and limit when it has been implemented.
+  // They will be used to return the rows that will be displayed
+  [params setObject:@"0" forKey:@"offset"];
+  [params setObject:@"100" forKey:@"limit"];
+  
+  [[SJAPIRequest sharedAPIRequest] sendUpdateTable:[self tableName] query:params callback:function (js) {
+    if (js.error =='') {
+      [self setTbrows:js.rows];
+      [[self tableView] reloadData];
+    } else {
+      console.log(js.error)
+    }
+  }];
 }
 
 

@@ -109,7 +109,7 @@ class App < Sinatra::Base
 
     results = query "SELECT * FROM `#{table_name}`#{orderby}LIMIT 0,100"
     rows = results.map {|f|
-      f = f.map {|v| v.nil? ? '' : v }
+      f = f.map {|v| v.nil? ? 'NULL' : v }
       Hash[*column_names.zip(f).flatten]
     }
     rows 
@@ -263,20 +263,45 @@ class App < Sinatra::Base
 
   post '/update_table_row/:table' do
     if params['where_fields']
-      where_fields = params['where_fields'][0].map {|k,v|
-        v.nil? || v == '' ? "`#{k}` IS NULL" : "`#{k}` = '#{v}'"
-      }.join(" AND ")
+      if params['add_row'] == 'YES'
+        fields = []
+        field_values = []
+        params['where_fields'][0].map {|k,v| 
+          fields << "`#{k}`"
+          if 'CURRENT_TIMESTAMP' == v
+            field_values << v
+          else
+            field_values << (v == "NULL" ? "#{v}" : "'#{v}'")
+          end
+        }
+        
+        s = "INSERT INTO `#{params[:table]}` (#{ fields.join(',') })"
+        s << " VALUES (#{ field_values.join(',') })"
+        
+        query s
+      else
+        fields = schema_table params[:table]
+        where_fields = params['where_fields'][0].map {|k,v|
+          if v.nil? || v == ''
+            "`#{k}` = ''"
+          elsif v == 'NULL'
+            "`#{k}` IS NULL"
+          else
+            "`#{k}` = #{ (v == 'CURRENT_TIMESTAMP' ? v : "'#{v}'") }"
+          end
+        }.join(" AND ")
     
-      s = "UPDATE `#{params[:table]}` SET `#{params['field_name']}` = '#{params['field_value']}' WHERE #{where_fields} LIMIT 1"
-      query s
+        s = "UPDATE `#{params[:table]}` SET `#{params['field_name']}` = '#{params['field_value']}' WHERE #{where_fields} LIMIT 1"
+        query s
+      end
     end
-  
+    
     rows = table_rows params[:table]
     render rows: rows, query: s
   end  
   
   get '/schema/:table' do
-    fields = schema_table params[:table]    
+    fields = schema_table params[:table]
     render fields: fields
   end
   

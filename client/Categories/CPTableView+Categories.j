@@ -2,7 +2,6 @@
 @import <Foundation/CPObject.j>
 @import "CPArray+Categories.j"
 
-
 @implementation CPTableView (SJTableViewAdditions)
 
 - (void)adjustColumnsToFit
@@ -25,5 +24,6 @@
   
   return -1;
 }
+
 
 @end

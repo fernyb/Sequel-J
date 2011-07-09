@@ -162,12 +162,12 @@ describe "App" do
       row['id'].should          == '00000000077'
       row['user_id'].should     == '39'
       row['name'].should        == 'Redford, MI'
-      row['description'].should == ''
+      row['description'].should == 'NULL'
       row['latitude'].should    == '42.4326'
       row['longitude'].should   == '-83.306'
       row['created_at'].should  == '2009-05-31 05:10:35'
       row['updated_at'].should  == '2009-05-31 05:10:35'
-      row['test'].should        == ''
+      row['test'].should        == 'NULL'
     end
     
     it "returns an error message when mysql gives an error" do
@@ -966,7 +966,7 @@ describe "App" do
       update_query = "UPDATE `checkins` SET `id` = '101' WHERE `id` = '4' AND `name` = 'fernyb' AND `description` = 'hello' LIMIT 1"
       @mysql.should_receive(:query).with(update_query)
       
-      @mysql.should_receive(:query).with("SHOW COLUMNS FROM `checkins`").and_return([])
+      @mysql.should_receive(:query).with("SHOW COLUMNS FROM `checkins`").at_least(1).times.and_return([])
       @mysql.should_receive(:query).with("SELECT * FROM `checkins` LIMIT 0,100").and_return([
         {'id' => '2', 'name' => 'query'}
       ])
@@ -979,13 +979,13 @@ describe "App" do
       json['query'].should == update_query
     end
     
-    it 'can update a row when a field is NULL / blank' do
-      @where_fields.merge!(description: '')
+    it 'can update a row when a field is NULL' do
+      @where_fields.merge!(description: 'NULL')
       
       update_query = "UPDATE `checkins` SET `id` = '101' WHERE `id` = '4' AND `name` = 'fernyb' AND `description` IS NULL LIMIT 1"
       @mysql.should_receive(:query).with(update_query)
       
-      @mysql.should_receive(:query).with("SHOW COLUMNS FROM `checkins`").and_return([])
+      @mysql.should_receive(:query).with("SHOW COLUMNS FROM `checkins`").at_least(1).times.and_return([])
       @mysql.should_receive(:query).with("SELECT * FROM `checkins` LIMIT 0,100").and_return([
         {'id' => '2', 'name' => 'query'}
       ])
@@ -996,6 +996,93 @@ describe "App" do
       
       json['path'].should == '/update_table_row/checkins'
       json['query'].should == update_query
+    end
+    
+    it 'can add new row with NULL fields & CURRENT_TIMESTAMP' do
+      @query.merge!({
+        field_name:  '',
+        field_value: '',
+        add_row:     'YES'
+      })
+      
+      @where_fields.merge!({
+        id:          'NULL',
+        name:        'NULL',
+        description: 'NULL',
+        created_at:  'NULL',
+        timestamp:   'CURRENT_TIMESTAMP'
+      })
+      
+      query_string = "INSERT INTO `checkins` (`id`,`name`,`description`,`created_at`,`timestamp`) VALUES (NULL,NULL,NULL,NULL,CURRENT_TIMESTAMP)"
+      @mysql.should_receive(:query).with(query_string)
+    
+      @mysql.should_receive(:query).with("SHOW COLUMNS FROM `checkins`").and_return([])
+      @mysql.should_receive(:query).with("SELECT * FROM `checkins` LIMIT 0,100").and_return([
+        {'id' => '2', 'name' => 'query'}
+      ])
+      
+      where_query = @where_fields.to_query_string_with_key('where_fields')
+    
+      post "/update_table_row/checkins?#{@query.to_query_string}&#{where_query}"
+      
+      json['path'].should == '/update_table_row/checkins'
+      json['query'].should == query_string
+    end
+
+    it 'can add new row' do
+      @query.merge!({
+        field_name:  '',
+        field_value: '',
+        add_row:     'YES'
+      })
+      
+      @where_fields.merge!({
+        id:          '1',
+        name:        'fernyb',
+        description: 'Today is a great day!',
+        created_at:  'CURRENT_TIMESTAMP',
+        timestamp:   'CURRENT_TIMESTAMP'
+      })
+      
+      query_string = "INSERT INTO `checkins` (`id`,`name`,`description`,`created_at`,`timestamp`) VALUES ('1','fernyb','Today is a great day!',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)"
+      @mysql.should_receive(:query).with(query_string)
+    
+      @mysql.should_receive(:query).with("SHOW COLUMNS FROM `checkins`").and_return([])
+      @mysql.should_receive(:query).with("SELECT * FROM `checkins` LIMIT 0,100").and_return([
+        {'id' => '2', 'name' => 'query'}
+      ])
+      
+      where_query = @where_fields.to_query_string_with_key('where_fields')
+    
+      post "/update_table_row/checkins?#{@query.to_query_string}&#{where_query}"
+      
+      json['path'].should == '/update_table_row/checkins'
+      json['query'].should == query_string
+    end
+    
+    it 'can update row when description is blank' do
+      @where_fields.merge!(description: '')
+      
+      @mysql.should_receive(:query).with("SHOW COLUMNS FROM `checkins`").at_least(1).times.and_return([
+        ["id", "int(11) zerofill", "NO", "PRI", nil, ""],
+        ["name", "varchar(255)", "YES", "MUL", nil, ""],
+        ["description", "text", "", "", nil, ""]
+      ])
+      
+      update_query = "UPDATE `checkins` SET `id` = '101' WHERE `id` = '4' AND `name` = 'fernyb' AND `description` = '' LIMIT 1"
+      @mysql.should_receive(:query).with(update_query)
+      
+      @mysql.should_receive(:query).with("SHOW COLUMNS FROM `checkins`").at_least(1).times.and_return([])
+      @mysql.should_receive(:query).with("SELECT * FROM `checkins` LIMIT 0,100").and_return([
+        {'id' => '2', 'name' => 'query'}
+      ])
+      
+      where_query = @where_fields.to_query_string_with_key('where_fields')
+    
+      post "/update_table_row/checkins?#{@query.to_query_string}&#{where_query}"
+      
+      json['path'].should == '/update_table_row/checkins'
+      json['query'].should == update_query      
     end
   end  
 end
