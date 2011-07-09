@@ -128,6 +128,18 @@ class App < Sinatra::Base
     results.size == 2 ? results.last : ''
   end
   
+  def generate_where_for_fields fields
+    fields[0].map {|k,v|
+      if v.nil? || v == ''
+        "`#{k}` = ''"
+      elsif v == 'NULL'
+        "`#{k}` IS NULL"
+      else
+        "`#{k}` = #{ (v == 'CURRENT_TIMESTAMP' ? v : "'#{v}'") }"
+      end
+    }.join(" AND ")
+  end
+  
   def database_list_tables
     begin
       @mysql.list_tables
@@ -281,16 +293,8 @@ class App < Sinatra::Base
         query s
       else
         fields = schema_table params[:table]
-        where_fields = params['where_fields'][0].map {|k,v|
-          if v.nil? || v == ''
-            "`#{k}` = ''"
-          elsif v == 'NULL'
-            "`#{k}` IS NULL"
-          else
-            "`#{k}` = #{ (v == 'CURRENT_TIMESTAMP' ? v : "'#{v}'") }"
-          end
-        }.join(" AND ")
-    
+        where_fields = generate_where_for_fields params['where_fields']
+
         s = "UPDATE `#{params[:table]}` SET `#{params['field_name']}` = '#{params['field_value']}' WHERE #{where_fields} LIMIT 1"
         query s
       end
@@ -298,7 +302,16 @@ class App < Sinatra::Base
     
     rows = table_rows params[:table]
     render rows: rows, query: s
-  end  
+  end
+  
+  post '/remove_table_row/:table' do
+    where_fields = generate_where_for_fields params['where_fields']
+    s = "DELETE FROM `#{params[:table]}` WHERE #{where_fields} LIMIT 1"
+    query s
+    
+    rows = table_rows params[:table]
+    render rows: rows, query: s
+  end
   
   get '/schema/:table' do
     fields = schema_table params[:table]

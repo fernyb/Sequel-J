@@ -2,7 +2,7 @@
 @import "SJTabBaseController.j"
 @import "Categories/CPDictionary+Categories.j"
 @import "Categories/CPArray+Categories.j"
-@import "Categories/CPTableView+Categories.j"
+@import "Categories/CPAlert+Categories.j"
 
 
 @implementation SJContentTabController : SJTabBaseController
@@ -164,10 +164,67 @@
   }
 }
 
+
 - (void)removeRow:(id)sender
 {
-  alert('Remove Row');
+  var selectedRow = [[self tableView] selectedRow];
+  if (selectedRow == CPNotFound) {
+    return;
+  }
+  
+  var didEndCallback = function (returnCode, contextInfo) {
+    if (returnCode == 0) {
+      var rowIndex = [[self tableView] selectedRow];
+      var rowData = [[self tbrows] objectAtIndex:rowIndex];
+
+      var columns = [[self tableView] tableColumns];
+      var where_fields = [CPArray array];
+
+      for(var i=0; i<[columns count]; i++) {
+        var column = [columns objectAtIndex:i];
+        var columnName = [[column headerView] stringValue];
+        var rowValue = rowData[columnName];
+  
+        var field_kv = [CPDictionary dictionaryWithObjectsAndKeys: columnName, @"name", rowValue, @"value"];
+        [where_fields addObject:field_kv];
+      }
+
+      var params = [CPDictionary dictionary];
+      [params setObject:where_fields forKey:@"where_fields"];
+
+      // TODO: replace the actual values of offset and limit when it has been implemented.
+      // They will be used to return the rows that will be displayed
+      [params setObject:@"0" forKey:@"offset"];
+      [params setObject:@"100" forKey:@"limit"];
+      
+      [[SJAPIRequest sharedAPIRequest] sendRemoveTableRow:[self tableName] query:params callback:function (js) {
+        if (js.error =='') {
+          var row = [[self tableView] selectedRow];
+          if (row != CPNotFound) {
+            [[self tableView] deselectRow:row];
+          }
+          
+          [self setTbrows:js.rows];
+          [[self tableView] reloadData];
+        } else {
+          console.log(js.error)
+        }
+      }];     
+    }
+  };
+  
+  var alert = [CPAlert new];
+  [alert addButtonWithTitle:@"Delete"];    
+  [alert addButtonWithTitle:@"Cancel"];
+  [alert setMessageText:@"Delete selected row?"];
+  [alert setInformativeText:@"Are you sure you want to delete the selected row from this table? This action cannot be undone."];
+  [alert setAlertStyle:CPWarningAlertStyle];
+  [alert beginSheetModalForWindow:[[self contentView] window]
+                  modalDelegate:self 
+                  didEndCallback:didEndCallback
+                  contextInfo:nil];
 }
+
 
 - (void)duplicateRowAction:(CPButton)sender
 {

@@ -1084,5 +1084,25 @@ describe "App" do
       json['path'].should == '/update_table_row/checkins'
       json['query'].should == update_query      
     end
-  end  
+  end 
+  
+  describe '/remove_table_row/:table' do
+    before do
+      @where_fields = {
+        id: '4',
+        name: 'fernyb',
+        description: 'hello'
+      }
+    end
+    
+    it 'can remove row' do
+      where_query = @where_fields.to_query_string_with_key('where_fields')
+      
+      @mysql.should_receive(:query).with("DELETE FROM `checkins` WHERE `id` = '4' AND `name` = 'fernyb' AND `description` = 'hello' LIMIT 1")
+      @mysql.should_receive(:query).with("SHOW COLUMNS FROM `checkins`").and_return([])
+      @mysql.should_receive(:query).with("SELECT * FROM `checkins` LIMIT 0,100").and_return([])
+      
+      post "/remove_table_row/checkins?#{where_query}"
+    end
+  end 
 end

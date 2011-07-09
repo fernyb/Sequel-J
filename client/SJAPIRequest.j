@@ -152,6 +152,15 @@ var DownloadIFrame = null,
 	[self _sendRequestToURL:url callback:callback];
 }
 
+- (void)sendRemoveTableRow:(CPString)table_name query:(CPDictionary)opts callback:(func)callback
+{
+  var url = SERVER_BASE + "/api.php";
+  var query = "endpoint=remove_table_row&table=" + table_name + "&" + [self _requestCredentialsString] + "&" + [opts toQueryString];
+  url += "?" + query;
+   
+  [self _sendRequestToURL:url httpMethod:@"POST" callback:callback];  
+}
+
 - (void)sendUpdateRequestSchemaTable:(CPString)table_name query:(CPDictionary)opts callback:(func)callback
 {
   var url = SERVER_BASE + "/api.php";
