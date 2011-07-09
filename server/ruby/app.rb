@@ -97,7 +97,7 @@ class App < Sinatra::Base
     fields
   end
   
-  def table_rows table_name
+  def table_rows table_name, limit={}
     names = table_columns table_name
     orderby = if params['order_by']
       " ORDER BY `#{params['order_by']}` " << (params['order'] == 'ASC' ? 'ASC ' : 'DESC ')
@@ -106,13 +106,27 @@ class App < Sinatra::Base
     end
 
  		column_names = names.collect {|n| n['name'] }
-
-    results = query "SELECT * FROM `#{table_name}`#{orderby}LIMIT 0,100"
+    offset = limit.delete(:offset) || "0"
+    limit  = limit.delete(:limit) || "100"
+    
+    results = query "SELECT * FROM `#{table_name}`#{orderby}LIMIT #{offset},#{limit}"
     rows = results.map {|f|
       f = f.map {|v| v.nil? ? 'NULL' : v }
       Hash[*column_names.zip(f).flatten]
     }
     rows 
+  end
+  
+  def table_total_rows table_name
+    result = query "SELECT COUNT(*) AS total_rows FROM `#{table_name}`"
+    if result && result.num_rows == 1
+      result.each_hash {|item|
+        return item['total_rows']
+      }
+      -1
+    else
+      -1
+    end
   end
   
   def table_columns table_name
@@ -270,7 +284,8 @@ class App < Sinatra::Base
 
   get '/rows/:table' do
     rows = table_rows params[:table]
-    render rows: rows
+    total_rows = table_total_rows params[:table]
+    render rows: rows, total_rows: total_rows
   end
 
   post '/update_table_row/:table' do
@@ -301,7 +316,9 @@ class App < Sinatra::Base
     end
     
     rows = table_rows params[:table]
-    render rows: rows, query: s
+    total_rows = table_total_rows params[:table]
+    
+    render rows: rows, total_rows: total_rows, query: s
   end
   
   post '/remove_table_row/:table' do
@@ -310,7 +327,9 @@ class App < Sinatra::Base
     query s
     
     rows = table_rows params[:table]
-    render rows: rows, query: s
+    total_rows = table_total_rows params[:table]
+        
+    render rows: rows, total_rows: total_rows, query: s
   end
   
   get '/schema/:table' do

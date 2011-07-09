@@ -132,6 +132,11 @@ describe "App" do
   end
   
   describe '/rows/:table' do
+    before do
+      result = [{'total_rows' => '2'}]
+      @mysql.should_receive(:query).with("SELECT COUNT(*) AS total_rows FROM `table_name`").and_return(result)
+    end
+    
     it 'returns rows for table_name' do
       @mysql.should_receive(:query).with("SHOW COLUMNS FROM `table_name`").and_return([
         ['id', 'type', 'null', 'key', 'default', 'extra'],
@@ -168,6 +173,7 @@ describe "App" do
       row['created_at'].should  == '2009-05-31 05:10:35'
       row['updated_at'].should  == '2009-05-31 05:10:35'
       row['test'].should        == 'NULL'
+      json['total_rows'].should  == '2'
     end
     
     it "returns an error message when mysql gives an error" do
@@ -959,8 +965,14 @@ describe "App" do
         name: 'fernyb',
         description: 'hello'
       }
+      
+      result = [{'total_rows' => '2'}]
+      @mysql.should_receive(:query).with("SELECT COUNT(*) AS total_rows FROM `checkins`").and_return(result)
     end
     
+    after :each do
+      json['total_rows'].should == '2'
+    end
     
     it 'can update a row' do
       update_query = "UPDATE `checkins` SET `id` = '101' WHERE `id` = '4' AND `name` = 'fernyb' AND `description` = 'hello' LIMIT 1"
@@ -1093,6 +1105,9 @@ describe "App" do
         name: 'fernyb',
         description: 'hello'
       }
+      
+      result = [{'total_rows' => '2'}]
+      @mysql.should_receive(:query).with("SELECT COUNT(*) AS total_rows FROM `checkins`").and_return(result)
     end
     
     it 'can remove row' do
@@ -1103,6 +1118,7 @@ describe "App" do
       @mysql.should_receive(:query).with("SELECT * FROM `checkins` LIMIT 0,100").and_return([])
       
       post "/remove_table_row/checkins?#{where_query}"
+      json['total_rows'].should == '2'
     end
   end 
 end

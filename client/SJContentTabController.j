@@ -128,8 +128,84 @@
   [refreshBtn setImagePosition:CPImageOnly];
   
   [bottomBar setButtons:[addButton, minusButton, duplicateButton, refreshBtn]];
+  
+    
+  var labelTableInfo = [[CPTextField alloc] initWithFrame:CGRectMake(35 * [[bottomBar buttons] count], 4, 300,20)];
+  [labelTableInfo setStringValue:@"Rows 2,001 - 3,000 of 10,583 from table"];
+  [labelTableInfo setEditable:NO];
+  [labelTableInfo setFont:[CPFont systemFontOfSize:11.0]];
+  [bottomBar addSubview:labelTableInfo];
+  
+  /**
+  * Show the previous, pref & next navigation buttons
+  */
+  var pagePrefButton = [[CPButton alloc] initWithFrame:CGRectMake(([bottomBar frame].size.width - (35 * 2)) + 1, 1, 35, 25)];
+  var pagePrefButtonImage = [[CPImage alloc] initWithContentsOfFile:[[CPBundle bundleForClass:[CPButtonBar class]] pathForResource:@"action_button.png"] size:CGSizeMake(22, 14)];
+  [pagePrefButton setBordered:NO];
+  [pagePrefButton setTarget:self];
+  [pagePrefButton setAction:@selector(pagePrefButtonAction:)];
+  [pagePrefButton setImage:pagePrefButtonImage];
+  [pagePrefButton setImagePosition:CPImageOnly];
+
+  var nextPageButton = [[CPButton alloc] initWithFrame:CGRectMake([bottomBar frame].size.width - 35, 1, 35, 25)];
+  var nextPageImage = [[CPImage alloc] initWithContentsOfFile:[[CPBundle mainBundle] pathForResource:@"arrow_right.png"] size:CGSizeMake(11, 14)];
+  [nextPageButton setBordered:NO];
+  [nextPageButton setTarget:self];
+  [nextPageButton setAction:@selector(nextPageAction:)];
+  [nextPageButton setImage:nextPageImage];
+  [nextPageButton setImagePosition:CPImageOnly];
+  
+  var prevPageButton = [[CPButton alloc] initWithFrame:CGRectMake(([bottomBar frame].size.width - (35 * 3)) + 2, 1, 35, 25)];
+  var prevPageImage = [[CPImage alloc] initWithContentsOfFile:[[CPBundle mainBundle] pathForResource:@"arrow_left.png"] size:CGSizeMake(11, 14)];
+  [prevPageButton setBordered:NO];
+  [prevPageButton setTarget:self];
+  [prevPageButton setAction:@selector(prevPageAction:)];
+  [prevPageButton setImage:prevPageImage];
+  [prevPageButton setImagePosition:CPImageOnly];
+  
+  
+  var normalColor  = [bottomBar valueForThemeAttribute:@"button-bezel-color" inState:CPThemeStateNormal],
+  highlightedColor = [bottomBar valueForThemeAttribute:@"button-bezel-color" inState:CPThemeStateHighlighted],
+  disabledColor    = [bottomBar valueForThemeAttribute:@"button-bezel-color" inState:CPThemeStateDisabled],
+  textColor        = [bottomBar valueForThemeAttribute:@"button-text-color" inState:CPThemeStateNormal];
+
+  var pageBtns = [prevPageButton, pagePrefButton, nextPageButton];
+  
+  for(var i=0; i<[pageBtns count]; i++) {
+    var button = [pageBtns objectAtIndex:i];
+    var buttonHeight = CGRectGetHeight([button bounds]) - 1;
+    
+    [button setFrame:CGRectMake([button frame].origin.x, 1, [button frame].size.width, buttonHeight)];
+    
+    [button setBordered:YES];
+    [button setValue:normalColor forThemeAttribute:@"bezel-color" inState:CPThemeStateNormal | CPThemeStateBordered];
+    [button setValue:highlightedColor forThemeAttribute:@"bezel-color" inState:CPThemeStateHighlighted | CPThemeStateBordered];
+    [button setValue:disabledColor forThemeAttribute:@"bezel-color" inState:CPThemeStateDisabled | CPThemeStateBordered];
+    [button setValue:textColor forThemeAttribute:@"text-color" inState:CPThemeStateBordered];
+
+    [bottomBar addSubview:button];
+  }
+  // end next, pref & prev page buttons
+  
   [bottomBar setHasResizeControl:NO];
 }
+
+
+- (void)nextPageAction:(CPButton)sender
+{
+  console.log(@"Make request for previous page");
+}
+
+- (void)prevPageAction:(CPButton)sender
+{
+  console.log(@"Make request for next page");
+}
+
+- (void)pagePrefButtonAction:(CPButton)sender
+{
+  console.log(@"SHOW Preference Window");
+}
+
 
 - (void)addRow:(id)sender
 {
