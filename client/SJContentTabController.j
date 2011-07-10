@@ -3,6 +3,7 @@
 @import "Categories/CPDictionary+Categories.j"
 @import "Categories/CPArray+Categories.j"
 @import "Categories/CPAlert+Categories.j"
+@import "SJContentPrefWindowController.j"
 
 
 @implementation SJContentTabController : SJTabBaseController
@@ -19,6 +20,7 @@
   CPInteger offset;
   CPInteger limit;
   CPInteger totalRows;
+  SJContentPrefWindowController prefWindow;
 }
 
 - (void)viewWillAppear
@@ -232,7 +234,15 @@
 
 - (void)pagePrefButtonAction:(CPButton)sender
 {
-  console.log(@"SHOW Preference Window");
+  if(!prefWindow) {
+    prefWindow = [[SJContentPrefWindowController alloc] init];
+  } 
+
+  [CPApp beginSheet: [prefWindow window]
+          modalForWindow: [[self contentView] window]
+           modalDelegate: self
+          didEndSelector: null
+             contextInfo: null];  
 }
 
 
