@@ -234,6 +234,11 @@
 
 - (CPScrollView)createTableViewForView:(CPView)cview headerNames:(CPArray)headerNames
 {
+	return [self createTableViewForView:cview headerFields:headerNames];
+}
+
+- (CPScrollView)createTableViewForView:(CPView)cview headerFields:(CPArray)headerFields
+{
    // create a CPScrollView that will contain the CPTableView
   var scrollView = [[CPScrollView alloc] initWithFrame:[cview bounds]];
   [scrollView setAutoresizingMask:CPViewWidthSizable | CPViewHeightSizable];
@@ -245,11 +250,11 @@
   [tableView setUsesAlternatingRowBackgroundColors:YES];
   [self setTableView:tableView];
 
-  var widthOfHeader = ([cview frame].size.width - 30) / [headerNames count];
+  var widthOfHeader = ([cview frame].size.width - 30) / [headerFields count];
 
-  for(var i=0; i<[headerNames count]; i++) {
-    var columnName = typeof( [headerNames objectAtIndex:i].name ) == @"string" ?  [headerNames objectAtIndex:i].name : [headerNames objectAtIndex:i];
-    var columnType = typeof( [headerNames objectAtIndex:i].type ) == @"string" ?  [headerNames objectAtIndex:i].type : '';
+  for(var i=0; i<[headerFields count]; i++) {
+    var columnName = typeof( [headerFields objectAtIndex:i].Field ) == @"string" ?  [headerFields objectAtIndex:i].Field : [headerFields objectAtIndex:i];
+    var columnType = typeof( [headerFields objectAtIndex:i].Type ) == @"string" ?  [headerFields objectAtIndex:i].Type : '';
 
     var sortDescriptor = [CPSortDescriptor sortDescriptorWithKey:columnName ascending:YES];
     var column = [[CPTableColumn alloc] initWithIdentifier:[CPString stringWithFormat:@"SJTableColumn%@", columnName]];

@@ -73,10 +73,8 @@
       var names = [columnFields collect:function (f) {
         return f['Field'];
       }];
-      
-      headerNames = [[CPArray alloc] initWithArray:names];
     
-      scrollview = [self createTableViewForView:[self view] headerNames:[self headerNames]];
+      scrollview = [self createTableViewForView:[self view] headerFields:columnFields];
       
       var rect = [scrollview frame];
       rect.size.height -= 23.0;
