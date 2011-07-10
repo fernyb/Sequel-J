@@ -22,8 +22,8 @@ function sj_serve_api_request() {
 			echo json_encode( sj_serve_endpoint_tables() );
 			exit;
 		
-		case 'header_names':
-			echo json_encode( sj_serve_endpoint_header_names() );
+		case 'schema':
+			echo json_encode( sj_serve_endpoint_schema() );
 			exit;
 		
 		case 'rows':
@@ -94,20 +94,35 @@ function sj_serve_endpoint_tables() {
 	return array( 'tables' => $db->get_col( 'SHOW TABLES' ), 'error' => '' );
 }
 
-function sj_serve_endpoint_header_names() {
+function sj_serve_endpoint_schema() {
 	
 	$db = sj_connect_to_mysql_from_get();
 	
 	if( !$db || empty( $_GET['table'] ) )
-		return array( 'tables' => array(), 'error' => 'Could not connect to MySQL with credentials' );
+		return array( 'fields' => array(), 'error' => 'Could not connect to MySQL with credentials' );
 	
 	$columns = $db->get_results( "SHOW COLUMNS FROM " . $_GET['table'] );
 	$column_names = array();
 	
-	foreach( $columns as $column )
-		$column_names[] = array( 'name' => $column->Field, 'type' => $column->Type );
+	foreach( $columns as $column ) {
+		
+		$length = preg_match( '/\(([0-9]+)\)/', $column->Type, $length_matches );
+		
+		$column_names[] = array( 
+			'Field' => $column->Field, 
+			'Type' 	=> preg_replace( '/\(([0-9])\)/', '', $column->Type ),
+			'Length'=> $length_matches ? $length_matches[1] : '',
+			'Unsigned' => strpos( $column->Field, 'unsigned' ) ? true : false,
+			'Zerofill' => strpos( $column->Field, 'zerofill' ) ? true : false,
+			'Binary'=> false,
+			'Allow Null' => $column->Null  == 'NO' ? false : true,
+			'Key' 	=> $column->Key,
+			'Default' => $column->Default,
+			'Extra'	=> $column->Extra
+		);
+	}
 	
-	return array( 'header_names' => $column_names, 'error' => '' );
+	return array( 'fields' => $column_names, 'error' => '' );
 	
 }
 
