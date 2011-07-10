@@ -15,6 +15,10 @@
   CPButtonBar bottomBar;
   BOOL clickedAddRow;
   CPInteger newRowAtIndex;
+  CPTextField labelTableInfo;
+  CPInteger offset;
+  CPInteger limit;
+  CPInteger totalRows;
 }
 
 - (void)viewWillAppear
@@ -25,6 +29,13 @@
   }
 }
 
+- (void)viewDidSet
+{
+  if(!offset) 
+    offset = 0;
+  if(!limit) 
+    limit = 100;
+}
 
 - (void)databaseTableSelected
 {
@@ -83,7 +94,7 @@
       [[SJAPIRequest sharedAPIRequest] sendRequestForRowsForTable:tableName callback:function( js ) 
   	  {
   	  	[self handleTableRowsResponse:js];
-		[[SJTaskProgressWindowController sharedTaskProgressWindowController] hideTaskProgressWindowForCurrentTask];
+		    [[SJTaskProgressWindowController sharedTaskProgressWindowController] hideTaskProgressWindowForCurrentTask];
 
       }];
     }
@@ -130,8 +141,8 @@
   [bottomBar setButtons:[addButton, minusButton, duplicateButton, refreshBtn]];
   
     
-  var labelTableInfo = [[CPTextField alloc] initWithFrame:CGRectMake(35 * [[bottomBar buttons] count], 4, 300,20)];
-  [labelTableInfo setStringValue:@"Rows 2,001 - 3,000 of 10,583 from table"];
+  labelTableInfo = [[CPTextField alloc] initWithFrame:CGRectMake(35 * [[bottomBar buttons] count], 4, 300,20)];
+  [labelTableInfo setStringValue:@""];
   [labelTableInfo setEditable:NO];
   [labelTableInfo setFont:[CPFont systemFontOfSize:11.0]];
   [bottomBar addSubview:labelTableInfo];
@@ -193,12 +204,30 @@
 
 - (void)nextPageAction:(CPButton)sender
 {
-  console.log(@"Make request for previous page");
+  var newOffset = offset + limit;
+  if (newOffset <= totalRows) {
+    offset = newOffset;
+    var row = [[self tableView] selectedRow];
+    if (row != CPNotFound) {
+      [[self tableView] deselectRow:row];
+    }
+    [self refreshAction:sender];
+    [[self tableView] scrollRowToVisible:0];
+  }
 }
 
 - (void)prevPageAction:(CPButton)sender
 {
-  console.log(@"Make request for next page");
+  var newOffset = offset - limit;
+  if (newOffset <= totalRows && newOffset >= 0) {
+    offset = newOffset;
+    var row = [[self tableView] selectedRow];
+    if (row != CPNotFound) {
+      [[self tableView] deselectRow:row];
+    }
+    [self refreshAction:sender];
+    [[self tableView] scrollRowToVisible:0];
+  }
 }
 
 - (void)pagePrefButtonAction:(CPButton)sender
@@ -270,8 +299,8 @@
 
       // TODO: replace the actual values of offset and limit when it has been implemented.
       // They will be used to return the rows that will be displayed
-      [params setObject:@"0" forKey:@"offset"];
-      [params setObject:@"100" forKey:@"limit"];
+      [params setObject:offset forKey:@"offset"];
+      [params setObject:limit forKey:@"limit"];
       
       [[SJAPIRequest sharedAPIRequest] sendRemoveTableRow:[self tableName] query:params callback:function (js) {
         if (js.error =='') {
@@ -280,8 +309,7 @@
             [[self tableView] deselectRow:row];
           }
           
-          [self setTbrows:js.rows];
-          [[self tableView] reloadData];
+          [self handleTableRowsResponse:js];
         } else {
           console.log(js.error)
         }
@@ -309,10 +337,9 @@
 
 - (void)refreshAction:(CPButton)sender
 {
-  // TODO: Add Navigation paging
   var params = [CPDictionary dictionary];
-  [params setObject:@"0" forKey:@"offset"];
-  [params setObject:@"100" forKey:@"limit"];
+  [params setObject:offset forKey:@"offset"];
+  [params setObject:limit forKey:@"limit"];
   
   [[SJAPIRequest sharedAPIRequest] sendRequestTableRows:[self tableName] query:params callback:function (js) {
   	[self handleTableRowsResponse:js];
@@ -323,6 +350,16 @@
 {
   [self setTbrows:js.rows];
   [[self tableView] reloadData];
+  
+  var rowscount = parseInt(js.rows.length);
+  totalRows = parseInt(js.total_rows);
+  
+  if(totalRows > limit) {
+    [labelTableInfo setStringValue:"Rows "+ (offset + 1) +" - "+ (offset + limit) +" of "+ totalRows +" from table"];
+  } 
+  else if (rowscount >= 0) {
+    [labelTableInfo setStringValue:rowscount + " rows in table"]; 
+  }
 }
 
 
@@ -387,15 +424,14 @@
   
   // TODO: replace the actual values of offset and limit when it has been implemented.
   // They will be used to return the rows that will be displayed
-  [params setObject:@"0" forKey:@"offset"];
-  [params setObject:@"100" forKey:@"limit"];
+  [params setObject:offset forKey:@"offset"];
+  [params setObject:limit forKey:@"limit"];
   
   rowData[header_name] = anObject;
  
   [[SJAPIRequest sharedAPIRequest] sendUpdateTable:[self tableName] query:params callback:function (js) {
     if (js.error =='') {
-      [self setTbrows:js.rows];
-      [[self tableView] reloadData];
+      [self handleTableRowsResponse:js];
     } else {
       console.log(js.error)
     }
@@ -461,13 +497,12 @@
   
   // TODO: replace the actual values of offset and limit when it has been implemented.
   // They will be used to return the rows that will be displayed
-  [params setObject:@"0" forKey:@"offset"];
-  [params setObject:@"100" forKey:@"limit"];
+  [params setObject:offset forKey:@"offset"];
+  [params setObject:limit forKey:@"limit"];
   
   [[SJAPIRequest sharedAPIRequest] sendUpdateTable:[self tableName] query:params callback:function (js) {
     if (js.error =='') {
-      [self setTbrows:js.rows];
-      [[self tableView] reloadData];
+      [self handleTableRowsResponse:js];
     } else {
       console.log(js.error)
     }

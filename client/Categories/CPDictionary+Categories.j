@@ -15,7 +15,7 @@
     
     if ([v respondsToSelector:@selector(toQueryStringWithPrefix:)]) {
       [params addObject:[v toQueryStringWithPrefix:k]];
-    } else if (typeof(v) == "string") {
+    } else if (typeof(v) == "string" || typeof(v) == "number") {
       [params addObject:k + "=" + v];
     }
   }

@@ -220,13 +220,20 @@ var DownloadIFrame = null,
   CFRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
   
   CFRequest.oncomplete = function() {
-    try {
-      var data = [CFRequest.responseText() objectFromJSON];
-      aCallback( data );
-    } 
-    catch (e) {
-      console.log(e);
-      alert( @"Request failed for URL: " + aURL );
+    var status_code = CFRequest.status();
+    
+    if (status_code == 200) {
+      try {
+        var data = [CFRequest.responseText() objectFromJSON];
+        aCallback( data );
+      } 
+      catch (e) {
+        console.log(e);
+        alert( @"Request failed for URL: " + aURL );
+      }
+    }
+    else {
+      alert( @"Request Status ("+ status_code +")\nFailed for URL:\n" + aURL );
     }
   };
   
