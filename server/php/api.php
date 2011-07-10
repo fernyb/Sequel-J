@@ -45,6 +45,10 @@ function sj_serve_api_request() {
 		case 'remove_table':
 			echo json_encode( sj_serve_endpoint_remove_table() );
 			exit;
+		
+		case 'update_table_row' :
+			echo json_encode( sj_serve_endpoint_update_table_row() );
+			exit;
 						
 	endswitch;
 
@@ -138,7 +142,7 @@ function sj_serve_endpoint_rows() {
 	else
 		$order_by = '';
 		
-	return array( 'rows' => $db->get_results( "SELECT * FROM " . $_GET['table'] . "$order_by LIMIT 0, 100" ), 'error' => '' );
+	return array( 'rows' => $db->get_results( "SELECT SQL_CALC_FOUND_ROWS * FROM " . $_GET['table'] . "$order_by LIMIT " . ( isset( $_GET['offset'] ) ? (int) $_GET['offset']  : 0 ) . ", 100" ), 'total_rows' => (int) $db->get_var( "SELECT FOUND_ROWS();" ), 'error' => '' );
 	
 }
 
@@ -231,6 +235,46 @@ function sj_serve_endpoint_remove_table() {
 		return sj_serve_endpoint_tables();
 	
 	return array( 'tables' => array(), 'error' => 'Unable to remove table: ' . $db->last_error );
+}
+
+function sj_serve_endpoint_update_table_row() {
+	
+	if( empty( $_GET['table'] ) )
+		return array( 'tables' => array(), 'error' => 'A table was not specified' );
+	
+	if( empty( $_GET['where_fields'] ) )
+		return array( 'tables' => array(), 'error' => 'No where fields specified' );
+	
+	$db = sj_connect_to_mysql_from_get();
+
+	$values = array();
+	$columns = array();
+	foreach( $_GET['where_fields'] as $value ) {
+	    $columns[] = key( $value );
+	    $values[] = "'" . stripslashes( end( $value ) ) . "'";
+	}
+		
+	if( $_GET['add_row'] == "YES" ) {
+
+		$query = "INSERT INTO `" . $_GET['table'] . "` (" . implode( ', ', $columns ) . ") VALUES ( " . implode( ', ', $values ) . " )";
+		
+	} else {
+		
+		$where_array = array();
+		foreach( $columns as $key => $column )
+			$where_array[] = "`" . $column . "` = " . $values[$key];
+		
+		$query = "UPDATE `" . $_GET['table'] . "` SET `" . $_GET['field_name'] . "` = '" . stripslashes( $_GET['field_value'] . "' WHERE " . implode( ' AND ', $where_array ) );
+		
+		error_log( $query );
+	
+	}
+	
+	error_log( $query );
+	
+	$db->query( $query );
+	
+	return sj_serve_endpoint_rows();
 }
 
 /* Helper Functions */
