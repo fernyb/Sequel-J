@@ -235,7 +235,7 @@
   if(!prefWindow) {
     prefWindow = [[SJContentPrefWindowController alloc] init];
   } 
-
+  
   [CPApp beginSheet: [prefWindow window]
           modalForWindow: [[self contentView] window]
            modalDelegate: self
