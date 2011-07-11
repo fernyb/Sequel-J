@@ -49,6 +49,10 @@ function sj_serve_api_request() {
 		case 'update_table_row' :
 			echo json_encode( sj_serve_endpoint_update_table_row() );
 			exit;
+		
+		case 'remove_table_row' :
+			echo json_encode( sj_serve_endpoint_remove_table_row() );
+			exit;
 						
 	endswitch;
 
@@ -265,12 +269,36 @@ function sj_serve_endpoint_update_table_row() {
 			$where_array[] = "`" . $column . "` = " . $values[$key];
 		
 		$query = "UPDATE `" . $_GET['table'] . "` SET `" . $_GET['field_name'] . "` = '" . stripslashes( $_GET['field_value'] . "' WHERE " . implode( ' AND ', $where_array ) );
-		
-		error_log( $query );
-	
 	}
 	
-	error_log( $query );
+	$db->query( $query );
+	
+	return sj_serve_endpoint_rows();
+}
+
+function sj_serve_endpoint_remove_table_row() {
+
+	if( empty( $_GET['table'] ) )
+		return array( 'tables' => array(), 'error' => 'A table was not specified' );
+	
+	if( empty( $_GET['where_fields'] ) )
+		return array( 'tables' => array(), 'error' => 'No where fields specified' );
+	
+	$db = sj_connect_to_mysql_from_get();
+	
+	$values = array();
+	$columns = array();
+	foreach( $_GET['where_fields'] as $value ) {
+	    $columns[] = key( $value );
+	    $values[] = "'" . stripslashes( end( $value ) ) . "'";
+	}
+	
+	$where_array = array();
+	
+	foreach( $columns as $key => $column )
+		$where_array[] = "`" . $column . "` = " . $values[$key];
+			
+	$query = "DELETE FROM `" . $_GET['table'] . "` WHERE " . implode( ' AND ', $where_array );
 	
 	$db->query( $query );
 	
