@@ -17,8 +17,6 @@
   BOOL clickedAddRow;
   CPInteger newRowAtIndex;
   CPTextField labelTableInfo;
-  CPInteger offset;
-  CPInteger limit;
   CPInteger totalRows;
   SJContentPrefWindowController prefWindow;
 }
@@ -33,10 +31,52 @@
 
 - (void)viewDidSet
 {
-  if(!offset) 
-    offset = 0;
-  if(!limit) 
+}
+
+- (CPString)limitKey
+{
+  var key = @"ContentTab_limit_"+ [self databaseHost] +"_"+ [self databaseName] +"_"+ [self tableName];
+  return key;
+}
+
+- (CPString)offsetKey
+{
+  var key = @"ContentTab_offset_"+ [self databaseHost] +"_"+ [self databaseName] +"_"+ [self tableName];
+  return key;
+}
+
+- (CPInteger)limit
+{
+  var key = [self limitKey];
+  var limit = [[CPUserDefaults standardUserDefaults] objectForKey:key];
+  if(!limit) {
     limit = 100;
+    [[CPUserDefaults standardUserDefaults] setObject:limit forKey:key];
+  }
+  return (typeof(limit) == "number" ? limit : parseInt(limit));
+}
+
+- (CPInteger)offset
+{
+  var key = [self offsetKey];
+  var offset = [[CPUserDefaults standardUserDefaults] objectForKey:key]; 
+  if(!offset) {
+    offset = 0;
+    [[CPUserDefaults standardUserDefaults] setObject:offset forKey:key];
+  } 
+  return (typeof(offset) == "number" ? offset : parseInt(offset));
+}
+
+- (void)setOffset:(CPInteger)anOffset
+{
+  var key = [self offsetKey];
+  [[CPUserDefaults standardUserDefaults] setObject:anOffset forKey:key];
+}
+
+- (void)setLimit:(CPInteger)aLimit
+{
+  var key = [self limitKey];
+  [[CPUserDefaults standardUserDefaults] setObject:aLimit forKey:key];
 }
 
 - (void)databaseTableSelected
@@ -91,11 +131,13 @@
       [self addBottomBarWithRect:rect];
       
       // We need to get the rows for the table, lets do that here
-      [[SJAPIRequest sharedAPIRequest] sendRequestForRowsForTable:tableName callback:function( js ) 
-  	  {
-  	  	[self handleTableRowsResponse:js];
-		    [[SJTaskProgressWindowController sharedTaskProgressWindowController] hideTaskProgressWindowForCurrentTask];
+      var params = [CPDictionary dictionary];
+      [params setObject:[self offset] forKey:@"offset"];
+      [params setObject:[self limit] forKey:@"limit"];
 
+      [[SJAPIRequest sharedAPIRequest] sendRequestTableRows:tableName query:params callback:function (js) {
+        [self handleTableRowsResponse:js];
+        [[SJTaskProgressWindowController sharedTaskProgressWindowController] hideTaskProgressWindowForCurrentTask];
       }];
     }
   
@@ -201,12 +243,17 @@
   [bottomBar setHasResizeControl:NO];
 }
 
+- (CPInteger)totalRows
+{
+  return totalRows;
+}
 
 - (void)nextPageAction:(CPButton)sender
 {
-  var newOffset = offset + limit;
+  var newOffset = [self offset] + [self limit];
   if (newOffset <= totalRows) {
-    offset = newOffset;
+    [self setOffset:newOffset];
+
     var row = [[self tableView] selectedRow];
     if (row != CPNotFound) {
       [[self tableView] deselectRow:row];
@@ -218,9 +265,10 @@
 
 - (void)prevPageAction:(CPButton)sender
 {
-  var newOffset = offset - limit;
+  var newOffset = [self offset] - [self limit];
   if (newOffset <= totalRows && newOffset >= 0) {
-    offset = newOffset;
+    [self setOffset:newOffset];
+
     var row = [[self tableView] selectedRow];
     if (row != CPNotFound) {
       [[self tableView] deselectRow:row];
@@ -233,9 +281,9 @@
 - (void)pagePrefButtonAction:(CPButton)sender
 {
   if(!prefWindow) {
-    prefWindow = [[SJContentPrefWindowController alloc] init];
+    prefWindow = [[SJContentPrefWindowController alloc] initWithParentController:self];
   } 
-  
+
   [CPApp beginSheet: [prefWindow window]
           modalForWindow: [[self contentView] window]
            modalDelegate: self
@@ -307,8 +355,8 @@
 
       // TODO: replace the actual values of offset and limit when it has been implemented.
       // They will be used to return the rows that will be displayed
-      [params setObject:offset forKey:@"offset"];
-      [params setObject:limit forKey:@"limit"];
+      [params setObject:[self offset] forKey:@"offset"];
+      [params setObject:[self limit] forKey:@"limit"];
       
       [[SJAPIRequest sharedAPIRequest] sendRemoveTableRow:[self tableName] query:params callback:function (js) {
         if (js.error =='') {
@@ -343,11 +391,18 @@
   alert('Duplicate Row Action');
 }
 
+- (void)refreshWithOffset:(CPInteger)anOffset withLimit:(CPInteger)aLimit
+{
+  [self setOffset:anOffset];
+  [self setLimit:aLimit];
+  [self refreshAction:nil];  
+}
+
 - (void)refreshAction:(CPButton)sender
 {
   var params = [CPDictionary dictionary];
-  [params setObject:offset forKey:@"offset"];
-  [params setObject:limit forKey:@"limit"];
+  [params setObject:[self offset] forKey:@"offset"];
+  [params setObject:[self limit] forKey:@"limit"];
   
   [[SJAPIRequest sharedAPIRequest] sendRequestTableRows:[self tableName] query:params callback:function (js) {
   	[self handleTableRowsResponse:js];
@@ -362,8 +417,8 @@
   var rowscount = parseInt(js.rows.length);
   totalRows = parseInt(js.total_rows);
   
-  if(totalRows > limit) {
-    [labelTableInfo setStringValue:"Rows "+ (offset + 1) +" - "+ (offset + limit) +" of "+ totalRows +" from table"];
+  if(totalRows > [self limit]) {
+    [labelTableInfo setStringValue:"Rows "+ ([self offset] + 1) +" - "+ ([self offset] + [self limit]) +" of "+ totalRows +" from table"];
   } 
   else if (rowscount >= 0) {
     [labelTableInfo setStringValue:rowscount + " rows in table"]; 
@@ -432,8 +487,8 @@
   
   // TODO: replace the actual values of offset and limit when it has been implemented.
   // They will be used to return the rows that will be displayed
-  [params setObject:offset forKey:@"offset"];
-  [params setObject:limit forKey:@"limit"];
+  [params setObject:[self offset] forKey:@"offset"];
+  [params setObject:[self limit] forKey:@"limit"];
   
   rowData[header_name] = anObject;
  
@@ -505,8 +560,8 @@
   
   // TODO: replace the actual values of offset and limit when it has been implemented.
   // They will be used to return the rows that will be displayed
-  [params setObject:offset forKey:@"offset"];
-  [params setObject:limit forKey:@"limit"];
+  [params setObject:[self offset] forKey:@"offset"];
+  [params setObject:[self limit] forKey:@"limit"];
   
   [[SJAPIRequest sharedAPIRequest] sendUpdateTable:[self tableName] query:params callback:function (js) {
     if (js.error =='') {

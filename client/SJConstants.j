@@ -13,3 +13,6 @@ QUERY_FAVORITES = @"query_favorites";
 QUERY_HISTORY = @"query_history";
 
 LOGIN_SUCCESS_NOTIFICATION = @"kLoginSuccess";
+
+DATABASE_SELECTED_NOTIFICATION = @"database_selected_notification";
+DATABASE_HOST_NOTIFICATION = @"database_host_notification";

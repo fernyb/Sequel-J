@@ -1,4 +1,3 @@
-
 @import <Foundation/CPObject.j>
 @import "SJConstants.j"
 
@@ -10,6 +9,8 @@
   CPArray _responseData;
   CPTableView _tableview;
   CPString _tablename;
+  CPString _databaseHost;
+  CPString _databaseName;
 }
 
 - (id)init
@@ -39,6 +40,26 @@
   [self setView:aview];
   [self setHidden:YES];
  }
+}
+
+- (CPString)databaseHost
+{
+  return _databaseHost;
+}
+
+- (void)setDatabaseHost:(CPString)aHost
+{
+  _databaseHost = [aHost copy];
+}
+
+- (CPString)databaseName
+{
+  return _databaseName;
+}
+
+- (void)setDatabaseName:(CPString)aName
+{
+  _databaseName = [aName copy];
 }
 
 - (void)awakeFromCib

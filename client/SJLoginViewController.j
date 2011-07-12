@@ -220,6 +220,7 @@ var sharedLoginViewController = nil;
   	  [[CPNotificationCenter defaultCenter] postNotificationName:LOGIN_SUCCESS_NOTIFICATION object:js.character_sets];
   	  [[CPNotificationCenter defaultCenter] postNotificationName:SHOW_DATABASES_NOTIFICATION object:nil];
   	  [[CPNotificationCenter defaultCenter] postNotificationName:SHOW_DATABASE_TABLES_NOTIFICATION object:nil];
+      [[CPNotificationCenter defaultCenter] postNotificationName:DATABASE_HOST_NOTIFICATION object:nil];
 	  }
   }];
 }

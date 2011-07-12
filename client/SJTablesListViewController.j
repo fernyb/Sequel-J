@@ -153,7 +153,8 @@
   databaseName = [aNotification object];
   if (!databaseName)
     return;
-    
+
+  [[CPNotificationCenter defaultCenter] postNotificationName:DATABASE_SELECTED_NOTIFICATION object:databaseName];
   [self loadDatabaseTables];
 }
 

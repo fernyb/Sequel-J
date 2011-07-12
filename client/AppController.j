@@ -40,7 +40,7 @@
     SJTablesListViewController 		tablesListViewController;
     SJFavoritesListViewController	favoritesListViewController;
     SJLoginViewController 			theLoginViewController;
-    CPArray viewControllers;
+    CPArray viewControllers @accessors;
 }
 
 - (void)applicationDidFinishLaunching:(CPNotification)aNotification
@@ -48,6 +48,8 @@
   [[CPNotificationCenter defaultCenter] addObserver:self selector:@selector(switchView:) name:SWITCH_CONTENT_RIGHT_VIEW_NOTIFICATION object:nil];
   [[CPNotificationCenter defaultCenter] addObserver:self selector:@selector(didLogin:) name:LOGIN_SUCCESS_NOTIFICATION object:nil];
   [[CPNotificationCenter defaultCenter] addObserver:self selector:@selector(databaseTableSelected:) name:TABLE_SELECTED_NOTIFICATION object:nil];
+  [[CPNotificationCenter defaultCenter] addObserver:self selector:@selector(databaseWasSelected:) name:DATABASE_SELECTED_NOTIFICATION object:nil];
+  [[CPNotificationCenter defaultCenter] addObserver:self selector:@selector(databaseHostSet:) name:DATABASE_HOST_NOTIFICATION object:nil];
 
 	var name = [[theWindow contentView] viewWithTag:100];
 	[theWindow makeFirstResponder:name];
@@ -85,7 +87,6 @@
 
 - (void)switchToView:(CPString)name
 {
-  CPLog(@"Switch To View: "+ name);
   [self hideAllSubviews];
 
   for(var i=0; i<[viewControllers count]; i++) {
@@ -122,7 +123,7 @@
   [self setupToolbar];
   [self setupLeftView];
   [self setupRightView];
-
+  
   // Add Controllers
 
   [structureTabController setContentView:[self contentRightView]];
@@ -139,13 +140,34 @@
 
   [queryTabController setContentView:[self contentRightView]];
   [viewControllers addObject:queryTabController];
-
+  
   [theWindow orderFront:self];
   
   [[self contentSplitView] setPosition:240 ofDividerAtIndex:0];
   [[self contentSplitView] setDelegate:self];
 }
 
+- (void)databaseHostSet:(CPNotification)aNotification
+{
+  var dbhost = [aNotification object];
+  for(var i=0; i<[[self viewControllers] count]; i++) {
+    var controller = [[self viewControllers] objectAtIndex:i];
+    if ([controller respondsToSelector:@selector(setDatabaseHost:)]) {
+      [controller setDatabaseHost:dbhost];
+    }
+  } 
+}
+
+- (void)databaseWasSelected:(CPNotification)aNotification
+{
+  var dbname = [aNotification object];
+  for(var i=0; i<[[self viewControllers] count]; i++) {
+    var controller = [[self viewControllers] objectAtIndex:i];
+    if ([controller respondsToSelector:@selector(setDatabaseName:)]) {
+      [controller setDatabaseName:dbname];
+    }
+  }
+}
 
 - (float)splitView:(CPSplitView)aSplitView constrainMaxCoordinate:(float)proposedMax ofSubviewAt:(int)subviewIndex
 {

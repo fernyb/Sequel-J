@@ -3,6 +3,8 @@
 @implementation SJContentPrefWindowController : CPWindowController
 {
   CPTextField labelInputName;
+  CPTextField limitRowsField;
+  id parentController @accessors;
 }
 
 - (id)init {
@@ -11,6 +13,34 @@
   return self;
 }
 
+- (id)initWithParentController:(id)aController
+{
+  self = [super initWithWindow:[[CPWindow alloc] initWithContentRect:CGRectMake(0,0, 300, 150) styleMask:CPDocModalWindowMask]];
+  [self setParentController:aController];
+  [self setup];
+  return self;
+}
+}
+
+- (CPInteger)limit
+{
+  return [parentController limit];
+}
+
+- (CPInteger)offset
+{
+  return [parentController offset];
+}
+
+- (CPInteger)pageNumber
+{
+  return ([self offset] / [self limit]) + 1;
+}
+
+- (CPInteger)totalRows
+{
+  return [parentController totalRows];
+}
 
 - (void)setup
 {
@@ -22,7 +52,7 @@
   [contentView addSubview:labelTitle];
   
   labelInputName = [[CPTextField alloc] initWithFrame:CGRectMake(110, 10, 65, 28)];
-  [labelInputName setStringValue:@"1"];
+  [labelInputName setStringValue:[self pageNumber]];
   [labelInputName setEditable:YES];
   [labelInputName setEnabled:YES];
   [labelInputName setBezeled:YES];
@@ -40,13 +70,13 @@
   [pageBtn setAction:@selector(goToPageAction:)];
   [contentView addSubview:pageBtn];
   
-  var limitBox = [[CPCheckBox alloc] initWithFrame:CGRectMake(10, 55, 100, 30)];
-  [limitBox setTitle:@"Limit result to:"];
-  [limitBox sizeToFit];
+  var limitBox = [[CPTextField alloc] initWithFrame:CGRectMake(10, 55, 100, 30)];
+  [limitBox setStringValue:@"Limit result to:"];
+  [limitBox setAlignment:CPRightTextAlignment];
   [contentView addSubview:limitBox];
 
-  var limitRowsField = [[CPTextField alloc] initWithFrame:CGRectMake(110, 50, 65, 28)];
-  [limitRowsField setStringValue:@"100"];
+  limitRowsField = [[CPTextField alloc] initWithFrame:CGRectMake(110, 50, 65, 28)];
+  [limitRowsField setStringValue:[self limit]];
   [limitRowsField setEditable:YES];
   [limitRowsField setEnabled:YES];
   [limitRowsField setBezeled:YES];
@@ -76,8 +106,17 @@
 }
 
 - (void)goToPageAction:(CPButton)sender {
-  var pageNumber = [labelInputName stringValue];
-  console.log(@"Go To Page: "+ pageNumber);
+  var pageNumber = parseInt([labelInputName stringValue]);
+  if(pageNumber <= 0) {
+    return;
+  }
+
+  var currentLimit = parseInt([limitRowsField stringValue]);
+  var currentOffset = (pageNumber - 1) * currentLimit;
+
+  if (currentOffset <= [self totalRows] && currentOffset >= 0) {
+    [parentController refreshWithOffset:currentOffset withLimit:currentLimit];
+  }
 }
 
 - (void)saveAction:(CPButton)sender {
