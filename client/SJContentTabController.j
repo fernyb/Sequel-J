@@ -153,6 +153,7 @@
       
       // We need to get the rows for the table, lets do that here
       var params = [CPDictionary dictionary];
+      [params setObject:[self deferLoadingBlobsAndText] forKey:@"defer_blob_text"];
       [params setObject:[self offset] forKey:@"offset"];
       [params setObject:[self limit] forKey:@"limit"];
 
@@ -374,11 +375,9 @@
 
       var params = [CPDictionary dictionary];
       [params setObject:where_fields forKey:@"where_fields"];
-
-      // TODO: replace the actual values of offset and limit when it has been implemented.
-      // They will be used to return the rows that will be displayed
       [params setObject:[self offset] forKey:@"offset"];
       [params setObject:[self limit] forKey:@"limit"];
+      [params setObject:[self deferLoadingBlobsAndText] forKey:@"defer_blob_text"];
       
       [[SJAPIRequest sharedAPIRequest] sendRemoveTableRow:[self tableName] query:params callback:function (js) {
         if (js.error =='') {
@@ -425,6 +424,7 @@
   var params = [CPDictionary dictionary];
   [params setObject:[self offset] forKey:@"offset"];
   [params setObject:[self limit] forKey:@"limit"];
+  [params setObject:[self deferLoadingBlobsAndText] forKey:@"defer_blob_text"];
   
   [[SJAPIRequest sharedAPIRequest] sendRequestTableRows:[self tableName] query:params callback:function (js) {
   	[self handleTableRowsResponse:js];
@@ -506,9 +506,8 @@
   [params setObject:anObject forKey:@"field_value"];
   [params setObject:where_fields forKey:@"where_fields"];
   [params setObject:(clickedAddRow ? @"YES" : @"NO") forKey:@"add_row"];
-  
-  // TODO: replace the actual values of offset and limit when it has been implemented.
-  // They will be used to return the rows that will be displayed
+
+  [params setObject:[self deferLoadingBlobsAndText] forKey:@"defer_blob_text"];
   [params setObject:[self offset] forKey:@"offset"];
   [params setObject:[self limit] forKey:@"limit"];
   
@@ -577,11 +576,10 @@
   var params = [CPDictionary dictionary];
   [params setObject:@"" forKey:@"field_name"];
   [params setObject:@"" forKey:@"field_value"];
+  [params setObject:[self deferLoadingBlobsAndText] forKey:@"defer_blob_text"];
   [params setObject:where_fields forKey:@"where_fields"];
   [params setObject:(clickedAddRow ? @"YES" : @"NO") forKey:@"add_row"];
   
-  // TODO: replace the actual values of offset and limit when it has been implemented.
-  // They will be used to return the rows that will be displayed
   [params setObject:[self offset] forKey:@"offset"];
   [params setObject:[self limit] forKey:@"limit"];
   

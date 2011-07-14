@@ -185,6 +185,29 @@ describe "App" do
       json['error'].should == "There is an error..."
       json['rows'].size.should == 0
     end
+
+    it "does not load TEXT and BLOB field" do
+      query = {
+        defer_blob_text: 'YES'
+      }
+
+      @mysql.should_receive(:query).with("SHOW COLUMNS FROM `table_name`").and_return([
+        ['id', 'type', 'null', 'key', 'default', 'extra'],
+        ['user_id', 'type', 'null', 'key', 'default', 'extra'],
+        ['name', 'TEXT', 'null', 'key', 'default', 'extra'],
+        ['description', 'BLOB', 'null', 'key', 'default', 'extra']
+      ])
+
+      @mysql.should_receive(:query).
+        with("SELECT id,user_id,NULL,NULL FROM `table_name` LIMIT 0,100").
+        and_return([
+          ['1', '100', nil, nil]
+        ])
+
+      get "/rows/table_name?#{query.to_query_string}"
+      json['rows'][0]['name'].should == '(not loaded)'
+      json['rows'][0]['description'].should == '(not loaded)'
+    end
   end
 
   describe '/schema/:table' do

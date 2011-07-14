@@ -18,6 +18,9 @@
     } else if (typeof(v) == "string" || typeof(v) == "number") {
       [params addObject:k + "=" + v];
     }
+    else if (v == YES || v == NO) {
+      [params addObject:k +"="+ (v == YES ? @"YES" : @"NO")];
+    }
   }
   
   return [params componentsJoinedByString:"&"];

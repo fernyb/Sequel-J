@@ -110,11 +110,26 @@ class App < Sinatra::Base
     limit  = params['limit']  if params['limit']  != ''
     offset = '0'   unless offset
     limit  = '100' unless limit
-    
-    results = query "SELECT * FROM `#{table_name}`#{orderby}LIMIT #{offset},#{limit}"
+  
+    table_column_names = ['*']
+    if params['defer_blob_text'] == 'YES' 
+      table_column_names = names.map {|n| (n['type'] =~ /BLOB/i || n['type'] =~ /TEXT/i) ? 'NULL' : n['name'] }
+    end
+
+    results = query "SELECT #{table_column_names.join(',')} FROM `#{table_name}`#{orderby}LIMIT #{offset},#{limit}"
     rows = results.map {|f|
       f = f.map {|v| v.nil? ? 'NULL' : v }
-      Hash[*column_names.zip(f).flatten]
+      if table_column_names.first == '*'
+        Hash[*column_names.zip(f).flatten]
+      else
+        fields = {}
+        f.each_with_index do |value, idx|
+          name = column_names[idx]
+          value = '(not loaded)' if table_column_names[idx] == 'NULL'
+          fields.merge!({name.to_s => value.to_s})
+        end
+        fields
+      end
     }
     rows 
   end
