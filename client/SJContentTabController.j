@@ -51,7 +51,7 @@
   var limit = [[CPUserDefaults standardUserDefaults] objectForKey:key];
   if(!limit) {
     limit = 100;
-    [[CPUserDefaults standardUserDefaults] setObject:limit forKey:key];
+    [self setLimit:limit];
   }
   return (typeof(limit) == "number" ? limit : parseInt(limit));
 }
@@ -62,7 +62,7 @@
   var offset = [[CPUserDefaults standardUserDefaults] objectForKey:key]; 
   if(!offset) {
     offset = 0;
-    [[CPUserDefaults standardUserDefaults] setObject:offset forKey:key];
+    [self setOffset:offset];
   } 
   return (typeof(offset) == "number" ? offset : parseInt(offset));
 }
@@ -77,6 +77,27 @@
 {
   var key = [self limitKey];
   [[CPUserDefaults standardUserDefaults] setObject:aLimit forKey:key];
+}
+
+- (CPString)deferLoadingKey
+{
+  var key = @"ContentTab_deferLoading_"+ [self databaseHost] +"_"+ [self databaseName] +"_"+ [self tableName];
+  return key;
+}
+
+- (void)setDeferLoadingBlobsAndText:(BOOL)b
+{
+  var key = [self deferLoadingKey];
+  [[CPUserDefaults standardUserDefaults] setObject:b forKey:key];
+}
+
+- (BOOL)deferLoadingBlobsAndText
+{
+  var key = [self deferLoadingKey];
+  var defer = [[CPUserDefaults standardUserDefaults] objectForKey:key];
+  defer = defer == YES ? YES : NO;
+  [self setDeferLoadingBlobsAndText:defer];
+  return defer;
 }
 
 - (void)databaseTableSelected
@@ -282,7 +303,8 @@
 {
   if(!prefWindow) {
     prefWindow = [[SJContentPrefWindowController alloc] initWithParentController:self];
-  } 
+  }
+ [prefWindow willDisplayController];
 
   [CPApp beginSheet: [prefWindow window]
           modalForWindow: [[self contentView] window]

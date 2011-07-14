@@ -4,6 +4,7 @@
 {
   CPTextField labelInputName;
   CPTextField limitRowsField;
+  CPCheckBox deferLoadingCheckbox;
   id parentController @accessors;
 }
 
@@ -88,7 +89,7 @@
   [limitToRowsTxt sizeToFit];
   [contentView addSubview:limitToRowsTxt];
   
-  var deferLoadingCheckbox = [[CPCheckBox alloc] initWithFrame:CGRectMake(10, 85, 100, 28)];
+  deferLoadingCheckbox = [[CPCheckBox alloc] initWithFrame:CGRectMake(10, 85, 100, 28)];
   [deferLoadingCheckbox setTitle:@"Defer loading of blobs and texts"];
   [deferLoadingCheckbox sizeToFit];
   [contentView addSubview:deferLoadingCheckbox];
@@ -120,11 +121,18 @@
 }
 
 - (void)saveAction:(CPButton)sender {
+  var currentLimit = parseInt([limitRowsField stringValue]);
+  if(currentLimit < 0) return;
+  [parentController setLimit:currentLimit]; 
+  var shouldDefer = [deferLoadingCheckbox state] == CPOnState ? YES : NO;
+  [parentController setDeferLoadingBlobsAndText:shouldDefer];
+  [parentController refreshAction:nil];
+
   [CPApp endSheet:[self window]];
 }
 
 - (void)willDisplayController {
-  console.log(@"SJContentPrefWIndowController, will display");
+  [deferLoadingCheckbox setState:([parentController deferLoadingBlobsAndText] ? CPOnState : CPOffState)];
 }
 
 @end
