@@ -471,6 +471,27 @@
   return [[self tbrows] count];
 }
 
+- (BOOL)tableView:(CPTableView)aTableView shouldEditTableColumn:(CPTableColumn)aTableColumn row:(int)rowIndex
+{
+  var alertEndedCallback = function(returnCode, contextInfo) {
+    // we will do nothing for now... 
+  };
+
+  if ([self deferLoadingBlobsAndText]) {
+    var alert = [CPAlert new];
+    [alert addButtonWithTitle:@"OK"];
+    [alert setInformativeText:@"You cannot edit table when blob and text are hidden."];
+    [alert setMessageText:@"Error trying to edit."];
+    [alert setAlertStyle:CPWarningAlertStyle];
+    [alert beginSheetModalForWindow:[[self contentView] window]
+                      modalDelegate:self 
+                     didEndCallback:alertEndedCallback
+                        contextInfo:nil];
+    return NO;
+  }
+  return YES;
+}
+
 - (id)tableView:(CPTableView)aTableView objectValueForTableColumn:(CPTableColumn)aTableColumn row:(CPInteger)rowIndex
 {
   var rowData = [[self tbrows] objectAtIndex:rowIndex];
@@ -484,10 +505,10 @@
   if(clickedAddRow == @"YES") {
     return;
   }
-  
+
   var rowData = [[self tbrows] objectAtIndex:rowIndex];
   var header_name = [[aTableColumn headerView] stringValue];
-    
+
   var columns = [[self tableView] tableColumns];
   var where_fields = [CPArray array];
   
@@ -560,7 +581,6 @@
 - (void)sendUpdatedRowAtIndex:(CPInteger)rowIndex
 {
   var rowData = [[self tbrows] objectAtIndex:rowIndex];
-
   var columns = [[self tableView] tableColumns];
   var where_fields = [CPArray array];
   
