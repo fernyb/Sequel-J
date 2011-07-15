@@ -9,7 +9,13 @@ require 'mysql'
 
 Bundler.require :default, ENV['RACK_ENV']
 
-%W(app ext/mysql ext/array ext/hash).each do |file|
+%W(
+  modules/app_module 
+  ext/mysql 
+  ext/array 
+  ext/hash 
+  app
+).each do |file|
   require File.join(File.dirname(__FILE__), '..', "#{file}.rb")
 end
 
