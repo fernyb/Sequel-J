@@ -1146,8 +1146,62 @@ describe "App" do
   end 
 
   describe '/duplicate_row/:table' do
-    it 'can duplicate a row' do
-      pending
+    before do
+      @where_fields = {
+        id: '4',
+        name: 'fernyb',
+        description: 'hello'
+      }
     end
+
+    it 'can duplicate a row without Primary Key' do
+      where_query = @where_fields.to_query_string_with_key('where_fields')
+      row = {'id' => '4'}
+      row.should_receive(:is_pri_key?).and_return false
+      result = [row]
+
+      select_qs = "SELECT * FROM `checkins` WHERE `id` = '4' AND `name` = 'fernyb' AND `description` = 'hello' LIMIT 1"
+      @mysql.should_receive(:query).with(select_qs).and_return(result)
+
+      new_sql_str = "INSERT INTO `checkins` (`id`) VALUES ('4')"
+      @mysql.should_receive(:query).with(new_sql_str)
+
+      columns = []
+      @mysql.should_receive(:query).with("SHOW COLUMNS FROM `checkins`").and_return columns
+      @mysql.should_receive(:query).with("SELECT * FROM `checkins` LIMIT 0,100").and_return []
+
+      post "/duplicate_row/checkins?#{where_query}"
+      json['query'].should == new_sql_str
+    end
+
+    it 'can duplicate a row having Primary Key' do
+      where_query = @where_fields.to_query_string_with_key('where_fields')
+      row = {'id' => '4'}
+      row.should_receive(:name).and_return 'id'
+      row.should_receive(:is_pri_key?).and_return true
+
+      row2 = {'name' => nil}
+      row2.should_not_receive(:name)
+      row2.should_receive(:is_pri_key?).and_return false
+
+      row3 = {'age' => '26'}
+      row3.should_not_receive(:name)
+      row3.should_receive(:is_pri_key?).and_return false
+      result = [row, row2, row3]
+
+      select_qs = "SELECT * FROM `checkins` WHERE `id` = '4' AND `name` = 'fernyb' AND `description` = 'hello' LIMIT 1"
+      @mysql.should_receive(:query).with(select_qs).and_return(result)
+
+      new_sql_str = "INSERT INTO `checkins` (`id`,`name`,`age`) VALUES (NULL,NULL,'26')"
+      @mysql.should_receive(:query).with(new_sql_str)
+
+      columns = []
+      @mysql.should_receive(:query).with("SHOW COLUMNS FROM `checkins`").and_return columns
+      @mysql.should_receive(:query).with("SELECT * FROM `checkins` LIMIT 0,100").and_return []
+
+      post "/duplicate_row/checkins?#{where_query}"
+      json['query'].should == new_sql_str
+    end
+
   end
 end

@@ -170,6 +170,35 @@ class App < Sinatra::Base
       end
     }.join(" AND ")
   end
+
+  
+  def generate_copy_query result, table_name
+    row = {}
+
+    result.each_hash do |item|
+      item.each_pair {|k,v| 
+        row.merge!({ 
+          k.to_s => (v.nil? ? 'NULL' : v) 
+        })
+      }
+    end
+
+    result.fetch_fields.each do |item|
+      if item.is_pri_key?
+        row[item.name] = 'NULL'
+      end
+    end
+
+    keys = row.keys
+
+    insert_keys = keys.map {|k| "`#{k}`" }.join(',')
+    insert_values = keys.map {|k| 
+      v = row[k]
+      v == 'NULL' ? 'NULL' : "'#{v}'"
+    }.join(',')
+
+   "INSERT INTO `#{table_name}` (#{insert_keys}) VALUES (#{insert_values})"
+  end
   
   def database_list_tables
     begin
@@ -579,7 +608,7 @@ class App < Sinatra::Base
     where_fields = generate_where_for_fields params['where_fields']
     
     result = query "SELECT * FROM `#{params[:table]}` WHERE #{where_fields} LIMIT 1"
-    new_query_str = result.to_copy_query
+    new_query_str = generate_copy_query result,  params[:table]
     query new_query_str
     
     rows = table_rows params[:table]

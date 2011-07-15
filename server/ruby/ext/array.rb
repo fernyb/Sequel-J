@@ -7,7 +7,7 @@ Array.class_eval {
     []
   end
   
-  def each_hash(&block)
+  def each_hash &block
     self.each do |item|
       block.call(item)
     end
@@ -15,5 +15,9 @@ Array.class_eval {
   
   def num_rows
     self.size
+  end
+
+  def fetch_fields
+    self
   end
 }

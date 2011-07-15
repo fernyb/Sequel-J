@@ -14,7 +14,7 @@ Mysql::Result.class_eval {
     rows
   end
 
-  def to_copy_query
+  def to_copy_query table_name
     row = {}
 
     self.each_hash do |item|
@@ -25,10 +25,8 @@ Mysql::Result.class_eval {
       }
     end
 
-    table_name = ''
     self.fetch_fields.each do |item|
       if item.is_pri_key?
-        table_name = item.table
         row[item.name] = 'NULL'
       end
     end
