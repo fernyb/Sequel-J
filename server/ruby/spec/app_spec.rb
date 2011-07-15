@@ -1144,4 +1144,10 @@ describe "App" do
       json['total_rows'].should == '2'
     end
   end 
+
+  describe '/duplicate_row/:table' do
+    it 'can duplicate a row' do
+      pending
+    end
+  end
 end

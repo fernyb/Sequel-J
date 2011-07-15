@@ -575,6 +575,17 @@ class App < Sinatra::Base
     render fields: fields, query: qstr
   end
   
+  post '/duplicate_row/:table' do
+    where_fields = generate_where_for_fields params['where_fields']
+    
+    result = query "SELECT * FROM `#{params[:table]}` WHERE #{where_fields} LIMIT 1"
+    new_query_str = result.to_copy_query
+    query new_query_str
+    
+    rows = table_rows params[:table]
+    render rows: rows, query: new_query_str
+  end
+
   get '/' do
     'Hello World'
   end

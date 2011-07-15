@@ -125,6 +125,15 @@ var DownloadIFrame = null,
   [self _sendRequestToURL:url httpMethod:@"POST" callback:callback];  
 }
 
+- (void)sendDuplicateTableRow:(CPString)table_name query:(CPDictionary)opts callback:(func)callback
+{
+  var url = SERVER_BASE + "/api.php";
+  var query = "endpoint=duplicate_row&table=" + table_name + "&" + [self _requestCredentialsString] + "&" + [opts toQueryString];
+  url += "?" + query;
+  
+  [self _sendRequestToURL:url httpMethod:@"POST" callback:callback];  
+}
+
 - (void)sendRequestToEndpoint:(CPString)aURL callback:(id)aCallback
 {
 	[self sendRequestToEndpoint:aURL withOptions:nil callback:aCallback];

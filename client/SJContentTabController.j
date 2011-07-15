@@ -409,7 +409,10 @@
 
 - (void)duplicateRowAction:(CPButton)sender
 {
-  alert('Duplicate Row Action');
+  var selectedRow = [[self tableView] selectedRow];
+  if (selectedRow != CPNotFound) {
+    [self duplicateRowAtIndex:selectedRow];
+  }
 }
 
 - (void)refreshWithOffset:(CPInteger)anOffset withLimit:(CPInteger)aLimit
@@ -612,5 +615,37 @@
   }];
 }
 
+- (void)duplicateRowAtIndex:(CPInteger)rowIndex
+{
+  if ([self deferLoadingBlobsAndText]) {
+    return;
+  }
+
+  var rowData = [[self tbrows] objectAtIndex:rowIndex];
+  var columns = [[self tableView] tableColumns];
+  var where_fields = [CPArray array];
+
+  for(var i=0; i<[columns count]; i++) {
+    var column = [columns objectAtIndex:i];
+    var columnName = [[column headerView] stringValue];
+    var rowValue = rowData[columnName];
+    
+    var field_kv = [CPDictionary dictionaryWithObjectsAndKeys: columnName, @"name", rowValue, @"value"];
+    [where_fields addObject:field_kv];
+  }
+  
+  var params = [CPDictionary dictionary];
+  [params setObject:[self offset] forKey:@"offset"];
+  [params setObject:[self limit] forKey:@"limit"];
+  [params setObject:where_fields forKey:@"where_fields"];
+
+  [[SJAPIRequest sharedAPIRequest] sendDuplicateTableRow:[self tableName] query:params callback:function (js) {
+    if (js.error == '') {
+      [self handleTableRowsResponse:js];
+    } else {
+      console.log(js.error);
+    }
+  }]; 
+}
 
 @end
