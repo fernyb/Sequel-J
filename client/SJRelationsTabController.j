@@ -8,6 +8,7 @@
 @implementation SJRelationsTabController : SJTabBaseController
 {
   CPArray relations;
+  CPButtonBar bottomBar;
 }
 
 // View Did Set is only called when the [self view] is set.
@@ -20,6 +21,13 @@
 - (void)addTableStructure
 {
   var scrollview = [self createTableViewForView:[self view] headerNames:[self headerNames]];
+
+  var rect = [scrollview frame];
+  rect.size.height -= 23.0;
+
+  [scrollview setFrame:rect];
+  [self addBottomBarWithRect:rect];
+
   // After we create the TableView we add it to the view as a subview.
   [[self view] addSubview:scrollview];
 }
@@ -32,6 +40,49 @@
 - (void)viewDidAdjust
 {
   [[self tableView] adjustColumnsToFit];
+}
+
+- (void)addBottomBarWithRect:(CGRect)rect
+{
+  if(bottomBar) return;
+  var originY = rect.size.height;
+
+  bottomBar = [[CPButtonBar alloc] initWithFrame:CGRectMake(0, originY, rect.size.width, 23.0)];    
+  [bottomBar setAutoresizingMask:CPViewWidthSizable | CPViewMinYMargin];
+  
+  [[self view] addSubview:bottomBar];
+
+  var addButton = [CPButtonBar plusButton];
+  [addButton setAction:@selector(addRelationAction:)];
+  [addButton setTarget:self];
+  [addButton setEnabled:YES];
+  
+  var minusButton = [CPButtonBar minusButton];
+  [minusButton setAction:@selector(removeRelationAction:)];
+  [minusButton setTarget:self];
+  [minusButton setEnabled:YES];
+
+  var refreshBtn = [[CPButton alloc] initWithFrame:CGRectMake(0, 0, 35, 25)];
+  var refreshImage = [[CPImage alloc] initWithContentsOfFile:[[CPBundle mainBundle] pathForResource:@"refresh-icon.png"] size:CGSizeMake(14, 15)];
+  [refreshBtn setBordered:NO];
+  [refreshBtn setTarget:self];
+  [refreshBtn setAction:@selector(refreshAction:)];
+  [refreshBtn setImage:refreshImage];
+  [refreshBtn setImagePosition:CPImageOnly];
+
+  [bottomBar setButtons:[addButton, minusButton, refreshBtn]];
+}
+
+- (void)addRelationAction:(CPButton)sender
+{
+}
+
+- (void)removeRelationAction:(CPButton)sender
+{
+}
+
+- (void)refreshAction:(CPButton)sender
+{
 }
 
 // Called when the tab is selected and the view will be displayed.
