@@ -3,12 +3,13 @@
 @import "SJTabBaseController.j"
 @import "SJConstants.j"
 @import "Categories/CPTableView+Categories.j"
-
+@import "SJRelationNewWindowController.j"
 
 @implementation SJRelationsTabController : SJTabBaseController
 {
   CPArray relations;
   CPButtonBar bottomBar;
+  SJRelationNewWindowController newRelWinController;
 }
 
 // View Did Set is only called when the [self view] is set.
@@ -75,6 +76,15 @@
 
 - (void)addRelationAction:(CPButton)sender
 {
+  if (!newRelWinController) {
+    newRelWinController = [[SJRelationNewWindowController alloc] initWithParentController:self];
+  }
+
+  [CPApp beginSheet: [newRelWinController window]
+     modalForWindow: [[self contentView] window]
+      modalDelegate: self
+     didEndSelector: null
+        contextInfo: null];
 }
 
 - (void)removeRelationAction:(CPButton)sender
@@ -83,6 +93,7 @@
 
 - (void)refreshAction:(CPButton)sender
 {
+  [self retrieveRelations];
 }
 
 // Called when the tab is selected and the view will be displayed.
