@@ -416,6 +416,9 @@ describe "App" do
     it 'returns relations for table checkins' do
       sql_code = File.open("#{DIR_PATH}/fixture/checkins.sql") {|f| f.read }
       @mysql.should_receive(:query).with("SHOW CREATE TABLE `checkins`").and_return(['checkins', sql_code])
+      @mysql.should_receive(:query).with("SHOW COLUMNS FROM `checkins`").and_return []
+      @mysql.should_receive(:list_tables).and_return []
+
       get '/relations/checkins'
       
       json['path'].should == '/relations/checkins'
@@ -428,6 +431,9 @@ describe "App" do
     
     it 'returns error message when Mysql throws an error' do
       @mysql.should_receive(:query).with("SHOW CREATE TABLE `checkins`").and_raise(Mysql::Error.new('There is an error'))
+      @mysql.should_receive(:query).with("SHOW COLUMNS FROM `checkins`").and_return []
+      @mysql.should_receive(:list_tables).and_return []
+
       get '/relations/checkins'
       
       json['path'].should == '/relations/checkins'
@@ -1203,5 +1209,24 @@ describe "App" do
       json['query'].should == new_sql_str
     end
 
+  end
+
+  describe '/add_relation/:table' do
+    before do
+      @query = {
+       column:     'id',
+       ref_table:  'users',
+       ref_column: 'id'
+      }
+    end
+
+    it 'can add a foreign key' do
+      @mysql.should_receive(:query).
+        with("ALTER TABLE `table_name_1` ADD FOREIGN KEY (`id`) REFERENCES `users` (`id`)")
+      @mysql.should_receive(:query).
+        with("SHOW CREATE TABLE `table_name_1`").and_return []
+
+      post "/add_relation/table_name_1?#{@query.to_query_string}"
+    end
   end
 end

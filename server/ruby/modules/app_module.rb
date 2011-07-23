@@ -230,4 +230,39 @@ module AppModule
   
     redirect to(endpoint_path), 307
   end
+
+  def relations_for_table table_name
+      sql = sql_for_table table_name
+    parts = sql.split("\n").map {|part| part.strip }
+    constraints = parts.select {|part| part =~ /^CONSTRAINT/ }
+
+    relations = constraints.map do |part|
+      row = {
+        name:          '',
+        foreign_key:   [],
+        reference_key: [],
+        on_delete:     '',
+        on_update:     ''
+      }
+      row.merge!({ name: $1 }) if part =~ /CONSTRAINT `([0-9a-z_\-\+\=\%]+)`/i
+    
+      if part =~ /FOREIGN KEY \(/i
+        fields = part.split("FOREIGN KEY (").last.split(")").first
+        fields = fields.scan(/`([\w\-]+)`/i).flatten
+        row.merge!({ foreign_key: fields })
+      end
+
+      if part =~ /REFERENCES `([0-9a-z_\-\+\=\%]+)`/i
+        row.merge!({ reference_table: $1 })
+        fields = part.split("REFERENCES").last
+        fields = fields.scan(/\`([\w\-]+)`/i).flatten
+        fields.shift    
+        row.merge!({ reference_key: fields })
+      end
+      
+      row.merge!({ on_delete: $1 }) if part =~ /ON DELETE (RESTRICT|CASCADE|SET NULL|NO ACTION)/i
+      row.merge!({ on_update: $1 }) if part =~ /ON UPDATE (RESTRICT|CASCADE|SET NULL|NO ACTION)/i
+      row.size > 0 ? row : nil
+    end.reject {|item| item.nil? }
+  end
 end

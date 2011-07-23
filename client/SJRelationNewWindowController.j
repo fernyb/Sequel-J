@@ -3,6 +3,11 @@
 @implementation SJRelationNewWindowController : CPWindowController
 {
   id controller @accessors;
+  CPPopUpButton columnPopBtn;
+  CPPopUpButton referenceTablesPopBtn;
+  CPPopUpButton referenceColumnPopupBtn;
+  CPPopUpButton onUpdatePopupBtn;
+  CPDictionary fields;
 }
 
 - (id)initWithParentController:(id)aController
@@ -48,8 +53,10 @@
   [columnLabel setFrameOrigin:CGPointMake(10, 14)];
   [[tableBox contentView] addSubview:columnLabel];
 
-  var columnPopBtn = [[CPPopUpButton alloc] initWithFrame:CGRectMake(0,0, 210, 24)];
+  columnPopBtn = [[CPPopUpButton alloc] initWithFrame:CGRectMake(0,0, 210, 24)];
   [columnPopBtn setFrameOrigin:CGPointMake(110, 10)];
+  [columnPopBtn setTarget:self];
+  [columnPopBtn setAction:@selector(didSelectColumnAction:)];
   [[tableBox contentView] addSubview:columnPopBtn];
 
   [contentView addSubview:tableBox];
@@ -76,9 +83,11 @@
   [tableLabel setFrameOrigin:CGPointMake(10, 14)];
   [[tableBox contentView] addSubview:tableLabel];
 
-  var tablePopupBtn = [[CPPopUpButton alloc] initWithFrame:CGRectMake(0,0, 210, 24)];
-  [tablePopupBtn setFrameOrigin:CGPointMake(110, 10)];
-  [[tableBox contentView] addSubview:tablePopupBtn];
+  referenceTablesPopBtn = [[CPPopUpButton alloc] initWithFrame:CGRectMake(0,0, 210, 24)];
+  [referenceTablesPopBtn setFrameOrigin:CGPointMake(110, 10)];
+  [referenceTablesPopBtn setTarget:self];
+  [referenceTablesPopBtn setAction:@selector(didSelectReferenceTableAction:)];
+  [[tableBox contentView] addSubview:referenceTablesPopBtn];
 
   
   var columnLabel = [[CPTextField alloc] initWithFrame:CGRectMakeZero()];
@@ -88,13 +97,25 @@
   [columnLabel setFrameOrigin:CGPointMake(10, 44)];
   [[tableBox contentView] addSubview:columnLabel];
 
-  var columnPopBtn = [[CPPopUpButton alloc] initWithFrame:CGRectMake(0,0, 210, 24)];
-  [columnPopBtn setFrameOrigin:CGPointMake(110, 42)];
-  [[tableBox contentView] addSubview:columnPopBtn];
+  referenceColumnPopupBtn = [[CPPopUpButton alloc] initWithFrame:CGRectMake(0,0, 210, 24)];
+  [referenceColumnPopupBtn setFrameOrigin:CGPointMake(110, 42)];
+  [referenceColumnPopupBtn setTarget:self];
+  [referenceColumnPopupBtn setAction:@selector(didSelectReferenceColumnAction:)];
+  [[tableBox contentView] addSubview:referenceColumnPopupBtn];
 
   [contentView addSubview:tableBox];
 }
 
+- (CPArray)actionItems
+{
+  return [
+    @" ",
+    @"Restrict",
+    @"Cascade",
+    @"Set NULL",
+    @"No Action"
+  ];
+}
 
 - (void)addActionBox
 {
@@ -117,9 +138,12 @@
   [tableLabel setFrameOrigin:CGPointMake(10, 14)];
   [[tableBox contentView] addSubview:tableLabel];
 
-  var tablePopupBtn = [[CPPopUpButton alloc] initWithFrame:CGRectMake(0,0, 210, 24)];
-  [tablePopupBtn setFrameOrigin:CGPointMake(110, 10)];
-  [[tableBox contentView] addSubview:tablePopupBtn];
+  onUpdatePopupBtn = [[CPPopUpButton alloc] initWithFrame:CGRectMake(0,0, 210, 24)];
+  [onUpdatePopupBtn setFrameOrigin:CGPointMake(110, 10)];
+  [onUpdatePopupBtn setTarget:self];
+  [onUpdatePopupBtn setAction:@selector(didSelectOnUpdateAction:)];
+  [onUpdatePopupBtn addItemsWithTitles:[self actionItems]];
+  [[tableBox contentView] addSubview:onUpdatePopupBtn];
 
   
   var columnLabel = [[CPTextField alloc] initWithFrame:CGRectMakeZero()];
@@ -127,11 +151,15 @@
   [columnLabel sizeToFit];
   [columnLabel setFrame:CGRectMake(0,0, 90, CGRectGetHeight([columnLabel frame]))];
   [columnLabel setFrameOrigin:CGPointMake(10, 44)];
+
   [[tableBox contentView] addSubview:columnLabel];
 
-  var columnPopBtn = [[CPPopUpButton alloc] initWithFrame:CGRectMake(0,0, 210, 24)];
-  [columnPopBtn setFrameOrigin:CGPointMake(110, 42)];
-  [[tableBox contentView] addSubview:columnPopBtn];
+  var onDeletePopupBtn = [[CPPopUpButton alloc] initWithFrame:CGRectMake(0,0, 210, 24)];
+  [onDeletePopupBtn setFrameOrigin:CGPointMake(110, 42)];
+  [onDeletePopupBtn addItemsWithTitles:[self actionItems]];
+  [onDeletePopupBtn setTarget:self];
+  [onDeletePopupBtn setAction:@selector(didSelectOnDeleteAction:)];
+  [[tableBox contentView] addSubview:onDeletePopupBtn];
 
   [contentView addSubview:tableBox];
 }
@@ -168,7 +196,94 @@
 
 - (void)addBtnAction:(CPButton)sender
 {
-  // Here make request for new relation
+  [[SJAPIRequest sharedAPIRequest] sendAddRelation:[controller tableName] query:fields callback:function (js) {
+    if (js.error == '') {
+      console.log(js);
+      [CPApp endSheet:[self window]];
+    } else {
+      [CPApp endSheet:[self window]];
+      [self handleErrorRequest:js];
+    }
+  }];  
+}
+
+- (void)handleErrorRequest:(id)js
+{
+  var didEndCallback = function() {
+  };
+
+  var error = js.error;
+  error += "\n\n";
+  error += js.query;
+
+  var alert = [CPAlert new];
+  [alert addButtonWithTitle:@"OK"];    
+  [alert setMessageText:@"Error trying to add relation."];
+  [alert setInformativeText:error];
+  [alert setAlertStyle:CPWarningAlertStyle];
+  [alert beginSheetModalForWindow:[[controller contentView] window]
+                  modalDelegate:self 
+                  didEndCallback:didEndCallback
+                  contextInfo:nil];
+}
+
+- (void)willDisplayView
+{
+  fields = [CPDictionary dictionary];
+
+  var structure = [controller structure];
+  [columnPopBtn removeAllItems];
+  [columnPopBtn addItemWithTitle:@" "];
+  [structure each:function(item) {
+    [columnPopBtn addItemWithTitle:item['Field']];
+  }];
+
+  var tables = [controller tables];
+  [referenceTablesPopBtn removeAllItems];
+  [referenceTablesPopBtn addItemWithTitle:@" "];
+  [tables each:function(item) {
+    [referenceTablesPopBtn addItemWithTitle:item];
+  }];
+}
+
+- (void)didSelectColumnAction:(CPPopUpButton)sender
+{
+  var colname = [[sender selectedItem] title];
+  [fields setObject:colname forKey:@"column"];
+}
+
+- (void)didSelectReferenceTableAction:(CPPopUpButton)sender
+{
+  var selectedRefTable = [[sender selectedItem] title];
+  [fields setObject:selectedRefTable forKey:@"ref_table"];
+  [referenceColumnPopupBtn removeAllItems];
+
+  [[SJAPIRequest sharedAPIRequest] sendRequestToEndpoint:@"schema" tableName:selectedRefTable callback:function ( js ) {
+    if (js.error == '') {
+      [referenceColumnPopupBtn addItemWithTitle:@" "];
+      [js.fields each:function(f) {
+        [referenceColumnPopupBtn addItemWithTitle:f['Field']];
+      }];
+    }
+  }];
+}
+
+- (void)didSelectReferenceColumnAction:(CPPopUpButton)sender
+{
+  var selectedTitle = [[sender selectedItem] title];
+  [fields setObject:selectedTitle forKey:@"ref_column"];
+}
+
+- (void)didSelectOnUpdateAction:(CPPopUpButton)sender
+{
+  var onUpdateAction = [[sender selectedItem] title];
+  [fields setObject:onUpdateAction forKey:@"update_action"];
+}
+
+- (void)didSelectOnDeleteAction:(CPPopUpButton)sender
+{
+  var onDeleteAction = [[sender selectedItem] title];
+  [fields setObject:onDeleteAction forKey:@"delete_action"];
 }
 
 @end

@@ -10,6 +10,8 @@
   CPArray relations;
   CPButtonBar bottomBar;
   SJRelationNewWindowController newRelWinController;
+  CPArray column_names;
+  CPArray structure;
 }
 
 // View Did Set is only called when the [self view] is set.
@@ -79,6 +81,7 @@
   if (!newRelWinController) {
     newRelWinController = [[SJRelationNewWindowController alloc] initWithParentController:self];
   }
+  [newRelWinController willDisplayView];
 
   [CPApp beginSheet: [newRelWinController window]
      modalForWindow: [[self contentView] window]
@@ -117,9 +120,21 @@
     [[SJAPIRequest sharedAPIRequest] sendRequestToEndpoint:@"relations" withOptions:options callback:function( js ) 
     {
       relations = js.relations;
+      tables = js.tables;
+      structure = js.structure;
       [[self tableView] reloadData];
     }];
   }
+}
+
+- (CPArray)structure
+{
+  return structure;
+}
+
+- (CPArray)tables
+{
+  return tables;
 }
 
 - (CPInteger)numberOfRowsInTableView:(CPTableView *)aTableView

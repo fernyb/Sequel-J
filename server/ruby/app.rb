@@ -201,40 +201,11 @@ class App < Sinatra::Base
   end
   
   get '/relations/:table' do
-    sql = sql_for_table params[:table]
-    parts = sql.split("\n").map {|part| part.strip }
-    constraints = parts.select {|part| part =~ /^CONSTRAINT/ }
-
-    relations = constraints.map do |part|
-      row = {
-        name:          '',
-        foreign_key:   [],
-        reference_key: [],
-        on_delete:     '',
-        on_update:     ''
-      }
-      row.merge!({ name: $1 }) if part =~ /CONSTRAINT `([0-9a-z_\-\+\=\%]+)`/i
-    
-      if part =~ /FOREIGN KEY \(/i
-        fields = part.split("FOREIGN KEY (").last.split(")").first
-        fields = fields.scan(/`([\w\-]+)`/i).flatten
-        row.merge!({ foreign_key: fields })
-      end
-
-      if part =~ /REFERENCES `([0-9a-z_\-\+\=\%]+)`/i
-        row.merge!({ reference_table: $1 })
-        fields = part.split("REFERENCES").last
-        fields = fields.scan(/\`([\w\-]+)`/i).flatten
-        fields.shift    
-        row.merge!({ reference_key: fields })
-      end
-      
-      row.merge!({ on_delete: $1 }) if part =~ /ON DELETE (RESTRICT|CASCADE|SET NULL|NO ACTION)/i
-      row.merge!({ on_update: $1 }) if part =~ /ON UPDATE (RESTRICT|CASCADE|SET NULL|NO ACTION)/i
-      row.size > 0 ? row : nil
-    end.reject {|item| item.nil? }
+    relations = relations_for_table params[:table]
+    structure = schema_table params[:table]
+    tables    = database_list_tables
   
-    render relations: relations
+    render relations: relations, tables: tables, structure: structure
   end
   
   get '/show_create_table/:table' do
@@ -383,6 +354,25 @@ class App < Sinatra::Base
     
     rows = table_rows params[:table]
     render rows: rows, query: new_query_str
+  end
+
+  post '/add_relation/:table' do
+    col       = params['column']
+    ref_table = params['ref_table']
+    ref_col   = params['ref_column']
+
+    qs = "ALTER TABLE `#{params[:table]}`"
+    qs << " ADD FOREIGN KEY (`#{col}`)"
+    qs << " REFERENCES `#{ref_table}` (`#{ref_col}`)"
+    query qs
+
+    relations = relations_for_table params[:table]
+
+    render query: qs, relations: relations
+  end
+
+  post '/drop_relation/:table' do
+    render
   end
 
   get '/' do

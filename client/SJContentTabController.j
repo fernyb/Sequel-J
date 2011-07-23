@@ -390,7 +390,7 @@
         } else {
           console.log(js.error)
         }
-      }];     
+      }];
     }
   };
   

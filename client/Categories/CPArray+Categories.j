@@ -3,11 +3,15 @@
 
 @implementation CPArray (SJArrayAdditions)
 
-- (void)map:(Function)func
+- (CPArray)map:(Function)func
 {
+  var items = [CPArray array];
   for(var i=0; i<[self count]; i++) {
-    func([self objectAtIndex:i]);
+    var item = func([self objectAtIndex:i]);
+    if (item)
+      [items addObject:item];
   }
+  return items;
 }
 
 - (void)each:(Function)func

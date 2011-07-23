@@ -39,6 +39,14 @@ var DownloadIFrame = null,
 	[self _sendRequestToURL:url callback:aCallback];
 }
 
+- (void)sendAddRelation:(CPString)table_name query:(CPDictionary)opts callback:(func)callback
+{
+  var url = SERVER_BASE + "/api.php";
+  var query = "endpoint=add_relation&table="+ table_name +"&"+ [self _requestCredentialsString] +"&"+ [opts toQueryString];
+  url += "?" + query;
+  [self _sendRequestToURL:url httpMethod:@"POST" callback:callback];
+}
+
 - (void)sendRequestAddTable:(CPString)table_name query:(CPDictionary)opts callback:(func)callback
 {
   var url = SERVER_BASE + "/api.php";
